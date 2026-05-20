@@ -1,26 +1,133 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-50: #eef0fa;
+  --color-brand-100: #d6dbf0;
+  --color-brand-200: #adb6e0;
+  --color-brand-300: #7e8bcd;
+  --color-brand-400: #4f60ba;
+  --color-brand-500: #263995;
+  --color-brand-600: #2b3aa1;
+  --color-brand-700: #1e2d7a;
+  --color-brand-800: #16225c;
+  --color-brand-900: #0f1840;
+
+  --color-accent-50: #f0fdf4;
+  --color-accent-100: #dcfce7;
+  --color-accent-200: #bbf7d0;
+  --color-accent-300: #86efac;
+  --color-accent-400: #6fdb83;
+  --color-accent-500: #55cd6c;
+  --color-accent-600: #4ab866;
+  --color-accent-700: #3a9a52;
+  --color-accent-800: #2d7a40;
+
+  --color-danger: #cc1818;
+  --color-danger-light: #fee2e2;
+  --color-warn: #fbc531;
+  --color-info: #0097e6;
+
+  --color-ink-50: #fafafa;
+  --color-ink-100: #f4f4f5;
+  --color-ink-200: #e4e4e7;
+  --color-ink-300: #d4d4d8;
+  --color-ink-400: #a1a1aa;
+  --color-ink-500: #71717a;
+  --color-ink-600: #52525b;
+  --color-ink-700: #3f3f46;
+  --color-ink-800: #27272a;
+  --color-ink-900: #18181b;
+
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Geist", ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-soft: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+  --shadow-lift: 0 10px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.05);
+  --shadow-glow: 0 0 0 4px rgb(38 57 149 / 0.12);
+
+  --radius-card: 1rem;
+}
+
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #18181b;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+html { scroll-behavior: smooth; }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Marquee */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee { animation: marquee 35s linear infinite; }
+.animate-marquee:hover { animation-play-state: paused; }
+.animate-marquee-slow { animation: marquee 55s linear infinite; }
+.animate-marquee-slow:hover { animation-play-state: paused; }
+
+/* Shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(110deg, #f4f4f5 8%, #e4e4e7 18%, #f4f4f5 33%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s linear infinite;
+}
+
+/* Gradient orb (hero) */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Pretty scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--color-ink-50); }
+::-webkit-scrollbar-thumb { background: var(--color-ink-300); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-brand-500); }
+
+/* Focus ring */
+*:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Card lift */
+.card-lift {
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 220ms ease-out;
+}
+.card-lift:hover {
+  transform: translateY(-4px);
+}
+
+/* Mask gradient (for hero blob etc) */
+.mask-fade-right {
+  -webkit-mask-image: linear-gradient(to right, black 80%, transparent 100%);
+  mask-image: linear-gradient(to right, black 80%, transparent 100%);
 }
