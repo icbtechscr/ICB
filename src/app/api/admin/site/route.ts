@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase";
 import { SECTION_KEYS, type SectionKey } from "@/lib/site-content";
 
@@ -19,6 +20,8 @@ export async function PATCH(req: Request) {
       updated_at: new Date().toISOString(),
     });
     if (error) return new NextResponse(error.message, { status: 500 });
+
+    revalidatePath("/", "layout");
     return NextResponse.json({ ok: true });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
