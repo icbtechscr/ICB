@@ -17,6 +17,7 @@ import type {
   SectionKey,
   HeroContent,
   CategoriesContent,
+  CategoryItem,
   ProductSectionContent,
   CtaContent,
   FooterContent,
@@ -36,32 +37,57 @@ export function StoreEditor({
   content,
   categories,
   initialProducts,
+  autoHeroProduct,
+  autoCategories,
+  autoOfertas,
+  autoDestacados,
 }: {
   content: SiteContent;
   categories: Category[];
   initialProducts: ProductLite[];
+  autoHeroProduct: ProductLite | null;
+  autoCategories: CategoryItem[];
+  autoOfertas: ProductLite[];
+  autoDestacados: ProductLite[];
 }) {
   const productCache = useRef<Map<string, ProductLite>>(
-    new Map(initialProducts.map((p) => [p.id, p]))
+    new Map(
+      [
+        ...initialProducts,
+        ...(autoHeroProduct ? [autoHeroProduct] : []),
+        ...autoOfertas,
+        ...autoDestacados,
+      ].map((p) => [p.id, p])
+    )
   );
 
   return (
     <div className="space-y-6">
-      <HeroEditor data={content.hero} cache={productCache} />
-      <CategoriesEditor data={content.categories} categories={categories} />
+      <HeroEditor
+        data={content.hero}
+        cache={productCache}
+        autoProduct={autoHeroProduct}
+      />
+      <CategoriesEditor
+        data={content.categories}
+        categories={categories}
+        autoItems={autoCategories}
+      />
       <ProductSectionEditor
         sectionKey="ofertas"
         title="Ofertas activas"
         data={content.ofertas}
         cache={productCache}
-        emptyHint="Sin productos seleccionados se muestran automáticamente los que están en oferta."
+        autoProducts={autoOfertas}
+        emptyHint="Estos son los productos en oferta que se muestran ahora. Editá la lista o dejá vacío para modo automático."
       />
       <ProductSectionEditor
         sectionKey="destacados"
         title="Productos destacados"
         data={content.destacados}
         cache={productCache}
-        emptyHint="Sin productos seleccionados se muestran automáticamente los más recientes."
+        autoProducts={autoDestacados}
+        emptyHint="Estos son los productos destacados que se muestran ahora. Editá la lista o dejá vacío para modo automático."
       />
       <CtaEditor data={content.cta} />
       <FooterEditor data={content.footer} />
@@ -436,11 +462,16 @@ function ProductChip({
 function HeroEditor({
   data,
   cache,
+  autoProduct,
 }: {
   data: HeroContent;
   cache: React.RefObject<Map<string, ProductLite>>;
+  autoProduct: ProductLite | null;
 }) {
-  const [form, setForm] = useState<HeroContent>(data);
+  const [form, setForm] = useState<HeroContent>({
+    ...data,
+    featuredProductId: data.featuredProductId ?? autoProduct?.id ?? null,
+  });
   const [, forceRender] = useState(0);
   const { save, saving, status, error } = useSave("hero");
   const set = <K extends keyof HeroContent>(k: K, v: HeroContent[K]) =>
@@ -552,11 +583,16 @@ function HeroEditor({
 function CategoriesEditor({
   data,
   categories,
+  autoItems,
 }: {
   data: CategoriesContent;
   categories: Category[];
+  autoItems: CategoryItem[];
 }) {
-  const [form, setForm] = useState<CategoriesContent>(data);
+  const [form, setForm] = useState<CategoriesContent>({
+    ...data,
+    items: data.items.length ? data.items : autoItems,
+  });
   const { save, saving, status, error } = useSave("categories");
   const set = <K extends keyof CategoriesContent>(
     k: K,
@@ -697,15 +733,22 @@ function ProductSectionEditor({
   title,
   data,
   cache,
+  autoProducts,
   emptyHint,
 }: {
   sectionKey: "ofertas" | "destacados";
   title: string;
   data: ProductSectionContent;
   cache: React.RefObject<Map<string, ProductLite>>;
+  autoProducts: ProductLite[];
   emptyHint: string;
 }) {
-  const [form, setForm] = useState<ProductSectionContent>(data);
+  const [form, setForm] = useState<ProductSectionContent>({
+    ...data,
+    productIds: data.productIds.length
+      ? data.productIds
+      : autoProducts.map((p) => p.id),
+  });
   const [, forceRender] = useState(0);
   const { save, saving, status, error } = useSave(sectionKey);
   const set = <K extends keyof ProductSectionContent>(
