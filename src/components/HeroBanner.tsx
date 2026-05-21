@@ -4,10 +4,19 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles, Zap, ShieldCheck } from "lucide-react";
 import type { Product } from "@/lib/products";
+import type { HeroContent } from "@/lib/site-content";
 import { formatCRC } from "@/lib/utils";
 import { BackgroundShader } from "@/components/ui/background-shader";
 
-export function HeroBanner({ featured }: { featured: Product | null }) {
+const BULLET_ICONS = [ShieldCheck, Zap, Sparkles];
+
+export function HeroBanner({
+  featured,
+  hero,
+}: {
+  featured: Product | null;
+  hero: HeroContent;
+}) {
   return (
     <section className="relative isolate -mt-[88px] overflow-hidden pt-[88px] text-white md:-mt-[200px] md:pt-[200px]">
       <BackgroundShader palette="brand" speed={0.5} />
@@ -21,7 +30,7 @@ export function HeroBanner({ featured }: { featured: Product | null }) {
             className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-accent-300 backdrop-blur-md"
           >
             <Sparkles className="size-3.5" />
-            +20 años liderando en Costa Rica
+            {hero.badge}
           </motion.div>
 
           <motion.h1
@@ -30,10 +39,10 @@ export function HeroBanner({ featured }: { featured: Product | null }) {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="mt-5 text-4xl font-black leading-[1.05] tracking-tight drop-shadow-lg sm:text-5xl md:text-6xl lg:text-7xl"
           >
-            Tecnología que
+            {hero.titleLine1}
             <br />
             <span className="bg-gradient-to-r from-accent-300 via-accent-400 to-emerald-300 bg-clip-text text-transparent">
-              trabaja por vos.
+              {hero.titleLine2}
             </span>
           </motion.h1>
 
@@ -43,8 +52,7 @@ export function HeroBanner({ featured }: { featured: Product | null }) {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="mt-5 max-w-md text-base text-white/85 drop-shadow md:text-lg"
           >
-            998 productos en stock. Computadoras, cámaras de vigilancia, redes
-            empresariales, UPS y soluciones POS.
+            {hero.subtitle}
           </motion.p>
 
           <motion.div
@@ -54,18 +62,18 @@ export function HeroBanner({ featured }: { featured: Product | null }) {
             className="mt-7 flex flex-wrap gap-3"
           >
             <Link
-              href="/productos"
+              href={hero.primaryCtaHref}
               className="group inline-flex items-center gap-2 rounded-full bg-accent-500 px-6 py-3 text-sm font-bold text-ink-900 shadow-lg shadow-accent-500/30 transition-all hover:bg-accent-400 hover:shadow-accent-500/50 active:scale-95"
             >
-              Ver catálogo
+              {hero.primaryCtaLabel}
               <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <Link
-              href="/ofertas"
+              href={hero.secondaryCtaHref}
               className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur transition-colors hover:bg-white/20"
             >
               <Zap className="size-4 text-warn" />
-              Ofertas activas
+              {hero.secondaryCtaLabel}
             </Link>
           </motion.div>
 
@@ -75,18 +83,15 @@ export function HeroBanner({ featured }: { featured: Product | null }) {
             transition={{ duration: 0.5, delay: 0.5 }}
             className="mt-10 grid grid-cols-3 gap-3 border-t border-white/15 pt-6 text-xs text-white/85 sm:gap-4"
           >
-            <li className="flex items-center gap-2">
-              <ShieldCheck className="size-4 shrink-0 text-accent-400" />
-              Garantía oficial
-            </li>
-            <li className="flex items-center gap-2">
-              <Zap className="size-4 shrink-0 text-accent-400" />
-              Envío rápido CR
-            </li>
-            <li className="flex items-center gap-2">
-              <Sparkles className="size-4 shrink-0 text-accent-400" />
-              Soporte técnico
-            </li>
+            {hero.bullets.map((b, i) => {
+              const Icon = BULLET_ICONS[i] ?? Sparkles;
+              return (
+                <li key={i} className="flex items-center gap-2">
+                  <Icon className="size-4 shrink-0 text-accent-400" />
+                  {b}
+                </li>
+              );
+            })}
           </motion.ul>
         </div>
 

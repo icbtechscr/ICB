@@ -119,6 +119,32 @@ export async function getOnSaleProducts(limit = 8): Promise<Product[]> {
   return (data as unknown as Row[]).map(rowToProduct);
 }
 
+export async function getProductById(id: string): Promise<Product | null> {
+  const { data, error } = await supabase
+    .from("products")
+    .select(SELECT)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return rowToProduct(data as unknown as Row);
+}
+
+export async function getProductsByIds(ids: string[]): Promise<Product[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from("products")
+    .select(SELECT)
+    .in("id", ids);
+  if (error) throw error;
+  const map = new Map(
+    (data as unknown as Row[]).map((r) => [r.id, rowToProduct(r)])
+  );
+  return ids
+    .map((id) => map.get(id))
+    .filter((p): p is Product => !!p);
+}
+
 export type CategoryGroup = {
   id: string;
   name: string;
@@ -175,6 +201,27 @@ export async function getTopCategoriesWithImage(
     })
   );
   return enriched;
+}
+
+export async function getCategoryCountsMap(): Promise<
+  Map<string, { name: string; slug: string; count: number }>
+> {
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id, name, slug, product_categories(count)");
+  if (error) throw error;
+  const rows = (data as unknown as Array<{
+    id: string;
+    name: string;
+    slug: string;
+    product_categories: { count: number }[];
+  }>) ?? [];
+  return new Map(
+    rows.map((c) => [
+      c.id,
+      { name: c.name, slug: c.slug, count: c.product_categories?.[0]?.count ?? 0 },
+    ])
+  );
 }
 
 export async function getProductsByCategory(slug: string): Promise<Product[]> {

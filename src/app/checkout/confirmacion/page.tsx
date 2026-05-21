@@ -29,7 +29,6 @@ type Order = {
     unitPrice: number;
   }[];
   subtotal: number;
-  tax: number;
   shippingCost: number;
   total: number;
   shipping: {
@@ -297,7 +296,6 @@ export default function ConfirmacionPage() {
               </h2>
               <dl className="mt-4 space-y-2 text-sm">
                 <Row label="Subtotal" value={formatCRC(order.subtotal)} />
-                <Row label="IVA (13%)" value={formatCRC(order.tax)} />
                 <Row
                   label="Envío"
                   value={
@@ -308,7 +306,10 @@ export default function ConfirmacionPage() {
                   highlight={order.shippingCost === 0}
                 />
                 <div className="mt-2 flex items-end justify-between border-t border-white/15 pt-3">
-                  <dt className="text-sm font-bold">Total</dt>
+                  <div>
+                    <dt className="text-sm font-bold">Total</dt>
+                    <span className="text-[11px] text-white/60">IVA incluido (13%)</span>
+                  </div>
                   <dd className="text-3xl font-black tabular-nums text-accent-300">
                     {formatCRC(order.total)}
                   </dd>

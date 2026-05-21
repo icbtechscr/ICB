@@ -76,8 +76,7 @@ export default function CheckoutPage() {
 
   const shippingCost =
     SHIPPING_OPTIONS.find((o) => o.id === form.method)?.price ?? 0;
-  const tax = Math.round(subtotal * 0.13);
-  const total = subtotal + tax + shippingCost;
+  const total = subtotal + shippingCost;
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -266,14 +265,16 @@ export default function CheckoutPage() {
 
               <dl className="mt-4 space-y-2 border-t border-white/15 pt-4 text-sm">
                 <Row label="Subtotal" value={formatCRC(subtotal)} />
-                <Row label="IVA (13%)" value={formatCRC(tax)} />
                 <Row
                   label="Envío"
                   value={shippingCost === 0 ? "Gratis" : formatCRC(shippingCost)}
                   highlight={shippingCost === 0}
                 />
                 <div className="mt-2 flex items-end justify-between border-t border-white/15 pt-3">
-                  <dt className="text-sm font-bold">Total</dt>
+                  <div>
+                    <dt className="text-sm font-bold">Total</dt>
+                    <span className="text-[11px] text-white/60">IVA incluido (13%)</span>
+                  </div>
                   <dd className="text-2xl font-black tabular-nums">
                     {formatCRC(total)}
                   </dd>

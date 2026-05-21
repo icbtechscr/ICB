@@ -9,8 +9,7 @@ import { BackgroundShader } from "@/components/ui/background-shader";
 
 export default function CartPage() {
   const { items, subtotal, count, setQty, remove } = useCart();
-  const tax = Math.round(subtotal * 0.13);
-  const total = subtotal + tax;
+  const total = subtotal;
 
   return (
     <div className="relative isolate -mt-[88px] overflow-hidden pt-[88px] text-white md:-mt-[200px] md:pt-[200px]">
@@ -137,15 +136,14 @@ export default function CartPage() {
                     <dd className="font-semibold tabular-nums">{formatCRC(subtotal)}</dd>
                   </div>
                   <div className="flex justify-between border-b border-white/10 pb-3">
-                    <dt className="text-white/70">IVA (13%)</dt>
-                    <dd className="font-semibold tabular-nums">{formatCRC(tax)}</dd>
-                  </div>
-                  <div className="flex justify-between border-b border-white/10 pb-3">
                     <dt className="text-white/70">Envío</dt>
                     <dd className="font-semibold text-accent-300">A calcular</dd>
                   </div>
                   <div className="flex items-end justify-between pt-2">
-                    <dt className="text-sm font-bold">Total</dt>
+                    <div>
+                      <dt className="text-sm font-bold">Total</dt>
+                      <span className="text-[11px] text-white/60">IVA incluido (13%)</span>
+                    </div>
                     <dd className="text-3xl font-black tabular-nums">
                       {formatCRC(total)}
                     </dd>

@@ -3,6 +3,7 @@ import "./globals.css";
 import { TopBar } from "@/components/TopBar";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { SiteChromeGate } from "@/components/SiteChromeGate";
 import { CartProvider } from "@/lib/cart";
 
 export const metadata: Metadata = {
@@ -20,10 +21,14 @@ export default function RootLayout({
     <html lang="es" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-ink-900 text-ink-900">
         <CartProvider>
-          <TopBar />
-          <Header />
+          <SiteChromeGate>
+            <TopBar />
+            <Header />
+          </SiteChromeGate>
           <main className="flex-1">{children}</main>
-          <Footer />
+          <SiteChromeGate>
+            <Footer />
+          </SiteChromeGate>
         </CartProvider>
       </body>
     </html>

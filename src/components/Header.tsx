@@ -20,13 +20,7 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { count } = useCart();
   const pathname = usePathname() ?? "/";
-  const transparentRoute =
-    pathname === "/" ||
-    /^\/productos\/[^/]+$/.test(pathname) ||
-    pathname === "/carrito" ||
-    pathname === "/checkout" ||
-    pathname.startsWith("/checkout/");
-  const solid = !transparentRoute;
+  const solid = false;
 
   return (
     <header

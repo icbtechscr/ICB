@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
+import { getSiteContent } from "@/lib/site-content";
 
 const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
@@ -20,48 +21,19 @@ const YoutubeIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-const COLS = [
-  {
-    title: "Catálogo",
-    items: [
-      { label: "Computadoras", href: "/categoria/computadoras" },
-      { label: "Componentes", href: "/categoria/componentes" },
-      { label: "Cámaras de seguridad", href: "/categoria/camaras-de-vigilancia" },
-      { label: "Redes", href: "/categoria/redes" },
-      { label: "POS", href: "/categoria/punto-de-venta" },
-      { label: "Ofertas", href: "/ofertas" },
-    ],
-  },
-  {
-    title: "Compañía",
-    items: [
-      { label: "Sobre ICB", href: "/sobre-nosotros" },
-      { label: "Sucursales", href: "/sucursales" },
-      { label: "Servicio técnico", href: "/soporte" },
-      { label: "Empleo", href: "/empleo" },
-    ],
-  },
-  {
-    title: "Soporte",
-    items: [
-      { label: "Contacto", href: "/contacto" },
-      { label: "Garantía", href: "/garantia" },
-      { label: "Política de envíos", href: "/envios" },
-      { label: "Devoluciones", href: "/devoluciones" },
-      { label: "Privacidad", href: "/privacidad" },
-    ],
-  },
-];
-
-export function Footer() {
+export async function Footer() {
+  const { footer } = await getSiteContent();
+  const telHref = `tel:${footer.phone.replace(/[^+\d]/g, "")}`;
   return (
     <footer className="mt-20 bg-gradient-to-br from-brand-800 via-brand-900 to-ink-900 text-white/80">
       <div className="border-b border-white/10 bg-gradient-to-br from-brand-700 to-brand-900">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 py-10 text-center md:flex-row md:justify-between md:text-left">
           <div>
-            <h3 className="text-2xl font-bold text-white">Mantente al día</h3>
+            <h3 className="text-2xl font-bold text-white">
+              {footer.newsletterTitle}
+            </h3>
             <p className="mt-1 text-sm text-white/70">
-              Ofertas exclusivas, lanzamientos y promociones cada semana.
+              {footer.newsletterSubtitle}
             </p>
           </div>
           <form className="flex w-full max-w-md gap-2">
@@ -92,32 +64,33 @@ export function Footer() {
               className="h-16 w-auto object-contain brightness-0 invert"
             />
             <p className="mt-4 max-w-sm text-sm text-ink-400">
-              Más de 20 años en el mercado informático y tecnológico de Costa Rica.
-              Distribuidor oficial Dahua, Hikvision, Uniview, Imou, APC y más.
+              {footer.description}
             </p>
             <ul className="mt-6 space-y-2 text-sm">
-              <li className="flex items-center gap-2.5">
-                <MapPin className="size-4 text-accent-500" aria-hidden />
-                San José, Costa Rica
+              <li className="flex items-start gap-2.5">
+                <MapPin className="mt-0.5 size-4 shrink-0 text-accent-500" aria-hidden />
+                <Link href="/sucursales" className="hover:text-white">
+                  {footer.locationsText}
+                </Link>
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone className="size-4 text-accent-500" aria-hidden />
-                <a href="tel:+50622223333" className="hover:text-white">
-                  +506 2222 3333
+                <a href={telHref} className="hover:text-white">
+                  {footer.phone}
                 </a>
               </li>
               <li className="flex items-center gap-2.5">
                 <Mail className="size-4 text-accent-500" aria-hidden />
-                <a href="mailto:info@icbtechscr.com" className="hover:text-white">
-                  info@icbtechscr.com
+                <a href={`mailto:${footer.email}`} className="hover:text-white">
+                  {footer.email}
                 </a>
               </li>
             </ul>
             <div className="mt-6 flex gap-3">
               {[
-                { Icon: FacebookIcon, href: "#", label: "Facebook" },
-                { Icon: InstagramIcon, href: "#", label: "Instagram" },
-                { Icon: YoutubeIcon, href: "#", label: "YouTube" },
+                { Icon: FacebookIcon, href: footer.facebook, label: "Facebook" },
+                { Icon: InstagramIcon, href: footer.instagram, label: "Instagram" },
+                { Icon: YoutubeIcon, href: footer.youtube, label: "YouTube" },
               ].map(({ Icon, href, label }) => (
                 <a
                   key={label}
@@ -131,14 +104,14 @@ export function Footer() {
             </div>
           </div>
 
-          {COLS.map((col) => (
+          {footer.columns.map((col) => (
             <div key={col.title}>
               <h4 className="mb-4 text-sm font-bold uppercase tracking-wider text-white">
                 {col.title}
               </h4>
               <ul className="space-y-2.5 text-sm">
-                {col.items.map((it) => (
-                  <li key={it.href}>
+                {col.items.map((it, i) => (
+                  <li key={i}>
                     <Link href={it.href} className="transition-colors hover:text-accent-500">
                       {it.label}
                     </Link>

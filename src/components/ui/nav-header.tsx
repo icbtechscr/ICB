@@ -65,9 +65,11 @@ function Tab({
   const ref = useRef<HTMLLIElement>(null);
   const textCls =
     variant === "transparent"
-      ? "text-white"
+      ? isHovered
+        ? "text-accent-400"
+        : "text-white"
       : isHovered
-        ? "text-white"
+        ? "text-accent-500"
         : "text-ink-700";
 
   return (

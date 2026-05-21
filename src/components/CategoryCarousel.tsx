@@ -11,7 +11,17 @@ type Cat = {
   imageUrl: string | null;
 };
 
-export function CategoryCarousel({ categories }: { categories: Cat[] }) {
+export function CategoryCarousel({
+  categories,
+  eyebrow,
+  title,
+  subtitle,
+}: {
+  categories: Cat[];
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+}) {
   if (categories.length === 0) return null;
   const items = [...categories, ...categories];
 
@@ -24,7 +34,7 @@ export function CategoryCarousel({ categories }: { categories: Cat[] }) {
           viewport={{ once: true }}
           className="text-xs font-bold uppercase tracking-[0.3em] text-brand-600"
         >
-          Catálogo
+          {eyebrow}
         </motion.span>
         <motion.h2
           initial={{ opacity: 0, y: 10 }}
@@ -33,11 +43,9 @@ export function CategoryCarousel({ categories }: { categories: Cat[] }) {
           transition={{ delay: 0.1 }}
           className="mt-2 text-3xl font-black tracking-tight text-ink-900 md:text-5xl"
         >
-          Categorías de la tienda
+          {title}
         </motion.h2>
-        <p className="mt-2 text-sm text-ink-500">
-          Deslizá y explorá lo que tenemos para vos
-        </p>
+        <p className="mt-2 text-sm text-ink-500">{subtitle}</p>
       </div>
 
       <div className="group relative overflow-hidden">
