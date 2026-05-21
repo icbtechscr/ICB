@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { Package, LayoutGrid, ShoppingBag, Settings, Home, Store } from "lucide-react";
+import { Package, ShoppingBag, Settings, Home, Store } from "lucide-react";
 
 const TABS = [
-  { href: "/admin", label: "Dashboard", Icon: LayoutGrid, exact: true },
-  { href: "/admin/productos", label: "Productos", Icon: Package },
+  { href: "/admin", label: "Productos", Icon: Package, exact: true },
   { href: "/admin/tienda", label: "Tienda", Icon: Store },
   { href: "/admin/pedidos", label: "Pedidos", Icon: ShoppingBag, soon: true },
   { href: "/admin/ajustes", label: "Ajustes", Icon: Settings, soon: true },

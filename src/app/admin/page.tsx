@@ -33,7 +33,7 @@ export default async function AdminHomePage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-black tracking-tight">Dashboard</h1>
+        <h1 className="text-2xl font-black tracking-tight">Productos</h1>
         <p className="mt-1 text-sm text-ink-500">
           Resumen general del catálogo.
         </p>
