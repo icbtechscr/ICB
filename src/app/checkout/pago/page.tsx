@@ -66,10 +66,14 @@ export default function PagoPage() {
   const [shipping, setShipping] = useState<{
     method: string;
     fullName: string;
+    email: string;
+    phone: string;
     province: string;
     canton: string;
     address: string;
+    notes: string;
   } | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<PaymentForm>({
     method: "tarjeta",
     cardName: "",
@@ -114,27 +118,68 @@ export default function PagoPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.acceptTerms) return;
+    if (!form.acceptTerms || !shipping) return;
     setSubmitting(true);
+    setError(null);
     try {
       localStorage.setItem(PAYMENT_KEY, JSON.stringify(form));
-      const orderId = `ICB-${Date.now().toString(36).toUpperCase()}`;
+
+      const cedula = (shipping.notes ?? "").split("||")[0] || "";
+      const realNotes = (shipping.notes ?? "").split("||")[1] || "";
+
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((it) => ({ id: it.id, qty: it.qty })),
+          customer: {
+            name: shipping.fullName,
+            email: shipping.email,
+            phone: shipping.phone,
+            idNumber: cedula,
+          },
+          shipping: {
+            province: shipping.province,
+            canton: shipping.canton,
+            address: shipping.address,
+            method: shipping.method,
+            notes: realNotes,
+          },
+          paymentMethod: form.method,
+        }),
+      });
+
+      if (!res.ok) {
+        setError(await res.text());
+        setSubmitting(false);
+        return;
+      }
+
+      const data = (await res.json()) as {
+        orderNumber: string;
+        subtotal: number;
+        shippingCost: number;
+        total: number;
+      };
+
       localStorage.setItem(
         "icb-last-order",
         JSON.stringify({
-          orderId,
+          orderId: data.orderNumber,
           createdAt: new Date().toISOString(),
           items,
-          subtotal,
-          shippingCost,
-          total,
+          subtotal: data.subtotal,
+          shippingCost: data.shippingCost,
+          total: data.total,
           shipping,
           paymentMethod: form.method,
         })
       );
-    } catch {}
-    await new Promise((r) => setTimeout(r, 900));
-    router.push("/checkout/confirmacion");
+      router.push("/checkout/confirmacion");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setSubmitting(false);
+    }
   }
 
   if (!hydrated) {
@@ -476,6 +521,12 @@ export default function PagoPage() {
                   </dd>
                 </div>
               </dl>
+
+              {error && (
+                <p className="mt-4 rounded-xl border border-red-300/40 bg-red-500/15 px-3 py-2 text-xs text-red-100">
+                  {error}
+                </p>
+              )}
 
               <button
                 type="submit"

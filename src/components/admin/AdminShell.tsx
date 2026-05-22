@@ -17,7 +17,7 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 const TABS = [
   { href: "/admin", label: "Productos", Icon: Package },
   { href: "/admin/tienda", label: "Tienda", Icon: Store },
-  { href: "/admin/pedidos", label: "Pedidos", Icon: ShoppingBag, soon: true },
+  { href: "/admin/pedidos", label: "Pedidos", Icon: ShoppingBag },
   { href: "/admin/ajustes", label: "Ajustes", Icon: Settings },
 ];
 
@@ -119,26 +119,18 @@ export function AdminShell({
         </div>
         <nav className="mx-auto max-w-7xl px-4">
           <ul className="flex gap-1 overflow-x-auto">
-            {TABS.map(({ href, label, Icon, soon }) => (
+            {TABS.map(({ href, label, Icon }) => (
               <li key={href}>
                 <Link
-                  href={soon ? "#" : href}
-                  aria-disabled={soon}
+                  href={href}
                   className={`relative inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
-                    soon
-                      ? "cursor-not-allowed border-transparent text-ink-300"
-                      : pathname === href
-                        ? "border-brand-600 text-brand-600"
-                        : "border-transparent text-ink-600 hover:border-brand-600 hover:text-brand-600"
+                    pathname === href
+                      ? "border-brand-600 text-brand-600"
+                      : "border-transparent text-ink-600 hover:border-brand-600 hover:text-brand-600"
                   }`}
                 >
                   <Icon className="size-4" />
                   {label}
-                  {soon && (
-                    <span className="ml-1 rounded-full bg-ink-200 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-ink-600">
-                      Pronto
-                    </span>
-                  )}
                 </Link>
               </li>
             ))}

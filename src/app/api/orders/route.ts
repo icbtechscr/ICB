@@ -1,0 +1,124 @@
+import { NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase";
+import { getProductsByIds } from "@/lib/products";
+import { SHIPPING_COST, generateOrderNumber } from "@/lib/orders";
+
+type Body = {
+  items?: { id: string; qty: number }[];
+  customer?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    idNumber?: string;
+  };
+  shipping?: {
+    province?: string;
+    canton?: string;
+    address?: string;
+    method?: string;
+    notes?: string;
+  };
+  paymentMethod?: string;
+};
+
+export async function POST(req: Request) {
+  try {
+    const body = (await req.json()) as Body;
+    const items = (body.items ?? []).filter(
+      (i) => i.id && Number.isFinite(i.qty) && i.qty > 0
+    );
+    if (items.length === 0) {
+      return new NextResponse("El carrito está vacío", { status: 400 });
+    }
+    const customer = body.customer ?? {};
+    if (!customer.name || !customer.email || !customer.phone) {
+      return new NextResponse("Faltan datos del cliente", { status: 400 });
+    }
+    const shipping = body.shipping ?? {};
+    const shippingMethod = shipping.method ?? "estandar";
+    const paymentMethod = body.paymentMethod ?? "tarjeta";
+
+    // Recalcular precios desde la base de datos (no confiar en el cliente)
+    const products = await getProductsByIds(items.map((i) => i.id));
+    const priceMap = new Map(products.map((p) => [p.id, p]));
+
+    const lineItems = items
+      .map((i) => {
+        const p = priceMap.get(i.id);
+        if (!p) return null;
+        const unit = p.salePriceCRC ?? p.priceCRC;
+        const qty = Math.min(99, Math.max(1, Math.floor(i.qty)));
+        return {
+          product_id: p.id,
+          product_name: p.name,
+          product_slug: p.slug,
+          unit_price_crc: unit,
+          qty,
+          line_total_crc: unit * qty,
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+
+    if (lineItems.length === 0) {
+      return new NextResponse("Ningún producto válido en el pedido", {
+        status: 400,
+      });
+    }
+
+    const subtotal = lineItems.reduce((a, i) => a + i.line_total_crc, 0);
+    const shippingCost = SHIPPING_COST[shippingMethod] ?? 0;
+    const total = subtotal + shippingCost;
+    const orderNumber = generateOrderNumber();
+
+    const sb = createAdminClient();
+    const { data: order, error: orderErr } = await sb
+      .from("orders")
+      .insert({
+        order_number: orderNumber,
+        status: "pendiente",
+        customer_name: customer.name,
+        customer_email: customer.email,
+        customer_phone: customer.phone,
+        customer_id_number: customer.idNumber ?? null,
+        shipping_province: shipping.province ?? null,
+        shipping_canton: shipping.canton ?? null,
+        shipping_address: shipping.address ?? null,
+        shipping_method: shippingMethod,
+        shipping_notes: shipping.notes ?? null,
+        payment_method: paymentMethod,
+        payment_status: "pendiente",
+        subtotal_crc: subtotal,
+        shipping_crc: shippingCost,
+        total_crc: total,
+      })
+      .select("id")
+      .single();
+
+    if (orderErr || !order) {
+      return new NextResponse(orderErr?.message ?? "Error al crear pedido", {
+        status: 500,
+      });
+    }
+
+    const { error: itemsErr } = await sb
+      .from("order_items")
+      .insert(lineItems.map((li) => ({ ...li, order_id: order.id })));
+
+    if (itemsErr) {
+      // limpiar la orden huérfana
+      await sb.from("orders").delete().eq("id", order.id);
+      return new NextResponse(itemsErr.message, { status: 500 });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      orderNumber,
+      subtotal,
+      shippingCost,
+      total,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return new NextResponse(msg, { status: 500 });
+  }
+}
