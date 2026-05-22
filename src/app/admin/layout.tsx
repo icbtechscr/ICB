@@ -1,14 +1,44 @@
+"use client";
 import Link from "next/link";
-import { Package, ShoppingBag, Settings, Home, Store } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  Package,
+  ShoppingBag,
+  Settings,
+  Home,
+  Store,
+  Users,
+  LogOut,
+} from "lucide-react";
+import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
 const TABS = [
   { href: "/admin", label: "Productos", Icon: Package, exact: true },
   { href: "/admin/tienda", label: "Tienda", Icon: Store },
+  { href: "/admin/usuarios", label: "Usuarios", Icon: Users },
   { href: "/admin/pedidos", label: "Pedidos", Icon: ShoppingBag, soon: true },
   { href: "/admin/ajustes", label: "Ajustes", Icon: Settings, soon: true },
 ];
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const pathname = usePathname() ?? "";
+  const router = useRouter();
+
+  // Login: sin chrome del panel
+  if (pathname === "/admin/login") {
+    return <>{children}</>;
+  }
+
+  async function logout() {
+    await createSupabaseBrowser().auth.signOut();
+    router.replace("/admin/login");
+    router.refresh();
+  }
+
   return (
     <div className="min-h-screen bg-ink-50 text-ink-900">
       <div className="border-b border-ink-200 bg-white">
@@ -24,13 +54,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               Beta
             </span>
           </div>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-ink-100"
-          >
-            <Home className="size-3.5" />
-            Ver sitio
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-ink-100"
+            >
+              <Home className="size-3.5" />
+              Ver sitio
+            </Link>
+            <button
+              type="button"
+              onClick={logout}
+              className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-red-50 hover:text-red-600"
+            >
+              <LogOut className="size-3.5" />
+              Salir
+            </button>
+          </div>
         </div>
         <nav className="mx-auto max-w-7xl px-4">
           <ul className="flex gap-1 overflow-x-auto">
@@ -39,10 +79,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <Link
                   href={soon ? "#" : href}
                   aria-disabled={soon}
-                  className={`relative inline-flex items-center gap-2 border-b-2 border-transparent px-4 py-3 text-sm font-semibold transition-colors ${
+                  className={`relative inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
                     soon
-                      ? "cursor-not-allowed text-ink-300"
-                      : "text-ink-600 hover:border-brand-600 hover:text-brand-600"
+                      ? "cursor-not-allowed border-transparent text-ink-300"
+                      : pathname === href
+                        ? "border-brand-600 text-brand-600"
+                        : "border-transparent text-ink-600 hover:border-brand-600 hover:text-brand-600"
                   }`}
                 >
                   <Icon className="size-4" />
