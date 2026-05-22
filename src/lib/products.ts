@@ -274,3 +274,100 @@ export async function getProductSlugs(limit = 100): Promise<string[]> {
   if (error) throw error;
   return (data ?? []).map((r) => r.slug);
 }
+
+// Para sitemap: todos los slugs (con updated_at si existe)
+export async function getAllProductSlugs(): Promise<
+  { slug: string; updatedAt: string | null }[]
+> {
+  const { data, error } = await supabase
+    .from("products")
+    .select("slug, updated_at")
+    .range(0, 4999);
+  if (error) throw error;
+  return ((data ?? []) as { slug: string; updated_at: string | null }[]).map(
+    (r) => ({ slug: r.slug, updatedAt: r.updated_at })
+  );
+}
+
+export async function getAllCategorySlugs(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("categories")
+    .select("slug, name")
+    .range(0, 4999);
+  if (error) throw error;
+  return ((data ?? []) as { slug: string; name: string }[])
+    .filter((c) => c.name !== "Todas las Categorías")
+    .map((c) => c.slug);
+}
+
+export async function getBrands(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("brands")
+    .select("name")
+    .order("name");
+  if (error) throw error;
+  return ((data ?? []) as { name: string | null }[])
+    .map((b) => b.name)
+    .filter((n): n is string => !!n);
+}
+
+export type CatalogSort = "relevancia" | "precio-asc" | "precio-desc" | "nombre" | "nuevos";
+
+export type CatalogParams = {
+  page?: number;
+  perPage?: number;
+  category?: string; // slug
+  brand?: string; // name
+  sort?: CatalogSort;
+};
+
+export async function getCatalogProducts(params: CatalogParams): Promise<{
+  products: Product[];
+  total: number;
+}> {
+  const page = params.page ?? 1;
+  const perPage = params.perPage ?? 40;
+  const from = (page - 1) * perPage;
+  const to = from + perPage - 1;
+
+  // SELECT con inner joins solo cuando se filtra, para que el filtro recorte filas
+  const catInner = params.category ? "!inner" : "";
+  const brandInner = params.brand ? "!inner" : "";
+  const select = `
+    id, woo_id, name, slug, sku, short_description, description,
+    on_sale, in_stock, price_crc, sale_price_crc,
+    brand:brands${brandInner} ( name ),
+    product_images ( url, alt, position ),
+    product_categories${catInner} ( category:categories${catInner} ( id, name, slug ) )
+  `;
+
+  let query = supabase.from("products").select(select, { count: "exact" });
+
+  if (params.category) {
+    query = query.eq("product_categories.category.slug", params.category);
+  }
+  if (params.brand) {
+    query = query.eq("brand.name", params.brand);
+  }
+
+  switch (params.sort) {
+    case "precio-asc":
+      query = query.order("price_crc", { ascending: true });
+      break;
+    case "precio-desc":
+      query = query.order("price_crc", { ascending: false });
+      break;
+    case "nuevos":
+      query = query.order("created_at", { ascending: false });
+      break;
+    default:
+      query = query.order("name", { ascending: true });
+  }
+
+  const { data, count, error } = await query.range(from, to);
+  if (error) throw error;
+  return {
+    products: (data as unknown as Row[]).map(rowToProduct),
+    total: count ?? 0,
+  };
+}

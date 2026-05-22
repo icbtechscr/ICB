@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/ProductCard";
 import { searchProducts } from "@/lib/products";
 import { BackgroundShader } from "@/components/ui/background-shader";
+
+export const metadata: Metadata = {
+  title: "Búsqueda",
+  robots: { index: false, follow: true },
+};
 
 export default async function SearchPage({
   searchParams,

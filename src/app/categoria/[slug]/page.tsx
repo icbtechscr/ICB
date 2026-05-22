@@ -1,11 +1,31 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/ProductCard";
 import { getProductsByCategory, getCategoryBySlug } from "@/lib/products";
 import { BackgroundShader } from "@/components/ui/background-shader";
+import { absoluteUrl } from "@/lib/site";
 
 export const revalidate = 60;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const cat = await getCategoryBySlug(slug);
+  if (!cat) return { title: "Categoría no encontrada" };
+  const desc = `Comprá ${cat.name.toLowerCase()} en ICB Tech Costa Rica. Productos con garantía oficial y envío a todo el país.`;
+  const url = absoluteUrl(`/categoria/${cat.slug}`);
+  return {
+    title: cat.name,
+    description: desc,
+    alternates: { canonical: url },
+    openGraph: { title: cat.name, description: desc, url },
+  };
+}
 
 export default async function CategoryPage({
   params,

@@ -1,19 +1,58 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight, Check, ShieldCheck, Truck, Headphones, Heart } from "lucide-react";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { getProductBySlug, getProductSlugs } from "@/lib/products";
-import { formatCRC, decodeHtml } from "@/lib/utils";
+import { formatCRC, decodeHtml, stripHtml } from "@/lib/utils";
 import { parseKitDescription } from "@/lib/parseKit";
 import { BackgroundShader } from "@/components/ui/background-shader";
 import { ProductTabs } from "@/components/ProductTabs";
+import { SITE_NAME, absoluteUrl } from "@/lib/site";
 
 export const revalidate = 60;
 
 export async function generateStaticParams() {
   const slugs = await getProductSlugs(50);
   return slugs.map((slug) => ({ slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
+  if (!product) return { title: "Producto no encontrado" };
+
+  const desc =
+    stripHtml(product.shortDescription) ||
+    stripHtml(product.description).slice(0, 160) ||
+    `${product.name} disponible en ICB Tech Costa Rica.`;
+  const img = product.images[0]?.src;
+  const url = absoluteUrl(`/productos/${product.slug}`);
+
+  return {
+    title: product.name,
+    description: desc.slice(0, 160),
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      title: product.name,
+      description: desc.slice(0, 160),
+      url,
+      siteName: SITE_NAME,
+      images: img ? [{ url: img }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: product.name,
+      description: desc.slice(0, 160),
+      images: img ? [img] : undefined,
+    },
+  };
 }
 
 export default async function ProductPage({
@@ -39,8 +78,37 @@ export default async function ProductPage({
     (c) => c.name !== "Todas las Categorías"
   );
 
+  const price = product.salePriceCRC ?? product.priceCRC;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    image: product.images.map((i) => i.src),
+    description:
+      stripHtml(product.shortDescription) ||
+      stripHtml(product.description).slice(0, 300),
+    sku: product.sku ?? undefined,
+    brand: product.brand
+      ? { "@type": "Brand", name: product.brand }
+      : undefined,
+    offers: {
+      "@type": "Offer",
+      url: absoluteUrl(`/productos/${product.slug}`),
+      priceCurrency: "CRC",
+      price: price > 0 ? price : undefined,
+      availability: product.inStock
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock",
+      seller: { "@type": "Organization", name: SITE_NAME },
+    },
+  };
+
   return (
     <div className="relative isolate -mt-[88px] overflow-hidden pt-[88px] text-white md:-mt-[200px] md:pt-[200px]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <BackgroundShader palette="ocean" speed={0.4} />
 
       <div className="relative mx-auto max-w-7xl px-4 pb-20 pt-8 md:pb-24">
