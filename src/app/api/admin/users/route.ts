@@ -12,6 +12,7 @@ export async function GET() {
     const users = data.users.map((u) => ({
       id: u.id,
       email: u.email ?? "",
+      name: (u.user_metadata?.full_name as string) ?? "",
       createdAt: u.created_at,
       lastSignInAt: u.last_sign_in_at ?? null,
     }));
@@ -24,9 +25,14 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as { email?: string; password?: string };
+    const body = (await req.json()) as {
+      email?: string;
+      password?: string;
+      name?: string;
+    };
     const email = body.email?.trim().toLowerCase();
     const password = body.password ?? "";
+    const name = body.name?.trim() ?? "";
     if (!email || !email.includes("@")) {
       return new NextResponse("Correo inválido", { status: 400 });
     }
@@ -40,6 +46,7 @@ export async function POST(req: Request) {
       email,
       password,
       email_confirm: true,
+      user_metadata: { full_name: name },
     });
     if (error) return new NextResponse(error.message, { status: 400 });
     return NextResponse.json({

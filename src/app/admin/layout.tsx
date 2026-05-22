@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -7,17 +8,17 @@ import {
   Settings,
   Home,
   Store,
-  Users,
   LogOut,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
 const TABS = [
   { href: "/admin", label: "Productos", Icon: Package, exact: true },
   { href: "/admin/tienda", label: "Tienda", Icon: Store },
-  { href: "/admin/usuarios", label: "Usuarios", Icon: Users },
   { href: "/admin/pedidos", label: "Pedidos", Icon: ShoppingBag, soon: true },
-  { href: "/admin/ajustes", label: "Ajustes", Icon: Settings, soon: true },
+  { href: "/admin/ajustes", label: "Ajustes", Icon: Settings },
 ];
 
 export default function AdminLayout({
@@ -27,6 +28,35 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
+  const [dark, setDark] = useState(false);
+  const [name, setName] = useState<string>("");
+
+  useEffect(() => {
+    setDark(localStorage.getItem("admin-theme") === "dark");
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    createSupabaseBrowser()
+      .auth.getUser()
+      .then(({ data }) => {
+        if (!active) return;
+        const u = data.user;
+        const full = (u?.user_metadata?.full_name as string) ?? "";
+        setName(full || u?.email?.split("@")[0] || "");
+      });
+    return () => {
+      active = false;
+    };
+  }, [pathname]);
+
+  function toggleTheme() {
+    setDark((d) => {
+      const next = !d;
+      localStorage.setItem("admin-theme", next ? "dark" : "light");
+      return next;
+    });
+  }
 
   // Login: sin chrome del panel
   if (pathname === "/admin/login") {
@@ -40,7 +70,9 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-ink-50 text-ink-900">
+    <div
+      className={`min-h-screen bg-ink-50 text-ink-900 ${dark ? "admin-dark" : ""}`}
+    >
       <div className="border-b border-ink-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4">
           <div className="flex items-center gap-3">
@@ -53,8 +85,21 @@ export default function AdminLayout({
             <span className="rounded-full bg-accent-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent-700">
               Beta
             </span>
+            {name && (
+              <span className="hidden text-sm text-ink-500 sm:inline">
+                Hola, <span className="font-semibold text-ink-800">{name}</span>
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              title={dark ? "Modo claro" : "Modo noche"}
+              className="inline-flex size-8 items-center justify-center rounded-full border border-ink-200 text-ink-700 hover:bg-ink-100"
+            >
+              {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+            </button>
             <Link
               href="/"
               className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-ink-100"

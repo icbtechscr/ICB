@@ -53,6 +53,25 @@
   --foreground: #18181b;
 }
 
+/* Admin night mode — dark gray, not full black.
+   Remaps the ink scale + white so every admin utility flips automatically. */
+.admin-dark {
+  --color-white: #26282d;
+  --color-ink-50: #1c1d21;
+  --color-ink-100: #303237;
+  --color-ink-200: #3b3d43;
+  --color-ink-300: #52555c;
+  --color-ink-400: #8b8d94;
+  --color-ink-500: #a9abb2;
+  --color-ink-600: #c4c6cc;
+  --color-ink-700: #d8dade;
+  --color-ink-800: #e8e9ec;
+  --color-ink-900: #f4f4f5;
+  --color-brand-50: #2a2d3f;
+  --color-accent-50: #233028;
+  color-scheme: dark;
+}
+
 html { scroll-behavior: smooth; }
 
 body {
