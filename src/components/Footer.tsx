@@ -26,33 +26,6 @@ export async function Footer() {
   const telHref = `tel:${footer.phone.replace(/[^+\d]/g, "")}`;
   return (
     <footer className="mt-20 bg-gradient-to-br from-brand-800 via-brand-900 to-ink-900 text-white/80">
-      <div className="border-b border-white/10 bg-gradient-to-br from-brand-700 to-brand-900">
-        <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 py-10 text-center md:flex-row md:justify-between md:text-left">
-          <div>
-            <h3 className="text-2xl font-bold text-white">
-              {footer.newsletterTitle}
-            </h3>
-            <p className="mt-1 text-sm text-white/70">
-              {footer.newsletterSubtitle}
-            </p>
-          </div>
-          <form className="flex w-full max-w-md gap-2">
-            <input
-              type="email"
-              required
-              placeholder="tu@email.com"
-              className="flex-1 rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm text-white outline-none backdrop-blur placeholder:text-white/50 focus:border-accent-500 focus:bg-white/15"
-            />
-            <button
-              type="submit"
-              className="rounded-full bg-accent-500 px-6 py-3 text-sm font-semibold text-ink-900 transition-colors hover:bg-accent-400"
-            >
-              Suscribir
-            </button>
-          </form>
-        </div>
-      </div>
-
       <div className="mx-auto max-w-7xl px-4 py-12">
         <div className="grid gap-10 md:grid-cols-5">
           <div className="md:col-span-2">
