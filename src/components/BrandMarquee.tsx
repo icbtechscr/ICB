@@ -1,21 +1,20 @@
 "use client";
 
 const BRANDS = [
-  { name: "Dahua", domain: "dahuasecurity.com" },
-  { name: "Hikvision", domain: "hikvision.com" },
-  { name: "Uniview", domain: "uniview.com" },
-  { name: "Imou", domain: "imoulife.com" },
-  { name: "APC", domain: "apc.com" },
-  { name: "TP-Link", domain: "tp-link.com" },
-  { name: "Epson", domain: "epson.com" },
-  { name: "Honeywell", domain: "honeywell.com" },
-  { name: "Oster", domain: "oster.com" },
-  { name: "3nStar", domain: "3nstar.com" },
-  { name: "Lanpro", domain: "lanpro.com" },
-  { name: "Cudy", domain: "cudy.com" },
-  { name: "Apple", domain: "apple.com" },
-  { name: "Dell", domain: "dell.com" },
-  { name: "ZKTeco", domain: "zkteco.com" },
+  { name: "Dahua", logo: "/LOGOS/dahua.png" },
+  { name: "Hikvision", logo: "/LOGOS/Hikvision.jpg" },
+  { name: "Uniview", logo: "/LOGOS/Uniview.png" },
+  { name: "Imou", logo: "/LOGOS/IMOU.png" },
+  { name: "APC", logo: "/LOGOS/APC.svg" },
+  { name: "TP-Link", logo: "/LOGOS/TPLINK.png" },
+  { name: "Epson", logo: "/LOGOS/epson.png" },
+  { name: "Honeywell", logo: "/LOGOS/Honeywell.jpg" },
+  { name: "Oster", logo: "/LOGOS/oster.png" },
+  { name: "3nStar", logo: "/LOGOS/3nstar.avif" },
+  { name: "Cudy", logo: "/LOGOS/cudy.png" },
+  { name: "Apple", logo: "/LOGOS/apple.webp" },
+  { name: "Dell", logo: "/LOGOS/dell.avif" },
+  { name: "ZKTeco", logo: "/LOGOS/zkteco.png" },
 ];
 
 export function BrandMarquee() {
@@ -40,10 +39,10 @@ export function BrandMarquee() {
               className="flex h-20 w-36 shrink-0 items-center justify-center rounded-2xl border border-ink-200 bg-white px-5 transition-all duration-300 hover:-translate-y-1 hover:border-brand-300 hover:shadow-soft sm:h-24 sm:w-44"
             >
               <img
-                src={`https://logo.clearbit.com/${b.domain}`}
+                src={b.logo}
                 alt={b.name}
                 loading="lazy"
-                className="max-h-10 max-w-full object-contain opacity-70 grayscale transition-all duration-300 hover:opacity-100 hover:grayscale-0 sm:max-h-12"
+                className="max-h-12 max-w-full object-contain opacity-70 grayscale transition-all duration-300 hover:opacity-100 hover:grayscale-0 sm:max-h-14"
                 onError={(e) => {
                   const t = e.currentTarget;
                   t.style.display = "none";
