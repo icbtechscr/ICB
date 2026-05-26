@@ -130,39 +130,38 @@ export async function createSession(input: CreateSessionInput): Promise<string> 
   const firstName = input.customer.name.split(" ")[0] || input.customer.name;
   const lastName = input.customer.name.split(" ").slice(1).join(" ") || input.customer.name;
 
+  // Docs: clientVersion es opcional y recomiendan NO incluirlo.
+  // El server escoge la versión apropiada automáticamente.
   const body = {
     targetOrigins: [origin],
-    clientVersion: "1.x",
     country: "CR",
     locale: "es_CR",
     allowedPaymentTypes: ["PANENTRY"],
     allowedCardNetworks: ["VISA", "MASTERCARD", "AMEX"],
     // autoProcessing se activa automáticamente cuando hay completeMandate.
-    // type "CAPTURE" = autoriza + captura inmediato (pago final, no solo hold).
+    // type "CAPTURE" = autoriza + captura inmediato.
     completeMandate: {
       type: "CAPTURE",
     },
-    data: {
-      clientReferenceInformation: {
-        code: input.orderNumber,
+    clientReferenceInformation: {
+      code: input.orderNumber,
+    },
+    orderInformation: {
+      amountDetails: {
+        totalAmount: input.amountCRC.toFixed(2),
+        currency: "CRC",
       },
-      orderInformation: {
-        amountDetails: {
-          totalAmount: input.amountCRC.toFixed(2),
-          currency: "CRC",
-        },
-        billTo: {
-          firstName,
-          lastName,
-          email: input.customer.email,
-          phoneNumber: input.customer.phone ?? "",
-          country: "CR",
-          address1: input.customer.address ?? "S/N",
-          buildingNumber: "S/N",
-          locality: input.customer.locality || "San Jose",
-          administrativeArea: input.customer.administrativeArea || "SJ",
-          postalCode: input.customer.postalCode ?? "10101",
-        },
+      billTo: {
+        firstName,
+        lastName,
+        email: input.customer.email,
+        phoneNumber: input.customer.phone ?? "",
+        country: "CR",
+        address1: input.customer.address ?? "S/N",
+        buildingNumber: "S/N",
+        locality: input.customer.locality || "San Jose",
+        administrativeArea: input.customer.administrativeArea || "SJ",
+        postalCode: input.customer.postalCode ?? "10101",
       },
     },
   };
