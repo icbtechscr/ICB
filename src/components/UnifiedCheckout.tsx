@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ShieldCheck, Lock, CreditCard } from "lucide-react";
 
 // Tipos mínimos del SDK de Cybersource Unified Checkout (Accept).
 type AcceptInstance = {
@@ -60,7 +61,6 @@ function loadSdk(url: string, integrity?: string | null) {
   return p;
 }
 
-// Convierte cualquier cosa (Error, Object, string) en un mensaje legible.
 function describeError(e: unknown): string {
   if (!e) return "Error desconocido";
   if (e instanceof Error) return e.message;
@@ -70,8 +70,7 @@ function describeError(e: unknown): string {
     const direct =
       (obj.message as string | undefined) ??
       (obj.error as string | undefined) ??
-      (obj.reason as string | undefined) ??
-      (obj.details as string | undefined);
+      (obj.reason as string | undefined);
     if (direct) return String(direct);
     try {
       return JSON.stringify(e);
@@ -82,10 +81,9 @@ function describeError(e: unknown): string {
   return String(e);
 }
 
-// Extrae el transient token de cualquier forma posible que devuelva el SDK.
 function extractTransientToken(result: unknown): string | null {
   if (!result) return null;
-  if (typeof result === "string") return result; // a veces devuelve JWT pelado
+  if (typeof result === "string") return result;
   if (typeof result === "object") {
     const obj = result as Record<string, unknown>;
     return (
@@ -109,7 +107,6 @@ export function UnifiedCheckout({
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
-    // Guardar contra doble-mount de React StrictMode.
     if (initStartedRef.current) return;
     initStartedRef.current = true;
 
@@ -120,122 +117,32 @@ export function UnifiedCheckout({
         if (cancelled) return;
         if (!window.Accept) throw new Error("SDK de UC se cargó pero no expuso window.Accept");
 
-        // Pequeño delay para que los contenedores estén en el DOM.
         await new Promise((r) => setTimeout(r, 0));
-        if (
-          !document.querySelector("#cybs-up-selection") ||
-          !document.querySelector("#cybs-up-screen")
-        ) {
-          throw new Error("Contenedores de UC no están en el DOM");
+        if (!document.querySelector("#cybs-up-selection")) {
+          throw new Error("Contenedor #cybs-up-selection no está en el DOM");
         }
 
-        let accept: AcceptInstance;
-        try {
-          accept = await window.Accept(captureContext);
-        } catch (e) {
-          console.error("[UC] Accept(captureContext) falló:", e);
-          throw new Error(`Accept() falló: ${describeError(e)}`);
-        }
-
-        let up: UnifiedPaymentsInstance;
-        try {
-          up = await accept.unifiedPayments();
-        } catch (e) {
-          console.error("[UC] accept.unifiedPayments() falló:", e);
-          throw new Error(`unifiedPayments() falló: ${describeError(e)}`);
-        }
-
+        const accept = await window.Accept(captureContext);
+        const up = await accept.unifiedPayments();
         if (cancelled) return;
         setStatus("ready");
 
-        // Forzar layout/paint antes de validar el container.
-        await new Promise<void>((r) => requestAnimationFrame(() => r()));
         await new Promise<void>((r) => requestAnimationFrame(() => r()));
 
-        const el = document.getElementById("cybs-up-selection");
-        const rect = el?.getBoundingClientRect();
-        console.log("[UC] SDK URL en uso:", sdkUrl);
-        console.log("[UC] window.location.origin:", window.location.origin);
-        console.log(
-          "[UC] container rect:",
-          rect
-            ? {
-                width: rect.width,
-                height: rect.height,
-                top: rect.top,
-                left: rect.left,
-                visible: rect.width > 0 && rect.height > 0,
-              }
-            : "(no element)"
-        );
-
-        // Si el container tiene 0 dimensiones aún, esperamos un poco.
-        if (rect && (rect.width === 0 || rect.height === 0)) {
-          console.warn("[UC] container tiene 0 dimensiones, esperando 500ms…");
-          await new Promise((r) => setTimeout(r, 500));
-        }
-
-        // Intentamos modo embedded primero (dos containers separados).
-        // Si la config del merchant solo permite sidebar, caemos a sidebar (1 container).
-        const containerAttempts: Array<Record<string, unknown>> = [
-          {
-            containers: {
-              paymentSelection: "#cybs-up-selection",
-              paymentScreen: "#cybs-up-screen",
-            },
-          },
-          // Fallback a sidebar si embedded no está habilitado en el merchant
-          { containers: { paymentSelection: "#cybs-up-selection" } },
-        ];
-
-        let result: unknown = null;
-        let lastErr: unknown = null;
-        for (const attempt of containerAttempts) {
-          try {
-            console.log("[UC] up.show() intentando con:", JSON.stringify(attempt));
-            result = await up.show(attempt);
-            console.log("[UC] ✓ show() funcionó con:", attempt);
-            lastErr = null;
-            break;
-          } catch (e) {
-            const errObj = e as { reason?: string; name?: string };
-            const fullDump = JSON.stringify(
-              e,
-              Object.getOwnPropertyNames(e ?? {}),
-              2
-            );
-            console.warn("[UC] falló — reason:", errObj?.reason, "name:", errObj?.name);
-            console.warn("[UC] error stringificado:\n" + fullDump);
-            // Seguimos probando si es error de container. Otros errores los lanzamos ya.
-            const retryable =
-              errObj?.reason === "SHOW_LOAD_INVALID_CONTAINER" ||
-              errObj?.reason === "SHOW_LOAD_SIDEBAR_OPTIONS";
-            if (!retryable) {
-              throw new Error(`show() falló: ${describeError(e)}`);
-            }
-            lastErr = e;
-          }
-        }
-        if (lastErr) {
-          throw new Error(
-            `show() falló tras probar todas las formas de container: ${describeError(lastErr)}`
-          );
-        }
+        const result = await up.show({
+          containers: { paymentSelection: "#cybs-up-selection" },
+        });
         if (cancelled) return;
 
-        console.log("[UC] show() devolvió:", result);
         const tt = extractTransientToken(result);
         if (tt) {
           onToken(tt);
         } else {
-          onError(
-            "No se encontró transient token en la respuesta del SDK. Respuesta cruda: " +
-              describeError(result)
-          );
+          onError("No se recibió el token de pago");
         }
       } catch (e) {
         if (cancelled) return;
-        console.error("[UC] error general:", e);
+        console.error("[UC] error:", e);
         setStatus("error");
         onError(describeError(e));
       }
@@ -246,27 +153,114 @@ export function UnifiedCheckout({
   }, [sdkUrl, sdkIntegrity, captureContext, onToken, onError]);
 
   return (
-    <div>
-      {status === "loading" && (
-        <div className="flex items-center justify-center py-12 text-sm text-white/70">
-          <span className="mr-3 size-5 animate-spin rounded-full border-2 border-white/40 border-r-transparent" />
-          Cargando pasarela segura…
+    <div className="space-y-4">
+      {/* Header con marcas aceptadas */}
+      <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
+        <div className="flex items-center gap-2">
+          <CreditCard className="size-4 text-accent-300" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-white/80">
+            Pago con tarjeta
+          </span>
         </div>
-      )}
-      {/* Containers de UC. NO agregarles clases ni contenido. */}
-      <div className="space-y-4">
-        <div
-          id="cybs-up-selection"
-          style={{ minHeight: 60, background: "#fff", borderRadius: 12, padding: 4 }}
-        />
-        <div
-          id="cybs-up-screen"
-          style={{ minHeight: 400, background: "#fff", borderRadius: 12, padding: 4 }}
-        />
+        <div className="flex items-center gap-2">
+          <CardBrand label="VISA" />
+          <CardBrand label="MC" />
+          <CardBrand label="AMEX" />
+        </div>
       </div>
-      <p className="mt-3 text-[11px] text-white/60">
-        Procesado por Cybersource · BAC Costa Rica · Datos cifrados en el navegador
+
+      {/* Card del pago con el botón de UC dentro */}
+      <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-br from-white/95 to-white/90 p-6 shadow-2xl shadow-brand-900/30">
+        <div className="absolute right-0 top-0 size-32 rounded-full bg-accent-300/30 blur-3xl" />
+        <div className="absolute -bottom-10 -left-10 size-40 rounded-full bg-brand-500/20 blur-3xl" />
+
+        <div className="relative">
+          <h4 className="mb-1 text-base font-black text-ink-900">
+            Listo para pagar de forma segura
+          </h4>
+          <p className="mb-5 text-sm text-ink-600">
+            Hacé clic en el botón abajo. Se abrirá la pasarela protegida de BAC
+            Costa Rica donde podés ingresar los datos de tu tarjeta.
+          </p>
+
+          {/* Loading state */}
+          {status === "loading" && (
+            <div className="flex items-center gap-3 rounded-xl bg-ink-100/60 px-4 py-3 text-sm text-ink-700">
+              <span className="size-4 animate-spin rounded-full border-2 border-ink-400 border-r-transparent" />
+              Inicializando pasarela segura…
+            </div>
+          )}
+
+          {/* Container donde UC monta su botón "Pay With Card" */}
+          <div
+            id="cybs-up-selection"
+            className="cybs-container"
+            style={{ minHeight: status === "loading" ? 0 : 60 }}
+          />
+
+          {/* Estilos para que el botón inyectado por UC se vea integrado */}
+          <style jsx>{`
+            :global(#cybs-up-selection button) {
+              width: 100% !important;
+              background: linear-gradient(135deg, #00b87c 0%, #00d68f 100%) !important;
+              color: #0a1f2c !important;
+              border: none !important;
+              border-radius: 9999px !important;
+              padding: 14px 24px !important;
+              font-weight: 800 !important;
+              font-size: 14px !important;
+              cursor: pointer !important;
+              box-shadow: 0 10px 25px -10px rgba(0, 184, 124, 0.6) !important;
+              transition: transform 0.15s, box-shadow 0.15s !important;
+              text-transform: none !important;
+              letter-spacing: 0.02em !important;
+            }
+            :global(#cybs-up-selection button:hover) {
+              transform: translateY(-1px);
+              box-shadow: 0 15px 30px -10px rgba(0, 184, 124, 0.8) !important;
+            }
+            :global(#cybs-up-selection button:active) {
+              transform: translateY(0) scale(0.98);
+            }
+          `}</style>
+        </div>
+      </div>
+
+      {/* Trust badges */}
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <TrustBadge Icon={Lock} label="Encriptación SSL" />
+        <TrustBadge Icon={ShieldCheck} label="3-D Secure" />
+        <TrustBadge Icon={CreditCard} label="PCI DSS" />
+      </div>
+
+      <p className="text-center text-[10px] uppercase tracking-wider text-white/50">
+        Procesado por Cybersource · BAC Credomatic Costa Rica
       </p>
+    </div>
+  );
+}
+
+function CardBrand({ label }: { label: string }) {
+  return (
+    <span className="rounded-md bg-white px-2 py-0.5 text-[10px] font-black tracking-wider text-ink-900 shadow">
+      {label}
+    </span>
+  );
+}
+
+function TrustBadge({
+  Icon,
+  label,
+}: {
+  Icon: React.ComponentType<{ className?: string }>;
+  label: string;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-1 rounded-xl border border-white/10 bg-white/5 py-2 backdrop-blur-sm">
+      <Icon className="size-3.5 text-accent-300" />
+      <span className="text-[9px] font-bold uppercase tracking-wider text-white/70">
+        {label}
+      </span>
     </div>
   );
 }

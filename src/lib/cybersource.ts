@@ -141,9 +141,6 @@ export async function createCaptureContext(input: CaptureContextInput): Promise<
     allowedPaymentTypes: ["PANENTRY"],
     country: "CR",
     locale: "es_CR",
-    // Modo embedded: UC renderiza inline en vez de sidebar.
-    checkoutComponent: "embedded",
-    embeddedComponent: true,
     captureMandate: {
       billingType: "FULL",
       requestEmail: true,
