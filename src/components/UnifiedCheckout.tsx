@@ -169,24 +169,24 @@ export function UnifiedCheckout({
         </div>
       </div>
 
-      {/* Card del pago con el botón de UC dentro */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-br from-white/95 to-white/90 p-6 shadow-2xl shadow-brand-900/30">
-        <div className="absolute right-0 top-0 size-32 rounded-full bg-accent-300/30 blur-3xl" />
-        <div className="absolute -bottom-10 -left-10 size-40 rounded-full bg-brand-500/20 blur-3xl" />
+      {/* Card del pago con el botón de UC dentro — fondo transparente */}
+      <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-white/5 p-6 backdrop-blur-md">
+        <div className="absolute right-0 top-0 size-32 rounded-full bg-accent-300/20 blur-3xl" />
+        <div className="absolute -bottom-10 -left-10 size-40 rounded-full bg-brand-500/15 blur-3xl" />
 
         <div className="relative">
-          <h4 className="mb-1 text-base font-black text-ink-900">
+          <h4 className="mb-1 text-base font-black text-white">
             Listo para pagar de forma segura
           </h4>
-          <p className="mb-5 text-sm text-ink-600">
+          <p className="mb-5 text-sm text-white/70">
             Hacé clic en el botón abajo. Se abrirá la pasarela protegida de BAC
             Costa Rica donde podés ingresar los datos de tu tarjeta.
           </p>
 
           {/* Loading state */}
           {status === "loading" && (
-            <div className="flex items-center gap-3 rounded-xl bg-ink-100/60 px-4 py-3 text-sm text-ink-700">
-              <span className="size-4 animate-spin rounded-full border-2 border-ink-400 border-r-transparent" />
+            <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
+              <span className="size-4 animate-spin rounded-full border-2 border-white/40 border-r-transparent" />
               Inicializando pasarela segura…
             </div>
           )}
