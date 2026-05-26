@@ -2,6 +2,18 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { processPayment } from "@/lib/cybersource";
 
+function decodeJwtPayload(jwt: string): unknown {
+  try {
+    const parts = jwt.split(".");
+    if (parts.length < 2) return null;
+    const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+    return JSON.parse(Buffer.from(padded, "base64").toString("utf8"));
+  } catch {
+    return null;
+  }
+}
+
 type Body = {
   orderId?: string;
   transientToken?: string;
@@ -30,6 +42,10 @@ export async function POST(req: Request) {
     if (order.payment_status === "pagado") {
       return NextResponse.json({ ok: true, alreadyPaid: true, orderNumber: order.order_number });
     }
+
+    // Decodificar el TT para ver qué contiene (debug)
+    const ttPayload = decodeJwtPayload(transientToken);
+    console.log("[PAY] transient token payload:", JSON.stringify(ttPayload, null, 2));
 
     const result = await processPayment({
       transientTokenJwt: transientToken,
@@ -68,6 +84,7 @@ export async function POST(req: Request) {
           message: result.message ?? "Pago rechazado por el banco",
           // Debug: respuesta cruda de Cybersource para entender el motivo
           rawDebug: result.raw,
+          ttPayload,
         },
         { status: 402 }
       );
