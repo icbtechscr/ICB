@@ -172,28 +172,29 @@ export function UnifiedCheckout({
           await new Promise((r) => setTimeout(r, 500));
         }
 
-        // Distintas versiones del SDK aceptan el container con nombres diferentes
-        // y pueden pedir selector string o elemento DOM directo.
+        // UC 0.23.x usa `containers` (plural) — un objeto con sub-containers por pantalla.
+        const sel = "#cybs-up-container";
         const containerAttempts: Array<Record<string, unknown>> = [
-          { containerSelector: "#cybs-up-container" },
-          { container: "#cybs-up-container" },
-          { containerId: "cybs-up-container" },
-          { containerSelector: "cybs-up-container" },
-          // Variantes con elemento DOM
-          { container: el },
-          { containerSelector: el },
-          // Sin parámetros (algunas versiones usan defaults o requieren payload)
-          {},
+          // Variante más común en UC v0.23+ (payment selection + payment screen apuntan al mismo div)
+          { containers: { paymentSelection: sel, paymentScreen: sel } },
+          // Solo paymentSelection
+          { containers: { paymentSelection: sel } },
+          // Otras propiedades posibles
+          { containers: { payment: sel } },
+          { containers: { default: sel } },
+          { containers: { root: sel } },
+          { containers: { initial: sel } },
+          // Array de selectors
+          { containers: [sel] },
+          // String directo
+          { containers: sel },
         ];
 
         let result: unknown = null;
         let lastErr: unknown = null;
         for (const attempt of containerAttempts) {
           try {
-            const debugLabel = Object.entries(attempt)
-              .map(([k, v]) => `${k}=${v instanceof Element ? "<Element>" : v}`)
-              .join(", ");
-            console.log(`[UC] up.show() intentando con: { ${debugLabel || "(vacío)"} }`);
+            console.log("[UC] up.show() intentando con:", JSON.stringify(attempt));
             result = await up.show(attempt);
             console.log("[UC] ✓ show() funcionó con:", attempt);
             lastErr = null;
