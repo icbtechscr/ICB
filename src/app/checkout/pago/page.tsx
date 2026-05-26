@@ -218,7 +218,10 @@ export default function PagoPage() {
         ok?: boolean;
         message?: string;
         status?: string;
+        reasonCode?: string;
+        rawDebug?: unknown;
       };
+      console.log("[PAY] /confirm response:", data);
       if (!res.ok || !data.ok) {
         setError(data.message ?? `Pago rechazado (${data.status ?? res.status})`);
         // Permitir reintentar: reseteamos el iframe.

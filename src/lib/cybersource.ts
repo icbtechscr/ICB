@@ -242,6 +242,10 @@ export async function processPayment(input: ProcessPaymentInput): Promise<Paymen
 
   const { status, data, raw } = await signedRequest("POST", "/pts/v2/payments", body);
 
+  // Logging para diagnosticar rechazos
+  console.log("[CYBS payments] status:", status);
+  console.log("[CYBS payments] response body:", raw.slice(0, 2000));
+
   const obj = typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
   const cybsStatus = String(obj.status ?? "");
   const reasonCode = obj.reasonCode as string | undefined;

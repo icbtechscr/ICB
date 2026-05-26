@@ -66,6 +66,8 @@ export async function POST(req: Request) {
           status: result.status,
           reasonCode: result.reasonCode,
           message: result.message ?? "Pago rechazado por el banco",
+          // Debug: respuesta cruda de Cybersource para entender el motivo
+          rawDebug: result.raw,
         },
         { status: 402 }
       );
