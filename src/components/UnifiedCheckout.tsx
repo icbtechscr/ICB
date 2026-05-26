@@ -8,10 +8,7 @@ type AcceptInstance = {
 };
 
 type UnifiedPaymentsInstance = {
-  show: (opts: {
-    containerSelector?: string;
-    container?: string;
-  }) => Promise<unknown>;
+  show: (opts: Record<string, unknown>) => Promise<unknown>;
 };
 
 declare global {
@@ -108,7 +105,6 @@ export function UnifiedCheckout({
   onToken,
   onError,
 }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null);
   const initStartedRef = useRef(false);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
@@ -126,8 +122,8 @@ export function UnifiedCheckout({
 
         // Pequeño delay para que el contenedor esté en el DOM.
         await new Promise((r) => setTimeout(r, 0));
-        if (!document.querySelector("#unified-checkout-container")) {
-          throw new Error("Contenedor #unified-checkout-container no está en el DOM");
+        if (!document.querySelector("#cybs-up-container")) {
+          throw new Error("Contenedor #cybs-up-container no está en el DOM");
         }
 
         let accept: AcceptInstance;
@@ -149,12 +145,38 @@ export function UnifiedCheckout({
         if (cancelled) return;
         setStatus("ready");
 
-        let result: unknown;
-        try {
-          result = await up.show({ containerSelector: "#unified-checkout-container" });
-        } catch (e) {
-          console.error("[UC] up.show() falló:", e);
-          throw new Error(`show() falló: ${describeError(e)}`);
+        // Distintas versiones del SDK aceptan el container con nombres diferentes.
+        // Probamos en orden hasta que una funcione.
+        const containerAttempts: Array<Record<string, unknown>> = [
+          { containerSelector: "#cybs-up-container" },
+          { container: "#cybs-up-container" },
+          { containerId: "cybs-up-container" },
+          { containerSelector: "cybs-up-container" },
+        ];
+
+        let result: unknown = null;
+        let lastErr: unknown = null;
+        for (const attempt of containerAttempts) {
+          try {
+            console.log("[UC] up.show() intentando con:", attempt);
+            result = await up.show(attempt);
+            lastErr = null;
+            break;
+          } catch (e) {
+            const errObj = e as { reason?: string };
+            // Solo seguimos probando si es invalid container. Otros errores los lanzamos ya.
+            if (errObj?.reason !== "SHOW_LOAD_INVALID_CONTAINER") {
+              console.error("[UC] up.show() falló con error no-container:", e);
+              throw new Error(`show() falló: ${describeError(e)}`);
+            }
+            console.warn("[UC] container inválido, probando siguiente forma…", e);
+            lastErr = e;
+          }
+        }
+        if (lastErr) {
+          throw new Error(
+            `show() falló tras probar todas las formas de container: ${describeError(lastErr)}`
+          );
         }
         if (cancelled) return;
 
@@ -188,11 +210,8 @@ export function UnifiedCheckout({
           Cargando pasarela segura…
         </div>
       )}
-      <div
-        id="unified-checkout-container"
-        ref={containerRef}
-        className="min-h-[500px] rounded-2xl bg-white/95 p-2"
-      />
+      {/* Contenedor donde UC monta su iframe. NO agregarle clases ni contenido. */}
+      <div id="cybs-up-container" style={{ minHeight: 500, background: "#fff", borderRadius: 16 }} />
       <p className="mt-3 text-[11px] text-white/60">
         Procesado por Cybersource · BAC Costa Rica · Datos cifrados en el navegador
       </p>
