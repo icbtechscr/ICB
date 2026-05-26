@@ -145,31 +145,49 @@ export function UnifiedCheckout({
         if (cancelled) return;
         setStatus("ready");
 
-        // Distintas versiones del SDK aceptan el container con nombres diferentes.
-        // Probamos en orden hasta que una funcione.
+        const el = document.getElementById("cybs-up-container");
+        console.log("[UC] SDK URL en uso:", sdkUrl);
+        console.log("[UC] window.location.origin:", window.location.origin);
+        console.log("[UC] elemento container:", el, "rect:", el?.getBoundingClientRect());
+
+        // Distintas versiones del SDK aceptan el container con nombres diferentes
+        // y pueden pedir selector string o elemento DOM directo.
         const containerAttempts: Array<Record<string, unknown>> = [
           { containerSelector: "#cybs-up-container" },
           { container: "#cybs-up-container" },
           { containerId: "cybs-up-container" },
           { containerSelector: "cybs-up-container" },
+          // Variantes con elemento DOM
+          { container: el },
+          { containerSelector: el },
+          // Sin parámetros (algunas versiones usan defaults o requieren payload)
+          {},
         ];
 
         let result: unknown = null;
         let lastErr: unknown = null;
         for (const attempt of containerAttempts) {
           try {
-            console.log("[UC] up.show() intentando con:", attempt);
+            const debugLabel = Object.entries(attempt)
+              .map(([k, v]) => `${k}=${v instanceof Element ? "<Element>" : v}`)
+              .join(", ");
+            console.log(`[UC] up.show() intentando con: { ${debugLabel || "(vacío)"} }`);
             result = await up.show(attempt);
+            console.log("[UC] ✓ show() funcionó con:", attempt);
             lastErr = null;
             break;
           } catch (e) {
-            const errObj = e as { reason?: string };
+            const errObj = e as { reason?: string; name?: string };
+            console.warn("[UC] falló:", {
+              reason: errObj?.reason,
+              name: errObj?.name,
+              message: describeError(e),
+              fullError: JSON.parse(JSON.stringify(e, Object.getOwnPropertyNames(e))),
+            });
             // Solo seguimos probando si es invalid container. Otros errores los lanzamos ya.
             if (errObj?.reason !== "SHOW_LOAD_INVALID_CONTAINER") {
-              console.error("[UC] up.show() falló con error no-container:", e);
               throw new Error(`show() falló: ${describeError(e)}`);
             }
-            console.warn("[UC] container inválido, probando siguiente forma…", e);
             lastErr = e;
           }
         }
