@@ -120,10 +120,13 @@ export function UnifiedCheckout({
         if (cancelled) return;
         if (!window.Accept) throw new Error("SDK de UC se cargó pero no expuso window.Accept");
 
-        // Pequeño delay para que el contenedor esté en el DOM.
+        // Pequeño delay para que los contenedores estén en el DOM.
         await new Promise((r) => setTimeout(r, 0));
-        if (!document.querySelector("#cybs-up-container")) {
-          throw new Error("Contenedor #cybs-up-container no está en el DOM");
+        if (
+          !document.querySelector("#cybs-up-selection") ||
+          !document.querySelector("#cybs-up-screen")
+        ) {
+          throw new Error("Contenedores de UC no están en el DOM");
         }
 
         let accept: AcceptInstance;
@@ -149,7 +152,7 @@ export function UnifiedCheckout({
         await new Promise<void>((r) => requestAnimationFrame(() => r()));
         await new Promise<void>((r) => requestAnimationFrame(() => r()));
 
-        const el = document.getElementById("cybs-up-container");
+        const el = document.getElementById("cybs-up-selection");
         const rect = el?.getBoundingClientRect();
         console.log("[UC] SDK URL en uso:", sdkUrl);
         console.log("[UC] window.location.origin:", window.location.origin);
@@ -172,12 +175,17 @@ export function UnifiedCheckout({
           await new Promise((r) => setTimeout(r, 500));
         }
 
-        // UC 0.23.x usa `containers.paymentSelection` (modo sidebar, default).
-        // El error SHOW_LOAD_SIDEBAR_OPTIONS confirmó que en este modo NO se debe
-        // pasar paymentScreen u otros containers — solo paymentSelection.
-        const sel = "#cybs-up-container";
+        // Intentamos modo embedded primero (dos containers separados).
+        // Si la config del merchant solo permite sidebar, caemos a sidebar (1 container).
         const containerAttempts: Array<Record<string, unknown>> = [
-          { containers: { paymentSelection: sel } },
+          {
+            containers: {
+              paymentSelection: "#cybs-up-selection",
+              paymentScreen: "#cybs-up-screen",
+            },
+          },
+          // Fallback a sidebar si embedded no está habilitado en el merchant
+          { containers: { paymentSelection: "#cybs-up-selection" } },
         ];
 
         let result: unknown = null;
@@ -245,8 +253,17 @@ export function UnifiedCheckout({
           Cargando pasarela segura…
         </div>
       )}
-      {/* Contenedor donde UC monta su iframe. NO agregarle clases ni contenido. */}
-      <div id="cybs-up-container" style={{ minHeight: 500, background: "#fff", borderRadius: 16 }} />
+      {/* Containers de UC. NO agregarles clases ni contenido. */}
+      <div className="space-y-4">
+        <div
+          id="cybs-up-selection"
+          style={{ minHeight: 60, background: "#fff", borderRadius: 12, padding: 4 }}
+        />
+        <div
+          id="cybs-up-screen"
+          style={{ minHeight: 400, background: "#fff", borderRadius: 12, padding: 4 }}
+        />
+      </div>
       <p className="mt-3 text-[11px] text-white/60">
         Procesado por Cybersource · BAC Costa Rica · Datos cifrados en el navegador
       </p>
