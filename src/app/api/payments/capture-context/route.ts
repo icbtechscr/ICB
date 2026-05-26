@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { createCaptureContext } from "@/lib/cybersource";
+import { createCaptureContext, decodeCaptureContext } from "@/lib/cybersource";
 
 type Body = {
   orderId?: string;
@@ -39,7 +39,12 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({ captureContext: jwt });
+    const { clientLibrary, clientLibraryIntegrity } = decodeCaptureContext(jwt);
+    return NextResponse.json({
+      captureContext: jwt,
+      clientLibrary,
+      clientLibraryIntegrity,
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return new NextResponse(msg, { status: 500 });

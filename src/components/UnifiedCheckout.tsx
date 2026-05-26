@@ -19,35 +19,48 @@ declare global {
 
 type Props = {
   sdkUrl: string;
+  sdkIntegrity?: string | null;
   captureContext: string;
   onToken: (transientToken: string) => void;
   onError: (err: string) => void;
 };
 
-let sdkPromise: Promise<void> | null = null;
+const sdkPromises = new Map<string, Promise<void>>();
 
-function loadSdk(url: string) {
+function loadSdk(url: string, integrity?: string | null) {
   if (typeof window === "undefined") return Promise.resolve();
-  if (sdkPromise) return sdkPromise;
-  sdkPromise = new Promise<void>((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>(`script[data-cybs-sdk]`);
+  const cached = sdkPromises.get(url);
+  if (cached) return cached;
+  const p = new Promise<void>((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>(`script[data-cybs-sdk="${url}"]`);
     if (existing) {
       if (window.Accept) resolve();
-      else existing.addEventListener("load", () => resolve());
+      else {
+        existing.addEventListener("load", () => resolve());
+        existing.addEventListener("error", () =>
+          reject(new Error(`No se pudo cargar el SDK de Unified Checkout: ${url}`))
+        );
+      }
       return;
     }
     const s = document.createElement("script");
     s.src = url;
     s.async = true;
-    s.dataset.cybsSdk = "1";
+    if (integrity) {
+      s.integrity = integrity;
+      s.crossOrigin = "anonymous";
+    }
+    s.dataset.cybsSdk = url;
     s.onload = () => resolve();
-    s.onerror = () => reject(new Error("No se pudo cargar el SDK de Unified Checkout"));
+    s.onerror = () =>
+      reject(new Error(`No se pudo cargar el SDK de Unified Checkout: ${url}`));
     document.head.appendChild(s);
   });
-  return sdkPromise;
+  sdkPromises.set(url, p);
+  return p;
 }
 
-export function UnifiedCheckout({ sdkUrl, captureContext, onToken, onError }: Props) {
+export function UnifiedCheckout({ sdkUrl, sdkIntegrity, captureContext, onToken, onError }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
@@ -55,7 +68,7 @@ export function UnifiedCheckout({ sdkUrl, captureContext, onToken, onError }: Pr
     let cancelled = false;
     (async () => {
       try {
-        await loadSdk(sdkUrl);
+        await loadSdk(sdkUrl, sdkIntegrity);
         if (cancelled || !window.Accept) throw new Error("SDK de UC no disponible");
         const accept = await window.Accept(captureContext);
         const up = await accept.unifiedPayments();
@@ -77,7 +90,7 @@ export function UnifiedCheckout({ sdkUrl, captureContext, onToken, onError }: Pr
     return () => {
       cancelled = true;
     };
-  }, [sdkUrl, captureContext, onToken, onError]);
+  }, [sdkUrl, sdkIntegrity, captureContext, onToken, onError]);
 
   return (
     <div>

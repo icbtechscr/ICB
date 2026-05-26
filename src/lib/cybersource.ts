@@ -257,9 +257,29 @@ export async function processPayment(input: ProcessPaymentInput): Promise<Paymen
   };
 }
 
-// Devuelve el host correcto del SDK según el ambiente.
-export function unifiedCheckoutSdkUrl(): string {
-  const env = (process.env.CYBS_RUN_ENV ?? "apitest") as Env;
-  const host = env === "api" ? "https://apps.cybersource.com" : "https://apps.test.cybersource.com";
-  return `${host}/Flex/Microform/2.0/SecureAcceptance.js`;
+// Decodifica el payload del JWT (sin verificar firma, lo hace el SDK del navegador).
+// Devuelve el campo `clientLibrary` (URL del SDK) y `clientLibraryIntegrity` (SRI).
+export function decodeCaptureContext(jwt: string): {
+  clientLibrary: string | null;
+  clientLibraryIntegrity: string | null;
+} {
+  try {
+    const parts = jwt.split(".");
+    if (parts.length < 2) return { clientLibrary: null, clientLibraryIntegrity: null };
+    const payloadB64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = payloadB64 + "=".repeat((4 - (payloadB64.length % 4)) % 4);
+    const json = Buffer.from(padded, "base64").toString("utf8");
+    const obj = JSON.parse(json) as {
+      ctx?: Array<{ data?: { clientLibrary?: string; clientLibraryIntegrity?: string } }>;
+      clientLibrary?: string;
+      clientLibraryIntegrity?: string;
+    };
+    const fromCtx = obj.ctx?.[0]?.data;
+    return {
+      clientLibrary: fromCtx?.clientLibrary ?? obj.clientLibrary ?? null,
+      clientLibraryIntegrity: fromCtx?.clientLibraryIntegrity ?? obj.clientLibraryIntegrity ?? null,
+    };
+  } catch {
+    return { clientLibrary: null, clientLibraryIntegrity: null };
+  }
 }

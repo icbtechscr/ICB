@@ -85,6 +85,7 @@ export default function PagoPage() {
   const [captureContext, setCaptureContext] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [sdkUrl, setSdkUrl] = useState<string | null>(null);
+  const [sdkIntegrity, setSdkIntegrity] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -182,14 +183,19 @@ export default function PagoPage() {
         setSubmitting(false);
         return;
       }
-      const { captureContext: cc } = (await ccRes.json()) as { captureContext: string };
-      setCaptureContext(cc);
-
-      // SDK URL conocido (server lo expone vía variable pública, fallback al sandbox).
-      setSdkUrl(
-        process.env.NEXT_PUBLIC_CYBS_SDK_URL ??
-          "https://apps.test.cybersource.com/Flex/Microform/2.0/SecureAcceptance.js"
-      );
+      const ccJson = (await ccRes.json()) as {
+        captureContext: string;
+        clientLibrary: string | null;
+        clientLibraryIntegrity: string | null;
+      };
+      if (!ccJson.clientLibrary) {
+        setError("Cybersource no devolvió la URL del SDK en el capture-context.");
+        setSubmitting(false);
+        return;
+      }
+      setCaptureContext(ccJson.captureContext);
+      setSdkUrl(ccJson.clientLibrary);
+      setSdkIntegrity(ccJson.clientLibraryIntegrity);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setSubmitting(false);
@@ -391,6 +397,7 @@ export default function PagoPage() {
                   </h3>
                   <UnifiedCheckout
                     sdkUrl={sdkUrl}
+                    sdkIntegrity={sdkIntegrity}
                     captureContext={captureContext}
                     onToken={onTransientToken}
                     onError={(msg) => {
