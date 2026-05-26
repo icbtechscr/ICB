@@ -187,7 +187,9 @@ export default function PagoPage() {
         captureContext: string;
         clientLibrary: string | null;
         clientLibraryIntegrity: string | null;
+        debugPayload?: unknown;
       };
+      console.log("[UC] capture-context JWT payload:", ccJson.debugPayload);
       if (!ccJson.clientLibrary) {
         setError("Cybersource no devolvió la URL del SDK en el capture-context.");
         setSubmitting(false);

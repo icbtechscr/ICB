@@ -178,12 +178,13 @@ export function UnifiedCheckout({
             break;
           } catch (e) {
             const errObj = e as { reason?: string; name?: string };
-            console.warn("[UC] falló:", {
-              reason: errObj?.reason,
-              name: errObj?.name,
-              message: describeError(e),
-              fullError: JSON.parse(JSON.stringify(e, Object.getOwnPropertyNames(e))),
-            });
+            const fullDump = JSON.stringify(
+              e,
+              Object.getOwnPropertyNames(e ?? {}),
+              2
+            );
+            console.warn("[UC] falló — reason:", errObj?.reason, "name:", errObj?.name);
+            console.warn("[UC] error stringificado:\n" + fullDump);
             // Solo seguimos probando si es invalid container. Otros errores los lanzamos ya.
             if (errObj?.reason !== "SHOW_LOAD_INVALID_CONTAINER") {
               throw new Error(`show() falló: ${describeError(e)}`);

@@ -40,10 +40,21 @@ export async function POST(req: Request) {
     });
 
     const { clientLibrary, clientLibraryIntegrity } = decodeCaptureContext(jwt);
+
+    // Decodificar payload completo para debug (NO incluye secretos, solo config pública del JWT).
+    let debugPayload: unknown = null;
+    try {
+      const parts = jwt.split(".");
+      const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+      debugPayload = JSON.parse(Buffer.from(padded, "base64").toString("utf8"));
+    } catch {}
+
     return NextResponse.json({
       captureContext: jwt,
       clientLibrary,
       clientLibraryIntegrity,
+      debugPayload,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
