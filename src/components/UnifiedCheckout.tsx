@@ -145,10 +145,32 @@ export function UnifiedCheckout({
         if (cancelled) return;
         setStatus("ready");
 
+        // Forzar layout/paint antes de validar el container.
+        await new Promise<void>((r) => requestAnimationFrame(() => r()));
+        await new Promise<void>((r) => requestAnimationFrame(() => r()));
+
         const el = document.getElementById("cybs-up-container");
+        const rect = el?.getBoundingClientRect();
         console.log("[UC] SDK URL en uso:", sdkUrl);
         console.log("[UC] window.location.origin:", window.location.origin);
-        console.log("[UC] elemento container:", el, "rect:", el?.getBoundingClientRect());
+        console.log(
+          "[UC] container rect:",
+          rect
+            ? {
+                width: rect.width,
+                height: rect.height,
+                top: rect.top,
+                left: rect.left,
+                visible: rect.width > 0 && rect.height > 0,
+              }
+            : "(no element)"
+        );
+
+        // Si el container tiene 0 dimensiones aún, esperamos un poco.
+        if (rect && (rect.width === 0 || rect.height === 0)) {
+          console.warn("[UC] container tiene 0 dimensiones, esperando 500ms…");
+          await new Promise((r) => setTimeout(r, 500));
+        }
 
         // Distintas versiones del SDK aceptan el container con nombres diferentes
         // y pueden pedir selector string o elemento DOM directo.
