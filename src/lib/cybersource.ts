@@ -132,7 +132,7 @@ export async function createSession(input: CreateSessionInput): Promise<string> 
 
   const body = {
     targetOrigins: [origin],
-    clientVersion: "1.0.0",
+    clientVersion: "1.x",
     country: "CR",
     locale: "es_CR",
     allowedPaymentTypes: ["PANENTRY"],
