@@ -236,25 +236,41 @@ export function verifyMountResult(resultJwt: string): PaymentVerification {
     return { ok: false, status: "INVALID_JWT", payload: null };
   }
 
-  // El payload del JWT del resultado contiene el resultado del pago.
-  // Estructura típica: { content: { processingInformation, paymentInformation, ... }, status, ... }
-  const content = (payload.content as Record<string, unknown> | undefined) ?? payload;
+  // El payload del JWT del resultado puede tener distintas estructuras.
+  // Buscamos status en varias rutas conocidas.
+  const content = (payload.content as Record<string, unknown> | undefined) ?? {};
+  const processingInfo = (content.processingInformation as Record<string, unknown> | undefined) ??
+    (payload.processingInformation as Record<string, unknown> | undefined) ?? {};
+  const paymentResponse = (content.paymentResponse as Record<string, unknown> | undefined) ??
+    (payload.paymentResponse as Record<string, unknown> | undefined) ?? {};
+
   const status =
     (content.status as string | undefined) ??
     (payload.status as string | undefined) ??
+    (processingInfo.status as string | undefined) ??
+    (paymentResponse.status as string | undefined) ??
     "";
+
   const reasonCode =
     (content.reasonCode as string | undefined) ??
-    (payload.reasonCode as string | undefined);
+    (payload.reasonCode as string | undefined) ??
+    (paymentResponse.reasonCode as string | undefined);
+
   const message =
     (content.message as string | undefined) ??
-    (payload.message as string | undefined);
+    (payload.message as string | undefined) ??
+    (paymentResponse.message as string | undefined);
+
   const id =
     (content.id as string | undefined) ??
-    (payload.id as string | undefined);
+    (payload.id as string | undefined) ??
+    (paymentResponse.id as string | undefined);
+
+  const okStatuses = ["AUTHORIZED", "PARTIAL_AUTHORIZED", "PENDING", "TRANSMITTED", "ACCEPTED", "COMPLETED"];
+  const ok = okStatuses.includes(status);
 
   return {
-    ok: status === "AUTHORIZED" || status === "PARTIAL_AUTHORIZED" || status === "PENDING" || status === "TRANSMITTED",
+    ok,
     status: status || "UNKNOWN",
     id,
     reasonCode,
