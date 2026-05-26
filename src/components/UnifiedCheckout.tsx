@@ -172,22 +172,12 @@ export function UnifiedCheckout({
           await new Promise((r) => setTimeout(r, 500));
         }
 
-        // UC 0.23.x usa `containers` (plural) — un objeto con sub-containers por pantalla.
+        // UC 0.23.x usa `containers.paymentSelection` (modo sidebar, default).
+        // El error SHOW_LOAD_SIDEBAR_OPTIONS confirmó que en este modo NO se debe
+        // pasar paymentScreen u otros containers — solo paymentSelection.
         const sel = "#cybs-up-container";
         const containerAttempts: Array<Record<string, unknown>> = [
-          // Variante más común en UC v0.23+ (payment selection + payment screen apuntan al mismo div)
-          { containers: { paymentSelection: sel, paymentScreen: sel } },
-          // Solo paymentSelection
           { containers: { paymentSelection: sel } },
-          // Otras propiedades posibles
-          { containers: { payment: sel } },
-          { containers: { default: sel } },
-          { containers: { root: sel } },
-          { containers: { initial: sel } },
-          // Array de selectors
-          { containers: [sel] },
-          // String directo
-          { containers: sel },
         ];
 
         let result: unknown = null;
@@ -208,8 +198,11 @@ export function UnifiedCheckout({
             );
             console.warn("[UC] falló — reason:", errObj?.reason, "name:", errObj?.name);
             console.warn("[UC] error stringificado:\n" + fullDump);
-            // Solo seguimos probando si es invalid container. Otros errores los lanzamos ya.
-            if (errObj?.reason !== "SHOW_LOAD_INVALID_CONTAINER") {
+            // Seguimos probando si es error de container. Otros errores los lanzamos ya.
+            const retryable =
+              errObj?.reason === "SHOW_LOAD_INVALID_CONTAINER" ||
+              errObj?.reason === "SHOW_LOAD_SIDEBAR_OPTIONS";
+            if (!retryable) {
               throw new Error(`show() falló: ${describeError(e)}`);
             }
             lastErr = e;
