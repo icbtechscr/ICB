@@ -3,26 +3,40 @@
 import { useEffect, useRef, useState } from "react";
 import { ShieldCheck, Lock, CreditCard } from "lucide-react";
 
-// Tipos mínimos del SDK de Cybersource Unified Checkout (Accept).
-type AcceptInstance = {
-  unifiedPayments: (review?: boolean) => Promise<UnifiedPaymentsInstance>;
+// API real de Unified Checkout v1: VAS.UnifiedCheckout(sessionJwt)
+type UCClient = {
+  createCheckout: (opts?: { autoProcessing?: boolean }) => Promise<UCCheckout>;
+  destroy: () => void;
 };
 
-type UnifiedPaymentsInstance = {
-  show: (opts: Record<string, unknown>) => Promise<unknown>;
+type UCCheckout = {
+  // mount con string = sidebar mode (buttons inline, payment screen en sidebar)
+  // mount con {paymentSelection,paymentScreen} = embedded mode
+  // mount() sin args = full sidebar
+  // Devuelve un JWT con el resultado del pago (cuando autoProcessing=true).
+  mount: (
+    target?: string | { paymentSelection?: string; paymentScreen?: string }
+  ) => Promise<string>;
+  complete?: (transientToken: string) => Promise<string>;
+  unmount: () => void;
+  destroy: () => void;
 };
+
+type UCError = Error & { reason?: string };
 
 declare global {
   interface Window {
-    Accept?: (captureContext: string) => Promise<AcceptInstance>;
+    VAS?: {
+      UnifiedCheckout: (sessionJwt: string) => Promise<UCClient>;
+    };
   }
 }
 
 type Props = {
   sdkUrl: string;
   sdkIntegrity?: string | null;
-  captureContext: string;
-  onToken: (transientToken: string) => void;
+  sessionJwt: string;
+  onResult: (resultJwt: string) => void;
   onError: (err: string) => void;
 };
 
@@ -33,9 +47,11 @@ function loadSdk(url: string, integrity?: string | null) {
   const cached = sdkPromises.get(url);
   if (cached) return cached;
   const p = new Promise<void>((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>(`script[data-cybs-sdk="${url}"]`);
+    const existing = document.querySelector<HTMLScriptElement>(
+      `script[data-cybs-sdk="${url}"]`
+    );
     if (existing) {
-      if (window.Accept) resolve();
+      if (window.VAS) resolve();
       else {
         existing.addEventListener("load", () => resolve());
         existing.addEventListener("error", () =>
@@ -69,7 +85,6 @@ function describeError(e: unknown): string {
     const obj = e as Record<string, unknown>;
     const direct =
       (obj.message as string | undefined) ??
-      (obj.error as string | undefined) ??
       (obj.reason as string | undefined);
     if (direct) return String(direct);
     try {
@@ -81,26 +96,11 @@ function describeError(e: unknown): string {
   return String(e);
 }
 
-function extractTransientToken(result: unknown): string | null {
-  if (!result) return null;
-  if (typeof result === "string") return result;
-  if (typeof result === "object") {
-    const obj = result as Record<string, unknown>;
-    return (
-      (obj.transientToken as string | undefined) ??
-      (obj.transientTokenJwt as string | undefined) ??
-      (obj.token as string | undefined) ??
-      null
-    );
-  }
-  return null;
-}
-
 export function UnifiedCheckout({
   sdkUrl,
   sdkIntegrity,
-  captureContext,
-  onToken,
+  sessionJwt,
+  onResult,
   onError,
 }: Props) {
   const initStartedRef = useRef(false);
@@ -111,46 +111,74 @@ export function UnifiedCheckout({
     initStartedRef.current = true;
 
     let cancelled = false;
+    let client: UCClient | null = null;
+    let checkout: UCCheckout | null = null;
+
     (async () => {
       try {
+        console.log("[UC] cargando SDK desde:", sdkUrl);
         await loadSdk(sdkUrl, sdkIntegrity);
         if (cancelled) return;
-        if (!window.Accept) throw new Error("SDK de UC se cargó pero no expuso window.Accept");
-
-        await new Promise((r) => setTimeout(r, 0));
-        if (!document.querySelector("#cybs-up-selection")) {
-          throw new Error("Contenedor #cybs-up-selection no está en el DOM");
+        if (!window.VAS?.UnifiedCheckout) {
+          throw new Error(
+            "El SDK se cargó pero no expone window.VAS.UnifiedCheckout"
+          );
         }
 
-        const accept = await window.Accept(captureContext);
-        const up = await accept.unifiedPayments();
+        console.log("[UC] inicializando VAS.UnifiedCheckout…");
+        client = await window.VAS.UnifiedCheckout(sessionJwt);
         if (cancelled) return;
+
+        // autoProcessing=true (default cuando hay completeMandate en la session).
+        // mount() devolverá un JWT con el pago ya procesado.
+        console.log("[UC] createCheckout()…");
+        checkout = await client.createCheckout();
+        if (cancelled) return;
+
         setStatus("ready");
 
         await new Promise<void>((r) => requestAnimationFrame(() => r()));
 
-        const result = await up.show({
-          containers: { paymentSelection: "#cybs-up-selection" },
-        });
-        if (cancelled) return;
+        const container = document.querySelector("#cybs-up-buttons");
+        if (!container) {
+          throw new Error("Contenedor #cybs-up-buttons no está en el DOM");
+        }
 
-        const tt = extractTransientToken(result);
-        if (tt) {
-          onToken(tt);
+        // Sidebar mode: buttons inline, payment screen como sidebar.
+        // Por defecto este merchant solo soporta sidebar.
+        console.log("[UC] mount('#cybs-up-buttons')…");
+        const resultJwt = await checkout.mount("#cybs-up-buttons");
+        console.log("[UC] mount() devolvió JWT (len):", resultJwt?.length);
+
+        if (cancelled) return;
+        if (typeof resultJwt === "string" && resultJwt.length > 0) {
+          onResult(resultJwt);
         } else {
-          onError("No se recibió el token de pago");
+          onError(
+            "El SDK no devolvió un JWT de resultado. Respuesta: " +
+              JSON.stringify(resultJwt)
+          );
         }
       } catch (e) {
         if (cancelled) return;
-        console.error("[UC] error:", e);
+        const err = e as UCError;
+        console.error("[UC] error:", err);
+        if (err?.reason) console.error("[UC] reason:", err.reason);
         setStatus("error");
         onError(describeError(e));
       }
     })();
+
     return () => {
       cancelled = true;
+      try {
+        checkout?.destroy();
+      } catch {}
+      try {
+        client?.destroy();
+      } catch {}
     };
-  }, [sdkUrl, sdkIntegrity, captureContext, onToken, onError]);
+  }, [sdkUrl, sdkIntegrity, sessionJwt, onResult, onError]);
 
   return (
     <div className="space-y-4">
@@ -169,7 +197,7 @@ export function UnifiedCheckout({
         </div>
       </div>
 
-      {/* Card del pago con el botón de UC dentro — fondo transparente */}
+      {/* Card del pago - fondo transparente */}
       <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-white/5 p-6 backdrop-blur-md">
         <div className="absolute right-0 top-0 size-32 rounded-full bg-accent-300/20 blur-3xl" />
         <div className="absolute -bottom-10 -left-10 size-40 rounded-full bg-brand-500/15 blur-3xl" />
@@ -183,7 +211,6 @@ export function UnifiedCheckout({
             Costa Rica donde podés ingresar los datos de tu tarjeta.
           </p>
 
-          {/* Loading state */}
           {status === "loading" && (
             <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
               <span className="size-4 animate-spin rounded-full border-2 border-white/40 border-r-transparent" />
@@ -191,16 +218,14 @@ export function UnifiedCheckout({
             </div>
           )}
 
-          {/* Container donde UC monta su botón "Pay With Card" */}
+          {/* Container donde UC monta el botón "Pay With Card" */}
           <div
-            id="cybs-up-selection"
-            className="cybs-container"
+            id="cybs-up-buttons"
             style={{ minHeight: status === "loading" ? 0 : 60 }}
           />
 
-          {/* Estilos para que el botón inyectado por UC se vea integrado */}
           <style jsx>{`
-            :global(#cybs-up-selection button) {
+            :global(#cybs-up-buttons button) {
               width: 100% !important;
               background: linear-gradient(135deg, #00b87c 0%, #00d68f 100%) !important;
               color: #0a1f2c !important;
@@ -215,18 +240,17 @@ export function UnifiedCheckout({
               text-transform: none !important;
               letter-spacing: 0.02em !important;
             }
-            :global(#cybs-up-selection button:hover) {
+            :global(#cybs-up-buttons button:hover) {
               transform: translateY(-1px);
               box-shadow: 0 15px 30px -10px rgba(0, 184, 124, 0.8) !important;
             }
-            :global(#cybs-up-selection button:active) {
+            :global(#cybs-up-buttons button:active) {
               transform: translateY(0) scale(0.98);
             }
           `}</style>
         </div>
       </div>
 
-      {/* Trust badges */}
       <div className="grid grid-cols-3 gap-2 text-center">
         <TrustBadge Icon={Lock} label="Encriptación SSL" />
         <TrustBadge Icon={ShieldCheck} label="3-D Secure" />

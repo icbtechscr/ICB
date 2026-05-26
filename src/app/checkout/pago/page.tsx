@@ -184,18 +184,20 @@ export default function PagoPage() {
         return;
       }
       const ccJson = (await ccRes.json()) as {
-        captureContext: string;
+        sessionJwt: string;
         clientLibrary: string | null;
         clientLibraryIntegrity: string | null;
         debugPayload?: unknown;
       };
-      console.log("[UC] capture-context JWT payload:", ccJson.debugPayload);
+      console.log("[UC] session JWT payload:", ccJson.debugPayload);
       if (!ccJson.clientLibrary) {
-        setError("Cybersource no devolvió la URL del SDK en el capture-context.");
+        setError(
+          "Cybersource no devolvió la URL del SDK. Verifica que el sessions API esté habilitado."
+        );
         setSubmitting(false);
         return;
       }
-      setCaptureContext(ccJson.captureContext);
+      setCaptureContext(ccJson.sessionJwt);
       setSdkUrl(ccJson.clientLibrary);
       setSdkIntegrity(ccJson.clientLibraryIntegrity);
     } catch (err) {
@@ -204,27 +206,26 @@ export default function PagoPage() {
     }
   }
 
-  // Cuando UC devuelve el transient token, confirmamos el pago en el backend.
-  async function onTransientToken(transientToken: string) {
+  // Cuando UC termina, devuelve un JWT con el resultado del pago (autoProcessing).
+  async function onResultJwt(resultJwt: string) {
     if (!orderId) return;
     setError(null);
     try {
       const res = await fetch("/api/payments/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId, transientToken }),
+        body: JSON.stringify({ orderId, resultJwt }),
       });
       const data = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
         message?: string;
         status?: string;
         reasonCode?: string;
-        rawDebug?: unknown;
+        payload?: unknown;
       };
       console.log("[PAY] /confirm response:", data);
       if (!res.ok || !data.ok) {
         setError(data.message ?? `Pago rechazado (${data.status ?? res.status})`);
-        // Permitir reintentar: reseteamos el iframe.
         setCaptureContext(null);
         setSubmitting(false);
         return;
@@ -403,8 +404,8 @@ export default function PagoPage() {
                   <UnifiedCheckout
                     sdkUrl={sdkUrl}
                     sdkIntegrity={sdkIntegrity}
-                    captureContext={captureContext}
-                    onToken={onTransientToken}
+                    sessionJwt={captureContext}
+                    onResult={onResultJwt}
                     onError={(msg) => {
                       setError(msg);
                       setSubmitting(false);

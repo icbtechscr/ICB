@@ -1,37 +1,25 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { processPayment } from "@/lib/cybersource";
-
-function decodeJwtPayload(jwt: string): unknown {
-  try {
-    const parts = jwt.split(".");
-    if (parts.length < 2) return null;
-    const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
-    return JSON.parse(Buffer.from(padded, "base64").toString("utf8"));
-  } catch {
-    return null;
-  }
-}
+import { verifyMountResult } from "@/lib/cybersource";
 
 type Body = {
   orderId?: string;
-  transientToken?: string;
+  // El JWT que devuelve checkout.mount() cuando autoProcessing=true.
+  // Contiene el resultado del pago ya procesado por UC.
+  resultJwt?: string;
 };
 
 export async function POST(req: Request) {
   try {
-    const { orderId, transientToken } = (await req.json()) as Body;
-    if (!orderId || !transientToken) {
-      return new NextResponse("Faltan orderId o transientToken", { status: 400 });
+    const { orderId, resultJwt } = (await req.json()) as Body;
+    if (!orderId || !resultJwt) {
+      return new NextResponse("Faltan orderId o resultJwt", { status: 400 });
     }
 
     const sb = createAdminClient();
     const { data: order, error } = await sb
       .from("orders")
-      .select(
-        "id, order_number, total_crc, payment_status, customer_name, customer_email, customer_phone, shipping_address, shipping_canton, shipping_province"
-      )
+      .select("id, order_number, payment_status")
       .eq("id", orderId)
       .single();
 
@@ -40,26 +28,16 @@ export async function POST(req: Request) {
     }
 
     if (order.payment_status === "pagado") {
-      return NextResponse.json({ ok: true, alreadyPaid: true, orderNumber: order.order_number });
+      return NextResponse.json({
+        ok: true,
+        alreadyPaid: true,
+        orderNumber: order.order_number,
+      });
     }
 
-    // Decodificar el TT para ver qué contiene (debug)
-    const ttPayload = decodeJwtPayload(transientToken);
-    console.log("[PAY] transient token payload:", JSON.stringify(ttPayload, null, 2));
-
-    const result = await processPayment({
-      transientTokenJwt: transientToken,
-      amountCRC: Number(order.total_crc),
-      orderNumber: order.order_number,
-      customer: {
-        name: order.customer_name,
-        email: order.customer_email,
-        phone: order.customer_phone,
-        address: order.shipping_address ?? undefined,
-        locality: order.shipping_canton ?? undefined,
-        administrativeArea: order.shipping_province ?? undefined,
-      },
-    });
+    // El JWT trae el resultado del pago ya procesado por UC (autoProcessing).
+    const result = verifyMountResult(resultJwt);
+    console.log("[PAY] verifyMountResult:", JSON.stringify(result, null, 2));
 
     const newPaymentStatus = result.ok ? "pagado" : "rechazado";
     const newOrderStatus = result.ok ? "pagado" : "pendiente";
@@ -70,7 +48,7 @@ export async function POST(req: Request) {
         payment_status: newPaymentStatus,
         status: newOrderStatus,
         payment_reference: result.id ?? null,
-        payment_response: result.raw as object | null,
+        payment_response: result.payload as object | null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId);
@@ -81,10 +59,8 @@ export async function POST(req: Request) {
           ok: false,
           status: result.status,
           reasonCode: result.reasonCode,
-          message: result.message ?? "Pago rechazado por el banco",
-          // Debug: respuesta cruda de Cybersource para entender el motivo
-          rawDebug: result.raw,
-          ttPayload,
+          message: result.message ?? "Pago rechazado",
+          payload: result.payload,
         },
         { status: 402 }
       );

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { createCaptureContext, decodeCaptureContext } from "@/lib/cybersource";
+import { createSession, getSdkAssets, decodeJwtPayload } from "@/lib/cybersource";
 
 type Body = {
   orderId?: string;
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       return new NextResponse("Orden no encontrada", { status: 404 });
     }
 
-    const jwt = await createCaptureContext({
+    const sessionJwt = await createSession({
       amountCRC: Number(order.total_crc),
       orderNumber: order.order_number,
       customer: {
@@ -39,19 +39,11 @@ export async function POST(req: Request) {
       },
     });
 
-    const { clientLibrary, clientLibraryIntegrity } = decodeCaptureContext(jwt);
-
-    // Decodificar payload completo para debug (NO incluye secretos, solo config pública del JWT).
-    let debugPayload: unknown = null;
-    try {
-      const parts = jwt.split(".");
-      const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-      const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
-      debugPayload = JSON.parse(Buffer.from(padded, "base64").toString("utf8"));
-    } catch {}
+    const { clientLibrary, clientLibraryIntegrity } = getSdkAssets(sessionJwt);
+    const debugPayload = decodeJwtPayload(sessionJwt);
 
     return NextResponse.json({
-      captureContext: jwt,
+      sessionJwt,
       clientLibrary,
       clientLibraryIntegrity,
       debugPayload,
