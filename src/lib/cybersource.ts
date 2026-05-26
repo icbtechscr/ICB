@@ -143,25 +143,27 @@ export async function createSession(input: CreateSessionInput): Promise<string> 
     completeMandate: {
       type: "CAPTURE",
     },
-    clientReferenceInformation: {
-      code: input.orderNumber,
-    },
-    orderInformation: {
-      amountDetails: {
-        totalAmount: input.amountCRC.toFixed(2),
-        currency: "CRC",
+    data: {
+      clientReferenceInformation: {
+        code: input.orderNumber,
       },
-      billTo: {
-        firstName,
-        lastName,
-        email: input.customer.email,
-        phoneNumber: input.customer.phone ?? "",
-        country: "CR",
-        address1: input.customer.address ?? "S/N",
-        buildingNumber: "S/N",
-        locality: input.customer.locality || "San Jose",
-        administrativeArea: input.customer.administrativeArea || "SJ",
-        postalCode: input.customer.postalCode ?? "10101",
+      orderInformation: {
+        amountDetails: {
+          totalAmount: input.amountCRC.toFixed(2),
+          currency: "CRC",
+        },
+        billTo: {
+          firstName,
+          lastName,
+          email: input.customer.email,
+          phoneNumber: input.customer.phone ?? "",
+          country: "CR",
+          address1: input.customer.address ?? "S/N",
+          buildingNumber: "S/N",
+          locality: input.customer.locality || "San Jose",
+          administrativeArea: input.customer.administrativeArea || "SJ",
+          postalCode: input.customer.postalCode ?? "10101",
+        },
       },
     },
   };
