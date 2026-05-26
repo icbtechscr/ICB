@@ -146,9 +146,8 @@ export const DEFAULT_CONTENT: SiteContent = {
         title: "Soporte",
         items: [
           { label: "Contacto", href: "/contacto" },
-          { label: "Cambios, devoluciones y garantías", href: "/devoluciones" },
+          { label: "Política de Garantía, Cambios y Devoluciones", href: "/devoluciones" },
           { label: "Política de envíos", href: "/envios" },
-          { label: "Privacidad", href: "/privacidad" },
           { label: "Términos y condiciones", href: "/terminos" },
         ],
       },

@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import { LegalPage, LegalSection } from "@/components/LegalPage";
 
 export const metadata: Metadata = {
-  title: "Política de Cambios, Devoluciones y Garantías",
+  title: "Política de Garantía, Cambios y Devoluciones",
   description:
-    "Política oficial de cambios, devoluciones y garantías de ICB Technologies Costa Rica.",
+    "Política oficial de garantía, cambios y devoluciones de ICB Technologies Costa Rica.",
 };
 
 export default function DevolucionesPage() {
   return (
     <LegalPage
-      title="Política de Cambios, Devoluciones y Garantías"
+      title="Política de Garantía, Cambios y Devoluciones"
       intro="En ICB Technologies Costa Rica agradecemos su compra y confianza. Con el fin de brindar claridad en nuestras condiciones comerciales, se establece la siguiente política aplicable a las compras realizadas en nuestras sucursales, canales digitales, medios de pago electrónicos, transferencias, SINPE Móvil, links de pago o pagos en efectivo."
       updated="Mayo 2026"
     >
