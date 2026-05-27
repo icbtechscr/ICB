@@ -1,25 +1,25 @@
-import { Truck, ShieldCheck, Headphones, CreditCard } from "lucide-react";
+import { Truck, ShieldCheck, HandHelping, Wallet } from "lucide-react";
 
 const FEATURES = [
   {
     Icon: Truck,
     title: "Envíos a todo el país",
-    desc: "Despacho rápido y seguro en 24-48h",
+    desc: "Entregas rápidas y seguras en Costa Rica",
   },
   {
     Icon: ShieldCheck,
     title: "Garantía oficial",
-    desc: "Productos respaldados de fábrica",
+    desc: "Productos originales con respaldo de fábrica",
   },
   {
-    Icon: Headphones,
-    title: "Soporte técnico",
-    desc: "Asesoría antes y después de tu compra",
+    Icon: HandHelping,
+    title: "Atención personalizada",
+    desc: "Te ayudamos a elegir el producto adecuado",
   },
   {
-    Icon: CreditCard,
-    title: "Pago seguro",
-    desc: "SINPE, tarjetas y cuotas disponibles",
+    Icon: Wallet,
+    title: "Métodos de pago seguros",
+    desc: "Aceptamos SINPE Móvil, Transferencia, Tarjetas y Efectivo",
   },
 ];
 
