@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { ArrowRight, Sparkles, Zap, ShieldCheck } from "lucide-react";
 import type { Product } from "@/lib/products";
 import type { HeroContent } from "@/lib/site-content";
-import { formatCRC } from "@/lib/utils";
 
 const BULLET_ICONS = [ShieldCheck, Zap, Sparkles];
 
@@ -17,7 +16,7 @@ export function HeroBanner({
   hero: HeroContent;
 }) {
   return (
-    <section className="relative isolate overflow-hidden border-b border-ink-200 bg-gradient-to-r from-brand-900 to-brand-700 text-white">
+    <section className="relative isolate overflow-hidden border-b border-ink-200 bg-white text-ink-900">
 
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-14 md:grid-cols-2 md:py-16 lg:py-20">
         <div>
@@ -25,7 +24,7 @@ export function HeroBanner({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-accent-300 backdrop-blur-md"
+            className="inline-flex items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700"
           >
             <Sparkles className="size-3.5" />
             {hero.badge}
@@ -35,11 +34,11 @@ export function HeroBanner({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="mt-5 text-4xl font-black leading-[1.05] tracking-tight drop-shadow-lg sm:text-5xl md:text-6xl lg:text-7xl"
+            className="mt-5 text-4xl font-black leading-[1.05] tracking-tight text-brand-900 sm:text-5xl md:text-6xl"
           >
             {hero.titleLine1}
             <br />
-            <span className="bg-gradient-to-r from-accent-300 via-accent-400 to-emerald-300 bg-clip-text text-transparent">
+            <span className="text-accent-600">
               {hero.titleLine2}
             </span>
           </motion.h1>
@@ -48,7 +47,7 @@ export function HeroBanner({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-5 max-w-md text-base text-white/85 drop-shadow md:text-lg"
+            className="mt-5 max-w-md text-base text-ink-700 md:text-lg"
           >
             {hero.subtitle}
           </motion.p>
@@ -61,16 +60,16 @@ export function HeroBanner({
           >
             <Link
               href={hero.primaryCtaHref}
-              className="group inline-flex items-center gap-2 rounded-full bg-accent-500 px-6 py-3 text-sm font-bold text-ink-900 shadow-lg shadow-accent-500/30 transition-all hover:bg-accent-400 hover:shadow-accent-500/50 active:scale-95"
+              className="group inline-flex items-center gap-2 rounded-md bg-accent-600 px-6 py-3 text-sm font-bold text-white transition-all hover:bg-accent-500 active:scale-95"
             >
               {hero.primaryCtaLabel}
               <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <Link
               href={hero.secondaryCtaHref}
-              className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur transition-colors hover:bg-white/20"
+              className="inline-flex items-center gap-2 rounded-md border border-brand-200 bg-white px-6 py-3 text-sm font-bold text-brand-900 transition-colors hover:bg-brand-50"
             >
-              <Zap className="size-4 text-warn" />
+              <Zap className="size-4 text-brand-700" />
               {hero.secondaryCtaLabel}
             </Link>
           </motion.div>
@@ -79,13 +78,13 @@ export function HeroBanner({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.5 }}
-            className="mt-10 grid grid-cols-3 gap-3 border-t border-white/15 pt-6 text-xs text-white/85 sm:gap-4"
+            className="mt-10 grid grid-cols-3 gap-3 border-t border-ink-200 pt-6 text-xs text-ink-700 sm:gap-4"
           >
             {hero.bullets.map((b, i) => {
               const Icon = BULLET_ICONS[i] ?? Sparkles;
               return (
                 <li key={i} className="flex items-center gap-2">
-                  <Icon className="size-4 shrink-0 text-accent-400" />
+                  <Icon className="size-4 shrink-0 text-accent-600" />
                   {b}
                 </li>
               );
@@ -98,44 +97,35 @@ export function HeroBanner({
             initial={{ opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="relative mx-auto w-full max-w-md"
+            className="relative mx-auto w-full max-w-xl"
           >
-            <div className="absolute inset-0 -z-10 rounded-[2rem] bg-gradient-to-br from-accent-400/30 to-brand-500/30 blur-2xl" />
             <Link
               href={`/productos/${featured.slug}`}
-              className="group relative block overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-6 backdrop-blur-xl transition-all hover:border-accent-400/50 hover:bg-white/15"
+              className="group relative block overflow-hidden rounded-xl border border-ink-200 bg-white p-4 transition-all hover:border-brand-200"
             >
-              <div className="absolute right-4 top-4 z-10 rounded-full bg-accent-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-ink-900">
-                Destacado
-              </div>
-              <div className="relative aspect-square w-full">
+              <div className="relative aspect-[16/10] w-full">
                 <Image
                   src={featured.images[0].src}
                   alt={featured.name}
                   fill
-                  sizes="(max-width: 768px) 90vw, 500px"
+                  sizes="(max-width: 768px) 90vw, 640px"
                   className="object-contain transition-transform duration-500 group-hover:scale-105"
                   priority
                   unoptimized
                 />
               </div>
-              <div className="mt-4 border-t border-white/15 pt-4">
+              <div className="mt-3 border-t border-ink-100 pt-3">
                 {featured.brand && (
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-accent-300">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-brand-700">
                     {featured.brand}
                   </span>
                 )}
-                <h3 className="line-clamp-2 text-sm font-semibold text-white">
+                <h3 className="line-clamp-2 text-sm font-semibold text-ink-900">
                   {featured.name}
                 </h3>
-                <div className="mt-2 flex items-end justify-between">
-                  <span className="text-2xl font-black text-white tabular-nums">
-                    {formatCRC(featured.salePriceCRC ?? featured.priceCRC)}
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-accent-300 transition-transform group-hover:translate-x-1">
-                    Ver más <ArrowRight className="size-3" />
-                  </span>
-                </div>
+                <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-brand-700 transition-transform group-hover:translate-x-1">
+                  Ver producto <ArrowRight className="size-3" />
+                </span>
               </div>
             </Link>
           </motion.div>
