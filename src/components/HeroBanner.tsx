@@ -6,7 +6,6 @@ import { ArrowRight, Sparkles, Zap, ShieldCheck } from "lucide-react";
 import type { Product } from "@/lib/products";
 import type { HeroContent } from "@/lib/site-content";
 import { formatCRC } from "@/lib/utils";
-import { BackgroundShader } from "@/components/ui/background-shader";
 
 const BULLET_ICONS = [ShieldCheck, Zap, Sparkles];
 
@@ -18,10 +17,9 @@ export function HeroBanner({
   hero: HeroContent;
 }) {
   return (
-    <section className="relative isolate -mt-[88px] overflow-hidden pt-[88px] text-white md:-mt-[200px] md:pt-[200px]">
-      <BackgroundShader palette="brand" speed={0.5} />
+    <section className="relative isolate overflow-hidden border-b border-ink-200 bg-gradient-to-r from-brand-900 to-brand-700 text-white">
 
-      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-16 md:grid-cols-2 md:py-24 lg:py-28">
+      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-14 md:grid-cols-2 md:py-16 lg:py-20">
         <div>
           <motion.div
             initial={{ opacity: 0, y: 20 }}

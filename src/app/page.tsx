@@ -5,7 +5,6 @@ import { FeatureStrip } from "@/components/FeatureStrip";
 import { BrandMarquee } from "@/components/BrandMarquee";
 import { CategoryCarousel } from "@/components/CategoryCarousel";
 import { SectionHeader } from "@/components/SectionHeader";
-import { BackgroundShader } from "@/components/ui/background-shader";
 import {
   getFeaturedProducts,
   getOnSaleProducts,
@@ -113,8 +112,7 @@ export default async function HomePage() {
 
       <BrandMarquee />
 
-      <section className="relative isolate overflow-hidden py-16 text-white md:py-20">
-        <BackgroundShader palette="ocean" speed={0.4} />
+      <section className="relative isolate overflow-hidden bg-brand-900 py-16 text-white md:py-20">
         <div className="relative mx-auto max-w-3xl px-4 text-center">
           <span className="text-xs font-bold uppercase tracking-[0.3em] text-accent-400">
             {content.cta.eyebrow}

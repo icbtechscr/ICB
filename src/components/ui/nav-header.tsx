@@ -2,6 +2,7 @@
 import React, { useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { Menu } from "lucide-react";
 
 type Item = { label: string; href: string };
 type Pos = { left: number; width: number; opacity: number };
@@ -20,16 +21,27 @@ export function NavHeader({
   const containerCls =
     variant === "transparent"
       ? "border-white/30 bg-white/10 backdrop-blur-md"
-      : "border-ink-200 bg-white shadow-soft";
+      : "border-brand-800 bg-brand-800";
 
   return (
     <ul
-      className={`relative mx-auto flex w-fit rounded-full border-2 p-1 transition-colors ${containerCls}`}
+      className={`relative mx-auto flex w-full max-w-7xl items-center gap-1 border px-1.5 py-1 transition-colors ${containerCls}`}
       onMouseLeave={() => {
         setPosition((p) => ({ ...p, opacity: 0 }));
         setHovered(null);
       }}
     >
+      {variant === "solid" && (
+        <li className="relative z-10 shrink-0">
+          <Link
+            href="/productos"
+            className="inline-flex items-center gap-2 rounded-sm bg-accent-600 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-accent-500"
+          >
+            <Menu className="size-4" />
+            Categorías
+          </Link>
+        </li>
+      )}
       {items.map((it) => (
         <Tab
           key={it.href}
@@ -69,8 +81,8 @@ function Tab({
         ? "text-accent-400"
         : "text-white"
       : isHovered
-        ? "text-accent-500"
-        : "text-ink-700";
+        ? "text-accent-300"
+        : "text-white";
 
   return (
     <li
@@ -84,7 +96,7 @@ function Tab({
     >
       <Link
         href={href}
-        className={`block cursor-pointer px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors md:px-5 md:py-2.5 md:text-sm ${textCls}`}
+        className={`block cursor-pointer rounded-sm px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors md:px-4 md:py-2.5 ${textCls}`}
       >
         {children}
       </Link>
@@ -97,7 +109,7 @@ function Cursor({ position }: { position: Pos }) {
     <motion.li
       animate={position}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
-      className="absolute z-0 h-7 rounded-full bg-brand-600 shadow-lg shadow-brand-600/40 md:h-10"
+      className="absolute z-0 h-8 rounded-sm bg-brand-600/90 md:h-10"
     />
   );
 }
