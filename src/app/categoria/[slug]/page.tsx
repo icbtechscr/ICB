@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/ProductCard";
 import { getProductsByCategory, getCategoryBySlug } from "@/lib/products";
-import { BackgroundShader } from "@/components/ui/background-shader";
 import { absoluteUrl } from "@/lib/site";
 
 export const revalidate = 60;
@@ -40,27 +39,25 @@ export default async function CategoryPage({
   if (!cat) notFound();
 
   return (
-    <div className="relative isolate -mt-[88px] overflow-hidden pt-[88px] text-white md:-mt-[200px] md:pt-[200px]">
-      <BackgroundShader palette="ocean" speed={0.4} />
-
-      <div className="relative mx-auto max-w-7xl px-4 pb-20 pt-8">
-        <nav className="mb-6 flex flex-wrap items-center gap-1 text-xs font-medium text-white/80">
-          <Link href="/" className="hover:text-accent-300">
+    <div className="bg-white">
+      <div className="mx-auto max-w-7xl px-4 pb-20 pt-8">
+        <nav className="mb-6 flex flex-wrap items-center gap-1 text-xs font-medium text-ink-500">
+          <Link href="/" className="hover:text-brand-600">
             Inicio
           </Link>
-          <ChevronRight className="size-3.5 text-white/40" />
-          <Link href="/productos" className="hover:text-accent-300">
+          <ChevronRight className="size-3.5 text-ink-300" />
+          <Link href="/productos" className="hover:text-brand-600">
             Catálogo
           </Link>
-          <ChevronRight className="size-3.5 text-white/40" />
-          <span className="text-white">{cat.name}</span>
+          <ChevronRight className="size-3.5 text-ink-300" />
+          <span className="text-ink-900">{cat.name}</span>
         </nav>
 
         <div className="mb-8">
-          <h1 className="text-4xl font-black tracking-tight drop-shadow md:text-5xl">
+          <h1 className="text-4xl font-black tracking-tight text-ink-900 md:text-5xl">
             {cat.name}
           </h1>
-          <p className="mt-1 text-sm text-white/75">{products.length} productos</p>
+          <p className="mt-1 text-sm text-ink-500">{products.length} productos</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">

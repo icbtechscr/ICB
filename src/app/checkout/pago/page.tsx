@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { formatCRC } from "@/lib/utils";
-import { BackgroundShader } from "@/components/ui/background-shader";
 import { CheckoutStepper } from "@/components/CheckoutStepper";
 import { UnifiedCheckout } from "@/components/UnifiedCheckout";
 
@@ -259,10 +258,9 @@ export default function PagoPage() {
 
   if (!hydrated) {
     return (
-      <div className="relative isolate -mt-[88px] overflow-hidden pt-[88px] text-white md:-mt-[200px] md:pt-[200px]">
-        <BackgroundShader palette="brand" speed={0.4} />
-        <div className="relative mx-auto flex max-w-2xl items-center justify-center px-4 py-32">
-          <span className="size-8 animate-spin rounded-full border-2 border-white/40 border-r-transparent" />
+      <div className="bg-white">
+        <div className="mx-auto flex max-w-2xl items-center justify-center px-4 py-32">
+          <span className="size-8 animate-spin rounded-full border-2 border-ink-300 border-r-transparent" />
         </div>
       </div>
     );
@@ -270,10 +268,9 @@ export default function PagoPage() {
 
   if (count === 0) {
     return (
-      <div className="relative isolate -mt-[88px] overflow-hidden pt-[88px] text-white md:-mt-[200px] md:pt-[200px]">
-        <BackgroundShader palette="brand" speed={0.4} />
-        <div className="relative mx-auto max-w-2xl px-4 py-20 text-center">
-          <h1 className="text-3xl font-black">Tu carrito está vacío</h1>
+      <div className="bg-white">
+        <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+          <h1 className="text-3xl font-black text-ink-900">Tu carrito está vacío</h1>
           <Link
             href="/productos"
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-accent-500 px-6 py-3 text-sm font-bold text-ink-900"
@@ -289,25 +286,23 @@ export default function PagoPage() {
   const showUcIframe = form.method === "tarjeta" && captureContext && sdkUrl;
 
   return (
-    <div className="relative isolate -mt-[88px] overflow-hidden pt-[88px] text-white md:-mt-[200px] md:pt-[200px]">
-      <BackgroundShader palette="brand" speed={0.4} />
-
-      <div className="relative mx-auto max-w-7xl px-4 pb-20 pt-8 md:pb-24">
-        <nav className="mb-6 flex flex-wrap items-center gap-1 text-xs font-medium text-white/80">
-          <Link href="/" className="hover:text-accent-300">Inicio</Link>
-          <ChevronRight className="size-3.5 text-white/40" />
-          <Link href="/carrito" className="hover:text-accent-300">Carrito</Link>
-          <ChevronRight className="size-3.5 text-white/40" />
-          <Link href="/checkout" className="hover:text-accent-300">Envío</Link>
-          <ChevronRight className="size-3.5 text-white/40" />
-          <span className="text-white">Pago</span>
+    <div className="bg-white">
+      <div className="mx-auto max-w-7xl px-4 pb-20 pt-8 md:pb-24">
+        <nav className="mb-6 flex flex-wrap items-center gap-1 text-xs font-medium text-ink-500">
+          <Link href="/" className="hover:text-brand-600">Inicio</Link>
+          <ChevronRight className="size-3.5 text-ink-300" />
+          <Link href="/carrito" className="hover:text-brand-600">Carrito</Link>
+          <ChevronRight className="size-3.5 text-ink-300" />
+          <Link href="/checkout" className="hover:text-brand-600">Envío</Link>
+          <ChevronRight className="size-3.5 text-ink-300" />
+          <span className="text-ink-900">Pago</span>
         </nav>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-black tracking-tight drop-shadow md:text-4xl">
+          <h1 className="text-3xl font-black tracking-tight text-ink-900 md:text-4xl">
             Método de pago
           </h1>
-          <p className="mt-1 text-sm text-white/70">
+          <p className="mt-1 text-sm text-ink-500">
             Elegí cómo querés pagar tu pedido.
           </p>
         </div>
@@ -319,9 +314,9 @@ export default function PagoPage() {
           className="mt-8 grid gap-6 lg:grid-cols-[1.5fr_1fr]"
         >
           <div className="space-y-6">
-            <section className="rounded-3xl border border-white/15 bg-white/10 p-6 backdrop-blur-xl">
-              <h3 className="mb-4 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
-                <span className="inline-flex size-8 items-center justify-center rounded-lg bg-accent-500/20 text-accent-300 ring-1 ring-accent-400/30">
+            <section className="rounded-3xl border border-ink-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-4 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-ink-900">
+                <span className="inline-flex size-8 items-center justify-center rounded-lg bg-accent-100 text-accent-700 ring-1 ring-accent-200">
                   <Lock className="size-4" />
                 </span>
                 Método
@@ -341,8 +336,8 @@ export default function PagoPage() {
                       }}
                       className={`flex items-center justify-between gap-4 rounded-2xl border p-4 text-left transition-all ${
                         selected
-                          ? "border-accent-400 bg-accent-500/15 ring-2 ring-accent-400/40"
-                          : "border-white/15 bg-white/5 hover:border-white/30 hover:bg-white/10"
+                          ? "border-accent-500 bg-accent-50 ring-2 ring-accent-500/30"
+                          : "border-ink-200 bg-white hover:border-ink-300 hover:bg-ink-50"
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -350,21 +345,21 @@ export default function PagoPage() {
                           className={`inline-flex size-10 items-center justify-center rounded-xl ${
                             selected
                               ? "bg-accent-500 text-ink-900"
-                              : "bg-white/10 text-white"
+                              : "bg-ink-100 text-ink-600"
                           }`}
                         >
                           <Icon className="size-5" />
                         </span>
                         <div>
-                          <div className="text-sm font-bold text-white">{m.label}</div>
-                          <div className="mt-0.5 text-xs text-white/70">{m.desc}</div>
+                          <div className="text-sm font-bold text-ink-900">{m.label}</div>
+                          <div className="mt-0.5 text-xs text-ink-500">{m.desc}</div>
                         </div>
                       </div>
                       <span
                         className={`size-4 shrink-0 rounded-full ring-2 ${
                           selected
                             ? "bg-accent-500 ring-accent-300"
-                            : "bg-transparent ring-white/40"
+                            : "bg-transparent ring-ink-300"
                         }`}
                       />
                     </button>
@@ -378,18 +373,18 @@ export default function PagoPage() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
-              className="rounded-3xl border border-white/15 bg-white/10 p-6 backdrop-blur-xl"
+              className="rounded-3xl border border-ink-200 bg-white p-6 shadow-sm"
             >
               {form.method === "tarjeta" && !showUcIframe && (
-                <div className="text-sm text-white/85">
-                  <h3 className="mb-2 text-sm font-bold uppercase tracking-wider text-white">
+                <div className="text-sm text-ink-600">
+                  <h3 className="mb-2 text-sm font-bold uppercase tracking-wider text-ink-900">
                     Pago con tarjeta
                   </h3>
-                  <p className="text-white/70">
+                  <p className="text-ink-600">
                     Aceptamos Visa, Mastercard y American Express. El pago se procesa
                     de forma segura en la pasarela de BAC con verificación 3-D Secure.
                   </p>
-                  <p className="mt-3 text-xs text-white/55">
+                  <p className="mt-3 text-xs text-ink-400">
                     Al continuar se creará tu pedido y se abrirá la pasarela segura.
                     Tus datos de tarjeta nunca pasan por nuestros servidores.
                   </p>
@@ -398,7 +393,7 @@ export default function PagoPage() {
 
               {showUcIframe && captureContext && sdkUrl && (
                 <>
-                  <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-white">
+                  <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-ink-900">
                     Ingresá los datos de tu tarjeta
                   </h3>
                   <UnifiedCheckout
@@ -416,21 +411,21 @@ export default function PagoPage() {
 
               {form.method === "sinpe" && (
                 <>
-                  <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-white">
+                  <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-ink-900">
                     SINPE Móvil
                   </h3>
-                  <div className="rounded-2xl border border-accent-400/30 bg-accent-500/10 p-5 text-sm leading-relaxed text-white/90">
-                    <div className="flex items-center justify-between border-b border-white/15 pb-3">
-                      <span className="text-xs uppercase tracking-wider text-white/60">Enviar a</span>
-                      <span className="font-mono text-base font-black text-accent-300">8888-8888</span>
+                  <div className="rounded-2xl border border-accent-200 bg-accent-50 p-5 text-sm leading-relaxed text-ink-700">
+                    <div className="flex items-center justify-between border-b border-accent-200 pb-3">
+                      <span className="text-xs uppercase tracking-wider text-ink-500">Enviar a</span>
+                      <span className="font-mono text-base font-black text-accent-700">8888-8888</span>
                     </div>
-                    <div className="flex items-center justify-between border-b border-white/15 py-3">
-                      <span className="text-xs uppercase tracking-wider text-white/60">Cédula jurídica</span>
-                      <span className="font-mono text-sm font-bold">3-101-XXXXXX</span>
+                    <div className="flex items-center justify-between border-b border-accent-200 py-3">
+                      <span className="text-xs uppercase tracking-wider text-ink-500">Cédula jurídica</span>
+                      <span className="font-mono text-sm font-bold text-ink-900">3-101-XXXXXX</span>
                     </div>
                     <div className="flex items-center justify-between pt-3">
-                      <span className="text-xs uppercase tracking-wider text-white/60">Monto</span>
-                      <span className="text-base font-black tabular-nums text-accent-300">
+                      <span className="text-xs uppercase tracking-wider text-ink-500">Monto</span>
+                      <span className="text-base font-black tabular-nums text-accent-700">
                         {formatCRC(total)}
                       </span>
                     </div>
@@ -446,7 +441,7 @@ export default function PagoPage() {
                     inputMode="tel"
                     className="mt-5"
                   />
-                  <p className="mt-3 text-xs text-white/60">
+                  <p className="mt-3 text-xs text-ink-500">
                     Confirmaremos tu pago manualmente en menos de 30 minutos en horario laboral.
                   </p>
                 </>
@@ -454,7 +449,7 @@ export default function PagoPage() {
 
               {form.method === "transferencia" && (
                 <>
-                  <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-white">
+                  <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-ink-900">
                     Datos bancarios
                   </h3>
                   <ul className="space-y-3 text-sm">
@@ -465,23 +460,23 @@ export default function PagoPage() {
                     ].map((b) => (
                       <li
                         key={b.bank}
-                        className="flex items-center justify-between gap-3 rounded-xl border border-white/15 bg-white/5 p-4"
+                        className="flex items-center justify-between gap-3 rounded-xl border border-ink-200 bg-ink-50 p-4"
                       >
                         <div>
-                          <div className="text-xs uppercase tracking-wider text-white/60">{b.bank}</div>
-                          <div className="mt-1 font-mono text-sm text-white">{b.acc}</div>
+                          <div className="text-xs uppercase tracking-wider text-ink-500">{b.bank}</div>
+                          <div className="mt-1 font-mono text-sm text-ink-900">{b.acc}</div>
                         </div>
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-4 text-xs text-white/60">
+                  <p className="mt-4 text-xs text-ink-500">
                     Enviá el comprobante al WhatsApp 8888-8888 con el número de orden.
                   </p>
                 </>
               )}
             </motion.section>
 
-            <section className="rounded-3xl border border-white/15 bg-white/10 p-6 backdrop-blur-xl">
+            <section className="rounded-3xl border border-ink-200 bg-white p-6 shadow-sm">
               <label className="flex cursor-pointer items-start gap-3">
                 <input
                   type="checkbox"
@@ -490,13 +485,13 @@ export default function PagoPage() {
                   className="mt-1 size-5 shrink-0 cursor-pointer accent-accent-500"
                   required
                 />
-                <span className="text-sm text-white/85">
+                <span className="text-sm text-ink-600">
                   Acepto los{" "}
-                  <Link href="/terminos" className="font-bold text-accent-300 underline-offset-4 hover:underline">
+                  <Link href="/terminos" className="font-bold text-brand-600 underline-offset-4 hover:underline">
                     términos y condiciones
                   </Link>{" "}
                   y la{" "}
-                  <Link href="/privacidad" className="font-bold text-accent-300 underline-offset-4 hover:underline">
+                  <Link href="/privacidad" className="font-bold text-brand-600 underline-offset-4 hover:underline">
                     política de privacidad
                   </Link>{" "}
                   de ICB Tech.
@@ -506,7 +501,7 @@ export default function PagoPage() {
 
             <Link
               href="/checkout"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-white/70 hover:text-accent-300"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-ink-500 hover:text-brand-600"
             >
               <ArrowLeft className="size-4" />
               Volver a envío
@@ -517,13 +512,13 @@ export default function PagoPage() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-3xl border border-white/15 bg-white/10 p-6 backdrop-blur-xl"
+              className="rounded-3xl border border-ink-200 bg-white p-6 shadow-sm"
             >
-              <h2 className="text-lg font-black">Resumen</h2>
+              <h2 className="text-lg font-black text-ink-900">Resumen</h2>
               {shipping && (
-                <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-xs text-white/80">
-                  <div className="font-bold text-white">{shipping.fullName}</div>
-                  <div className="mt-0.5 text-white/70">
+                <div className="mt-3 rounded-2xl border border-ink-200 bg-ink-50 p-3 text-xs text-ink-600">
+                  <div className="font-bold text-ink-900">{shipping.fullName}</div>
+                  <div className="mt-0.5 text-ink-500">
                     {shipping.address}, {shipping.canton}, {shipping.province}
                   </div>
                 </div>
@@ -532,37 +527,37 @@ export default function PagoPage() {
                 {items.map((it) => (
                   <li
                     key={it.id}
-                    className="flex items-start justify-between gap-3 border-b border-white/10 pb-3 last:border-0"
+                    className="flex items-start justify-between gap-3 border-b border-ink-200 pb-3 last:border-0"
                   >
                     <div className="min-w-0">
-                      <div className="line-clamp-2 text-xs font-semibold text-white">{it.name}</div>
-                      <div className="mt-0.5 text-[11px] text-white/60">x{it.qty}</div>
+                      <div className="line-clamp-2 text-xs font-semibold text-ink-900">{it.name}</div>
+                      <div className="mt-0.5 text-[11px] text-ink-500">x{it.qty}</div>
                     </div>
-                    <div className="text-sm font-bold tabular-nums">
+                    <div className="text-sm font-bold tabular-nums text-ink-900">
                       {formatCRC(it.qty * it.unitPrice)}
                     </div>
                   </li>
                 ))}
               </ul>
 
-              <dl className="mt-4 space-y-2 border-t border-white/15 pt-4 text-sm">
+              <dl className="mt-4 space-y-2 border-t border-ink-200 pt-4 text-sm">
                 <Row label="Subtotal" value={formatCRC(subtotal)} />
                 <Row
                   label="Envío"
                   value={shippingCost === 0 ? "Gratis" : formatCRC(shippingCost)}
                   highlight={shippingCost === 0}
                 />
-                <div className="mt-2 flex items-end justify-between border-t border-white/15 pt-3">
+                <div className="mt-2 flex items-end justify-between border-t border-ink-200 pt-3">
                   <div>
-                    <dt className="text-sm font-bold">Total</dt>
-                    <span className="text-[11px] text-white/60">IVA incluido (13%)</span>
+                    <dt className="text-sm font-bold text-ink-900">Total</dt>
+                    <span className="text-[11px] text-ink-400">IVA incluido (13%)</span>
                   </div>
-                  <dd className="text-2xl font-black tabular-nums">{formatCRC(total)}</dd>
+                  <dd className="text-2xl font-black tabular-nums text-ink-900">{formatCRC(total)}</dd>
                 </div>
               </dl>
 
               {error && (
-                <p className="mt-4 rounded-xl border border-red-300/40 bg-red-500/15 px-3 py-2 text-xs text-red-100">
+                <p className="mt-4 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
                   {error}
                 </p>
               )}
@@ -573,7 +568,7 @@ export default function PagoPage() {
                     type="button"
                     onClick={startCardFlow}
                     disabled={!form.acceptTerms || submitting}
-                    className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent-500 px-6 py-3.5 text-sm font-bold text-ink-900 shadow-lg shadow-accent-500/30 transition-all hover:bg-accent-400 active:scale-95 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/50 disabled:shadow-none"
+                    className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent-500 px-6 py-3.5 text-sm font-bold text-ink-900 shadow-lg shadow-accent-500/30 transition-all hover:bg-accent-400 active:scale-95 disabled:cursor-not-allowed disabled:bg-ink-200 disabled:text-ink-400 disabled:shadow-none"
                   >
                     {submitting ? (
                       <>
@@ -592,7 +587,7 @@ export default function PagoPage() {
                 <button
                   type="submit"
                   disabled={!form.acceptTerms || submitting}
-                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent-500 px-6 py-3.5 text-sm font-bold text-ink-900 shadow-lg shadow-accent-500/30 transition-all hover:bg-accent-400 active:scale-95 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/50 disabled:shadow-none"
+                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent-500 px-6 py-3.5 text-sm font-bold text-ink-900 shadow-lg shadow-accent-500/30 transition-all hover:bg-accent-400 active:scale-95 disabled:cursor-not-allowed disabled:bg-ink-200 disabled:text-ink-400 disabled:shadow-none"
                 >
                   {submitting ? (
                     <>
@@ -608,8 +603,8 @@ export default function PagoPage() {
                 </button>
               )}
 
-              <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-white/60">
-                <ShieldCheck className="size-3.5 text-accent-400" />
+              <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-ink-500">
+                <ShieldCheck className="size-3.5 text-accent-600" />
                 Pago seguro · Encriptación SSL
               </div>
             </motion.div>
@@ -641,9 +636,9 @@ function Field({
 }) {
   return (
     <label className={`block ${className}`}>
-      <span className="text-xs font-bold uppercase tracking-wider text-white/70">
+      <span className="text-xs font-bold uppercase tracking-wider text-ink-600">
         {label}
-        {required && <span className="ml-1 text-accent-400">*</span>}
+        {required && <span className="ml-1 text-accent-600">*</span>}
       </span>
       <input
         type={type}
@@ -652,7 +647,7 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         inputMode={inputMode}
-        className="mt-1 w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white outline-none backdrop-blur transition-colors placeholder:text-white/40 focus:border-accent-400"
+        className="mt-1 w-full rounded-xl border border-ink-200 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition-colors placeholder:text-ink-400 focus:border-brand-500"
       />
     </label>
   );
@@ -669,10 +664,10 @@ function Row({
 }) {
   return (
     <div className="flex justify-between">
-      <dt className="text-white/70">{label}</dt>
+      <dt className="text-ink-500">{label}</dt>
       <dd
         className={`font-semibold tabular-nums ${
-          highlight ? "text-accent-300" : "text-white"
+          highlight ? "text-accent-700" : "text-ink-900"
         }`}
       >
         {value}

@@ -36,11 +36,11 @@ export function CatalogFilters({
   }
 
   const selectCls =
-    "rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm text-white outline-none backdrop-blur-md transition focus:border-accent-400 [&>option]:text-ink-900";
+    "rounded-full border border-ink-200 bg-white px-4 py-2 text-sm text-ink-900 outline-none transition focus:border-brand-500 [&>option]:text-ink-900";
 
   return (
     <div className="mb-8 flex flex-wrap items-center gap-3">
-      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/80">
+      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-600">
         <SlidersHorizontal className="size-4" />
         Filtrar
       </span>
@@ -90,7 +90,7 @@ export function CatalogFilters({
         <button
           type="button"
           onClick={() => router.push("/productos")}
-          className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 transition hover:bg-white/15"
+          className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 bg-white px-3 py-2 text-xs font-semibold text-ink-600 transition hover:bg-ink-50"
         >
           <X className="size-3.5" />
           Limpiar

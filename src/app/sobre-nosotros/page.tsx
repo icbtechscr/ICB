@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ChevronRight, ShieldCheck, Truck, Sparkles, Building2, Headphones, Award } from "lucide-react";
-import { BackgroundShader } from "@/components/ui/background-shader";
 
 export const metadata = {
   title: "Sobre nosotros — ICB Technologies",
@@ -10,29 +9,27 @@ export const metadata = {
 
 export default function SobreNosotrosPage() {
   return (
-    <div className="relative isolate -mt-[88px] overflow-hidden pt-[88px] text-white md:-mt-[200px] md:pt-[200px]">
-      <BackgroundShader palette="brand" speed={0.4} />
-
-      <div className="relative mx-auto max-w-5xl px-4 pb-20 pt-8 md:pb-24">
-        <nav className="mb-6 flex flex-wrap items-center gap-1 text-xs font-medium text-white/80">
-          <Link href="/" className="hover:text-accent-300">
+    <div className="bg-white">
+      <div className="mx-auto max-w-5xl px-4 pb-20 pt-8 md:pb-24">
+        <nav className="mb-6 flex flex-wrap items-center gap-1 text-xs font-medium text-ink-500">
+          <Link href="/" className="hover:text-brand-600">
             Inicio
           </Link>
-          <ChevronRight className="size-3.5 text-white/40" />
-          <span className="text-white">Sobre nosotros</span>
+          <ChevronRight className="size-3.5 text-ink-300" />
+          <span className="text-ink-900">Sobre nosotros</span>
         </nav>
 
         <header className="mb-10">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-accent-300 backdrop-blur-md">
+          <span className="inline-flex items-center gap-2 rounded-full border border-accent-200 bg-accent-50 px-3 py-1 text-xs font-semibold text-accent-700">
             <Sparkles className="size-3.5" />
             100% costarricense · +20 años
           </span>
-          <h1 className="mt-4 text-4xl font-black tracking-tight drop-shadow md:text-5xl">
+          <h1 className="mt-4 text-4xl font-black tracking-tight text-ink-900 md:text-5xl">
             ¿Quiénes somos?
           </h1>
         </header>
 
-        <article className="space-y-5 rounded-3xl border border-white/15 bg-white/10 p-6 text-base leading-relaxed text-white/90 backdrop-blur-xl md:p-10">
+        <article className="space-y-5 rounded-3xl border border-ink-200 bg-white p-6 text-base leading-relaxed text-ink-600 shadow-sm md:p-10">
           <p>
             Somos una organización 100% costarricense con más de 20 años de
             experiencia en el mercado del comercio de tecnología. Estamos
@@ -74,13 +71,13 @@ export default function SobreNosotrosPage() {
           ].map(({ Icon, title, desc }) => (
             <div
               key={title}
-              className="rounded-2xl border border-white/15 bg-white/5 p-5 backdrop-blur transition-colors hover:border-accent-400/40 hover:bg-white/10"
+              className="rounded-2xl border border-ink-200 bg-white p-5 shadow-sm transition-colors hover:border-accent-500/50 hover:bg-ink-50"
             >
-              <div className="flex size-10 items-center justify-center rounded-xl bg-accent-500/20 text-accent-300 ring-1 ring-accent-400/30">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-accent-100 text-accent-700 ring-1 ring-accent-200">
                 <Icon className="size-5" />
               </div>
-              <div className="mt-3 text-sm font-bold text-white">{title}</div>
-              <div className="mt-1 text-xs text-white/70">{desc}</div>
+              <div className="mt-3 text-sm font-bold text-ink-900">{title}</div>
+              <div className="mt-1 text-xs text-ink-500">{desc}</div>
             </div>
           ))}
         </div>
@@ -95,7 +92,7 @@ export default function SobreNosotrosPage() {
           </Link>
           <Link
             href="/productos"
-            className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20"
+            className="inline-flex items-center gap-2 rounded-full border border-ink-200 bg-white px-6 py-3 text-sm font-bold text-ink-700 transition hover:bg-ink-50"
           >
             <Headphones className="size-4" />
             Explorar catálogo

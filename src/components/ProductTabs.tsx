@@ -9,8 +9,8 @@ export function ProductTabs({ tabs }: { tabs: Tab[] }) {
   if (tabs.length === 0) return null;
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-white/15 bg-white/10 text-white shadow-soft backdrop-blur-xl">
-      <div className="flex flex-wrap gap-1 border-b border-white/15 bg-white/5 p-2">
+    <div className="overflow-hidden rounded-3xl border border-ink-200 bg-white text-ink-900 shadow-sm">
+      <div className="flex flex-wrap gap-1 border-b border-ink-200 bg-ink-50 p-2">
         {tabs.map((t) => {
           const isActive = active === t.id;
           return (
@@ -19,7 +19,7 @@ export function ProductTabs({ tabs }: { tabs: Tab[] }) {
               type="button"
               onClick={() => setActive(t.id)}
               className={`relative rounded-full px-5 py-2.5 text-sm font-semibold transition-colors ${
-                isActive ? "text-white" : "text-white/70 hover:text-white"
+                isActive ? "text-white" : "text-ink-500 hover:text-ink-900"
               }`}
             >
               {isActive && (

@@ -7,7 +7,6 @@ import {
   getBrands,
   type CatalogSort,
 } from "@/lib/products";
-import { BackgroundShader } from "@/components/ui/background-shader";
 
 export const metadata = { title: "Catálogo" };
 
@@ -59,15 +58,13 @@ export default async function ProductsPage({
   }
 
   return (
-    <div className="relative isolate -mt-[88px] overflow-hidden pt-[88px] text-white md:-mt-[200px] md:pt-[200px]">
-      <BackgroundShader palette="brand" speed={0.4} />
-
-      <div className="relative mx-auto max-w-7xl px-4 pb-20 pt-8">
+    <div className="bg-white">
+      <div className="mx-auto max-w-7xl px-4 pb-20 pt-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-black tracking-tight drop-shadow md:text-5xl">
+          <h1 className="text-4xl font-black tracking-tight text-ink-900 md:text-5xl">
             Catálogo
           </h1>
-          <p className="mt-1 text-sm text-white/75">
+          <p className="mt-1 text-sm text-ink-500">
             {total} producto{total !== 1 ? "s" : ""}
             {cat || brand ? " (filtrado)" : " disponibles"}
           </p>
@@ -90,7 +87,7 @@ export default async function ProductsPage({
             ))}
           </div>
         ) : (
-          <p className="mt-8 text-white/70">
+          <p className="mt-8 text-ink-500">
             No se encontraron productos con esos filtros.
           </p>
         )}
@@ -100,18 +97,18 @@ export default async function ProductsPage({
             {page > 1 && (
               <a
                 href={pageHref(page - 1)}
-                className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
+                className="rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
               >
                 ← Anterior
               </a>
             )}
-            <span className="text-sm text-white/75">
+            <span className="text-sm text-ink-500">
               Página {page} de {totalPages}
             </span>
             {page < totalPages && (
               <a
                 href={pageHref(page + 1)}
-                className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
+                className="rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
               >
                 Siguiente →
               </a>

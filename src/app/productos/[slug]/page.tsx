@@ -7,7 +7,6 @@ import { AddToCartButton } from "@/components/AddToCartButton";
 import { getProductBySlug, getProductSlugs } from "@/lib/products";
 import { formatCRC, decodeHtml, stripHtml } from "@/lib/utils";
 import { parseKitDescription } from "@/lib/parseKit";
-import { BackgroundShader } from "@/components/ui/background-shader";
 import { ProductTabs } from "@/components/ProductTabs";
 import { SITE_NAME, absoluteUrl } from "@/lib/site";
 
@@ -104,28 +103,27 @@ export default async function ProductPage({
   };
 
   return (
-    <div className="relative isolate -mt-[88px] overflow-hidden pt-[88px] text-white md:-mt-[200px] md:pt-[200px]">
+    <div className="bg-white">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <BackgroundShader palette="ocean" speed={0.4} />
 
-      <div className="relative mx-auto max-w-7xl px-4 pb-20 pt-8 md:pb-24">
-        <nav className="mb-6 flex flex-wrap items-center gap-1 text-xs font-medium text-white/80">
-          <Link href="/" className="hover:text-accent-300">
+      <div className="mx-auto max-w-7xl px-4 pb-20 pt-8 md:pb-24">
+        <nav className="mb-6 flex flex-wrap items-center gap-1 text-xs font-medium text-ink-500">
+          <Link href="/" className="hover:text-brand-600">
             Inicio
           </Link>
-          <ChevronRight className="size-3.5 text-white/40" />
-          <Link href="/productos" className="hover:text-accent-300">
+          <ChevronRight className="size-3.5 text-ink-300" />
+          <Link href="/productos" className="hover:text-brand-600">
             Catálogo
           </Link>
-          <ChevronRight className="size-3.5 text-white/40" />
-          <span className="line-clamp-1 text-white">{product.name}</span>
+          <ChevronRight className="size-3.5 text-ink-300" />
+          <span className="line-clamp-1 text-ink-900">{product.name}</span>
         </nav>
 
         <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
-          <div className="relative overflow-hidden rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur-xl md:p-8">
+          <div className="relative overflow-hidden rounded-3xl border border-ink-200 bg-white p-4 shadow-sm md:p-8">
             <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-white">
               {product.images[0] ? (
                 <Image
@@ -154,7 +152,7 @@ export default async function ProductPage({
                 {product.images.slice(0, 5).map((img, i) => (
                   <div
                     key={i}
-                    className="relative aspect-square overflow-hidden rounded-xl border border-white/20 bg-white"
+                    className="relative aspect-square overflow-hidden rounded-xl border border-ink-200 bg-white"
                   >
                     <Image
                       src={img.src}
@@ -170,33 +168,33 @@ export default async function ProductPage({
             )}
           </div>
 
-          <div className="rounded-3xl border border-white/15 bg-white/10 p-6 backdrop-blur-xl md:p-8">
+          <div className="rounded-3xl border border-ink-200 bg-white p-6 shadow-sm md:p-8">
             {product.brand && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-500/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent-300">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent-700">
                 {product.brand}
               </span>
             )}
-            <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight drop-shadow md:text-4xl">
+            <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight text-ink-900 md:text-4xl">
               {product.name}
             </h1>
             {product.sku && (
-              <p className="mt-2 text-xs text-white/70">
-                SKU: <span className="font-mono text-white">{product.sku}</span>
+              <p className="mt-2 text-xs text-ink-500">
+                SKU: <span className="font-mono text-ink-700">{product.sku}</span>
               </p>
             )}
 
-            <div className="mt-6 flex items-end gap-3 border-y border-white/15 py-5">
+            <div className="mt-6 flex items-end gap-3 border-y border-ink-200 py-5">
               {product.salePriceCRC ? (
                 <>
-                  <span className="text-4xl font-black tabular-nums text-accent-300 drop-shadow md:text-5xl">
+                  <span className="text-4xl font-black tabular-nums text-accent-700 md:text-5xl">
                     {formatCRC(product.salePriceCRC)}
                   </span>
-                  <span className="pb-2 text-lg text-white/50 line-through tabular-nums">
+                  <span className="pb-2 text-lg text-ink-400 line-through tabular-nums">
                     {formatCRC(product.priceCRC)}
                   </span>
                 </>
               ) : (
-                <span className="text-4xl font-black tabular-nums text-white drop-shadow md:text-5xl">
+                <span className="text-4xl font-black tabular-nums text-ink-900 md:text-5xl">
                   {formatCRC(product.priceCRC)}
                 </span>
               )}
@@ -204,19 +202,19 @@ export default async function ProductPage({
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
               {product.inStock ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-3 py-1 text-sm font-semibold text-emerald-200 ring-1 ring-emerald-400/40">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200">
                   <Check className="size-3.5" />
                   En stock
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-sm font-semibold text-white/70 ring-1 ring-white/20">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-ink-100 px-3 py-1 text-sm font-semibold text-ink-500 ring-1 ring-ink-200">
                   Agotado
                 </span>
               )}
             </div>
 
             {product.shortDescription && (
-              <p className="mt-5 text-sm leading-relaxed text-white/80">
+              <p className="mt-5 text-sm leading-relaxed text-ink-600">
                 {decodeHtml(product.shortDescription.replace(/<[^>]+>/g, ""))}
               </p>
             )}
@@ -236,13 +234,13 @@ export default async function ProductPage({
               />
               <button
                 aria-label="Favorito"
-                className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur transition-colors hover:border-accent-400 hover:text-accent-300"
+                className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-ink-200 bg-white text-ink-500 transition-colors hover:border-accent-500 hover:text-accent-600"
               >
                 <Heart className="size-5" />
               </button>
             </div>
 
-            <ul className="mt-6 grid grid-cols-3 gap-3 border-t border-white/15 pt-5 text-[11px] text-white/85">
+            <ul className="mt-6 grid grid-cols-3 gap-3 border-t border-ink-200 pt-5 text-[11px] text-ink-600">
               <li className="flex items-start gap-1.5">
                 <Truck className="size-4 shrink-0 text-accent-400" />
                 Sistema de envíos
@@ -258,8 +256,8 @@ export default async function ProductPage({
             </ul>
 
             {visibleCategories.length > 0 && (
-              <div className="mt-6 border-t border-white/15 pt-5">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white/60">
+              <div className="mt-6 border-t border-ink-200 pt-5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-ink-400">
                   Categorías
                 </span>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -267,7 +265,7 @@ export default async function ProductPage({
                     <Link
                       key={c.id}
                       href={`/categoria/${c.slug}`}
-                      className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90 backdrop-blur transition-colors hover:bg-accent-500 hover:text-ink-900"
+                      className="rounded-full bg-ink-100 px-3 py-1 text-xs font-semibold text-ink-700 transition-colors hover:bg-accent-500 hover:text-ink-900"
                     >
                       {c.name}
                     </Link>
@@ -287,11 +285,11 @@ export default async function ProductPage({
                 content: kit ? (
                   <KitTableBlock kit={kit} />
                 ) : fallbackDescription ? (
-                  <p className="whitespace-pre-line text-sm leading-relaxed text-white/85">
+                  <p className="whitespace-pre-line text-sm leading-relaxed text-ink-600">
                     {fallbackDescription}
                   </p>
                 ) : (
-                  <p className="text-sm text-white/70">
+                  <p className="text-sm text-ink-500">
                     Sin descripción disponible. Contactanos para más información.
                   </p>
                 ),
@@ -317,13 +315,13 @@ export default async function ProductPage({
 function KitTableBlock({ kit }: { kit: { header: string[]; rows: string[][] } }) {
   return (
     <div>
-      <p className="mb-4 text-sm text-white/75">
+      <p className="mb-4 text-sm text-ink-500">
         Este producto es un kit. Incluye los siguientes componentes:
       </p>
-      <div className="overflow-x-auto rounded-2xl border border-white/15">
+      <div className="overflow-x-auto rounded-2xl border border-ink-200">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-white/10 text-left text-xs font-bold uppercase tracking-wider text-accent-300">
+            <tr className="bg-ink-50 text-left text-xs font-bold uppercase tracking-wider text-brand-600">
               {kit.header.map((h, i) => (
                 <th key={i} className="px-4 py-3">
                   {h}
@@ -335,14 +333,14 @@ function KitTableBlock({ kit }: { kit: { header: string[]; rows: string[][] } })
             {kit.rows.map((row, i) => (
               <tr
                 key={i}
-                className="border-t border-white/10 transition-colors hover:bg-white/5"
+                className="border-t border-ink-200 transition-colors hover:bg-ink-50"
               >
                 {row.map((cell, j) => (
                   <td
                     key={j}
                     className={`px-4 py-3 align-top ${
-                      j === 0 ? "font-mono text-xs text-accent-300" : "text-white/85"
-                    } ${j === row.length - 1 ? "text-right font-bold tabular-nums text-white" : ""}`}
+                      j === 0 ? "font-mono text-xs text-brand-600" : "text-ink-600"
+                    } ${j === row.length - 1 ? "text-right font-bold tabular-nums text-ink-900" : ""}`}
                   >
                     {cell}
                   </td>
@@ -386,11 +384,11 @@ function SpecsBlock({
   return (
     <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
       {rows.map(([k, v]) => (
-        <div key={k} className="flex items-start justify-between border-b border-white/10 pb-3">
-          <dt className="text-xs font-semibold uppercase tracking-wider text-white/60">
+        <div key={k} className="flex items-start justify-between border-b border-ink-200 pb-3">
+          <dt className="text-xs font-semibold uppercase tracking-wider text-ink-400">
             {k}
           </dt>
-          <dd className="text-right text-sm font-medium text-white">{v}</dd>
+          <dd className="text-right text-sm font-medium text-ink-900">{v}</dd>
         </div>
       ))}
     </dl>
@@ -420,13 +418,13 @@ function WarrantyBlock() {
       {items.map(({ Icon, title, desc }) => (
         <div
           key={title}
-          className="rounded-2xl border border-white/15 bg-white/5 p-5 transition-colors hover:border-accent-400/40 hover:bg-white/10"
+          className="rounded-2xl border border-ink-200 bg-white p-5 transition-colors hover:border-accent-500/50 hover:bg-ink-50"
         >
-          <div className="flex size-10 items-center justify-center rounded-xl bg-accent-500/20 text-accent-300 ring-1 ring-accent-400/30">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-accent-100 text-accent-700 ring-1 ring-accent-200">
             <Icon className="size-5" />
           </div>
-          <h4 className="mt-3 text-sm font-bold text-white">{title}</h4>
-          <p className="mt-1 text-xs leading-relaxed text-white/70">{desc}</p>
+          <h4 className="mt-3 text-sm font-bold text-ink-900">{title}</h4>
+          <p className="mt-1 text-xs leading-relaxed text-ink-500">{desc}</p>
         </div>
       ))}
     </div>

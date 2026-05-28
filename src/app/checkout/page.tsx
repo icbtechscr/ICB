@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { ChevronRight, ArrowRight, Truck, MapPin, Mail, Phone, User } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { formatCRC } from "@/lib/utils";
-import { BackgroundShader } from "@/components/ui/background-shader";
 import { CheckoutStepper } from "@/components/CheckoutStepper";
 
 const STORAGE_KEY = "icb-checkout-v1";
@@ -88,11 +87,10 @@ export default function CheckoutPage() {
 
   if (count === 0) {
     return (
-      <div className="relative isolate -mt-[88px] overflow-hidden pt-[88px] text-white md:-mt-[200px] md:pt-[200px]">
-        <BackgroundShader palette="brand" speed={0.4} />
-        <div className="relative mx-auto max-w-2xl px-4 py-20 text-center">
-          <h1 className="text-3xl font-black">Tu carrito está vacío</h1>
-          <p className="mt-2 text-white/70">
+      <div className="bg-white">
+        <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+          <h1 className="text-3xl font-black text-ink-900">Tu carrito está vacío</h1>
+          <p className="mt-2 text-ink-500">
             Agregá productos antes de continuar al checkout.
           </p>
           <Link
@@ -108,23 +106,21 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="relative isolate -mt-[88px] overflow-hidden pt-[88px] text-white md:-mt-[200px] md:pt-[200px]">
-      <BackgroundShader palette="brand" speed={0.4} />
-
-      <div className="relative mx-auto max-w-7xl px-4 pb-20 pt-8 md:pb-24">
-        <nav className="mb-6 flex flex-wrap items-center gap-1 text-xs font-medium text-white/80">
-          <Link href="/" className="hover:text-accent-300">Inicio</Link>
-          <ChevronRight className="size-3.5 text-white/40" />
-          <Link href="/carrito" className="hover:text-accent-300">Carrito</Link>
-          <ChevronRight className="size-3.5 text-white/40" />
-          <span className="text-white">Envío</span>
+    <div className="bg-white">
+      <div className="mx-auto max-w-7xl px-4 pb-20 pt-8 md:pb-24">
+        <nav className="mb-6 flex flex-wrap items-center gap-1 text-xs font-medium text-ink-500">
+          <Link href="/" className="hover:text-brand-600">Inicio</Link>
+          <ChevronRight className="size-3.5 text-ink-300" />
+          <Link href="/carrito" className="hover:text-brand-600">Carrito</Link>
+          <ChevronRight className="size-3.5 text-ink-300" />
+          <span className="text-ink-900">Envío</span>
         </nav>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-black tracking-tight drop-shadow md:text-4xl">
+          <h1 className="text-3xl font-black tracking-tight text-ink-900 md:text-4xl">
             Datos de envío
           </h1>
-          <p className="mt-1 text-sm text-white/70">
+          <p className="mt-1 text-sm text-ink-500">
             Necesitamos saber dónde entregar tu pedido.
           </p>
         </div>
@@ -168,16 +164,16 @@ export default function CheckoutPage() {
             <Card title="Dirección de entrega" Icon={MapPin}>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-white/70">
+                  <label className="text-xs font-bold uppercase tracking-wider text-ink-600">
                     Provincia
                   </label>
                   <select
                     value={form.province}
                     onChange={(e) => setForm({ ...form, province: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white outline-none backdrop-blur focus:border-accent-400"
+                    className="mt-1 w-full rounded-xl border border-ink-200 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition-colors focus:border-brand-500"
                   >
                     {PROVINCES.map((p) => (
-                      <option key={p} value={p} className="bg-ink-900">
+                      <option key={p} value={p} className="bg-white">
                         {p}
                       </option>
                     ))}
@@ -211,23 +207,23 @@ export default function CheckoutPage() {
                       onClick={() => setForm({ ...form, method: o.id })}
                       className={`group flex items-center justify-between gap-4 rounded-2xl border p-4 text-left transition-all ${
                         selected
-                          ? "border-accent-400 bg-accent-500/15 ring-2 ring-accent-400/40"
-                          : "border-white/15 bg-white/5 hover:border-white/30 hover:bg-white/10"
+                          ? "border-accent-500 bg-accent-50 ring-2 ring-accent-500/30"
+                          : "border-ink-200 bg-white hover:border-ink-300 hover:bg-ink-50"
                       }`}
                     >
                       <div>
-                        <div className="text-sm font-bold text-white">{o.label}</div>
-                        <div className="mt-0.5 text-xs text-white/70">{o.desc}</div>
+                        <div className="text-sm font-bold text-ink-900">{o.label}</div>
+                        <div className="mt-0.5 text-xs text-ink-500">{o.desc}</div>
                       </div>
                       <div className="text-right">
-                        <div className="font-black tabular-nums text-white">
+                        <div className="font-black tabular-nums text-ink-900">
                           {o.price === 0 ? "Gratis" : formatCRC(o.price)}
                         </div>
                         <div
                           className={`mt-1 inline-block size-4 rounded-full ring-2 ${
                             selected
                               ? "bg-accent-500 ring-accent-300"
-                              : "bg-transparent ring-white/40"
+                              : "bg-transparent ring-ink-300"
                           }`}
                         />
                       </div>
@@ -242,40 +238,40 @@ export default function CheckoutPage() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-3xl border border-white/15 bg-white/10 p-6 backdrop-blur-xl"
+              className="rounded-3xl border border-ink-200 bg-white p-6 shadow-sm"
             >
-              <h2 className="text-lg font-black">Tu pedido</h2>
+              <h2 className="text-lg font-black text-ink-900">Tu pedido</h2>
               <ul className="mt-4 max-h-72 space-y-3 overflow-auto pr-2 text-sm">
                 {items.map((it) => (
-                  <li key={it.id} className="flex items-start justify-between gap-3 border-b border-white/10 pb-3 last:border-0">
+                  <li key={it.id} className="flex items-start justify-between gap-3 border-b border-ink-200 pb-3 last:border-0">
                     <div className="min-w-0">
-                      <div className="line-clamp-2 text-xs font-semibold text-white">
+                      <div className="line-clamp-2 text-xs font-semibold text-ink-900">
                         {it.name}
                       </div>
-                      <div className="mt-0.5 text-[11px] text-white/60">
+                      <div className="mt-0.5 text-[11px] text-ink-500">
                         x{it.qty} · {formatCRC(it.unitPrice)}
                       </div>
                     </div>
-                    <div className="text-sm font-bold tabular-nums">
+                    <div className="text-sm font-bold tabular-nums text-ink-900">
                       {formatCRC(it.qty * it.unitPrice)}
                     </div>
                   </li>
                 ))}
               </ul>
 
-              <dl className="mt-4 space-y-2 border-t border-white/15 pt-4 text-sm">
+              <dl className="mt-4 space-y-2 border-t border-ink-200 pt-4 text-sm">
                 <Row label="Subtotal" value={formatCRC(subtotal)} />
                 <Row
                   label="Envío"
                   value={shippingCost === 0 ? "Gratis" : formatCRC(shippingCost)}
                   highlight={shippingCost === 0}
                 />
-                <div className="mt-2 flex items-end justify-between border-t border-white/15 pt-3">
+                <div className="mt-2 flex items-end justify-between border-t border-ink-200 pt-3">
                   <div>
-                    <dt className="text-sm font-bold">Total</dt>
-                    <span className="text-[11px] text-white/60">IVA incluido (13%)</span>
+                    <dt className="text-sm font-bold text-ink-900">Total</dt>
+                    <span className="text-[11px] text-ink-400">IVA incluido (13%)</span>
                   </div>
-                  <dd className="text-2xl font-black tabular-nums">
+                  <dd className="text-2xl font-black tabular-nums text-ink-900">
                     {formatCRC(total)}
                   </dd>
                 </div>
@@ -306,9 +302,9 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-white/15 bg-white/10 p-6 backdrop-blur-xl">
-      <h3 className="mb-4 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
-        <span className="inline-flex size-8 items-center justify-center rounded-lg bg-accent-500/20 text-accent-300 ring-1 ring-accent-400/30">
+    <section className="rounded-3xl border border-ink-200 bg-white p-6 shadow-sm">
+      <h3 className="mb-4 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-ink-900">
+        <span className="inline-flex size-8 items-center justify-center rounded-lg bg-accent-100 text-accent-700 ring-1 ring-accent-200">
           <Icon className="size-4" />
         </span>
         {title}
@@ -335,20 +331,20 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-xs font-bold uppercase tracking-wider text-white/70">
+      <span className="text-xs font-bold uppercase tracking-wider text-ink-600">
         {label}
-        {required && <span className="ml-1 text-accent-400">*</span>}
+        {required && <span className="ml-1 text-accent-600">*</span>}
       </span>
       <div className="relative mt-1">
         {Icon && (
-          <Icon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/50" />
+          <Icon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
         )}
         <input
           type={type}
           required={required}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className={`w-full rounded-xl border border-white/20 bg-white/10 py-3 text-sm text-white outline-none backdrop-blur transition-colors placeholder:text-white/40 focus:border-accent-400 ${
+          className={`w-full rounded-xl border border-ink-200 bg-white py-3 text-sm text-ink-900 outline-none transition-colors placeholder:text-ink-400 focus:border-brand-500 ${
             Icon ? "pl-10 pr-4" : "px-4"
           }`}
         />
@@ -360,8 +356,8 @@ function Field({
 function Row({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
     <div className="flex justify-between">
-      <dt className="text-white/70">{label}</dt>
-      <dd className={`font-semibold tabular-nums ${highlight ? "text-accent-300" : "text-white"}`}>
+      <dt className="text-ink-500">{label}</dt>
+      <dd className={`font-semibold tabular-nums ${highlight ? "text-accent-700" : "text-ink-900"}`}>
         {value}
       </dd>
     </div>

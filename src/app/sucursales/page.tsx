@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ChevronRight, MapPin, Navigation, Building2 } from "lucide-react";
-import { BackgroundShader } from "@/components/ui/background-shader";
 import { ProductTabs } from "@/components/ProductTabs";
 
 export const metadata = {
@@ -80,18 +79,18 @@ function LocationCard({ loc, badge }: { loc: Location; badge?: string }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           {badge && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-500/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent-300">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent-700">
               {badge}
             </span>
           )}
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-white md:text-3xl">
+          <h2 className="mt-2 text-2xl font-black tracking-tight text-ink-900 md:text-3xl">
             {loc.name}
           </h2>
         </div>
       </div>
 
-      <p className="mt-4 flex items-start gap-2 text-sm leading-relaxed text-white/85 md:text-base">
-        <MapPin className="mt-0.5 size-4 shrink-0 text-accent-400" />
+      <p className="mt-4 flex items-start gap-2 text-sm leading-relaxed text-ink-600 md:text-base">
+        <MapPin className="mt-0.5 size-4 shrink-0 text-accent-600" />
         {loc.address}
       </p>
 
@@ -109,7 +108,7 @@ function LocationCard({ loc, badge }: { loc: Location; badge?: string }) {
           href={loc.waze}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-5 py-2.5 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20"
+          className="inline-flex items-center gap-2 rounded-full border border-ink-200 bg-white px-5 py-2.5 text-sm font-bold text-ink-700 transition hover:bg-ink-50"
         >
           <Navigation className="size-4" />
           Waze
@@ -134,27 +133,25 @@ export default function SucursalesPage() {
   ];
 
   return (
-    <div className="relative isolate -mt-[88px] overflow-hidden pt-[88px] text-white md:-mt-[200px] md:pt-[200px]">
-      <BackgroundShader palette="ocean" speed={0.4} />
-
-      <div className="relative mx-auto max-w-5xl px-4 pb-20 pt-8 md:pb-24">
-        <nav className="mb-6 flex flex-wrap items-center gap-1 text-xs font-medium text-white/80">
-          <Link href="/" className="hover:text-accent-300">
+    <div className="bg-white">
+      <div className="mx-auto max-w-5xl px-4 pb-20 pt-8 md:pb-24">
+        <nav className="mb-6 flex flex-wrap items-center gap-1 text-xs font-medium text-ink-500">
+          <Link href="/" className="hover:text-brand-600">
             Inicio
           </Link>
-          <ChevronRight className="size-3.5 text-white/40" />
-          <span className="text-white">Sucursales</span>
+          <ChevronRight className="size-3.5 text-ink-300" />
+          <span className="text-ink-900">Sucursales</span>
         </nav>
 
         <header className="mb-8">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-accent-300 backdrop-blur-md">
+          <span className="inline-flex items-center gap-2 rounded-full border border-accent-200 bg-accent-50 px-3 py-1 text-xs font-semibold text-accent-700">
             <Building2 className="size-3.5" />
             5 sucursales + 1 CEDI
           </span>
-          <h1 className="mt-4 text-4xl font-black tracking-tight drop-shadow md:text-5xl">
+          <h1 className="mt-4 text-4xl font-black tracking-tight text-ink-900 md:text-5xl">
             ¿Dónde estamos ubicados?
           </h1>
-          <p className="mt-3 max-w-2xl text-sm text-white/75 md:text-base">
+          <p className="mt-3 max-w-2xl text-sm text-ink-500 md:text-base">
             Apersonate a cualquiera de nuestros puntos físicos o solicitá
             despacho desde nuestro CEDI. También ofrecemos mensajería GAM y
             envíos a todo Costa Rica.

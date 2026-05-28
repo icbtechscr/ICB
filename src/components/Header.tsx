@@ -6,23 +6,12 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { NavHeader } from "@/components/ui/nav-header";
 import { useCart } from "@/lib/cart";
+import type { NavItem } from "@/lib/category-tree";
 
-const NAV = [
-  { label: "Inicio", href: "/" },
-  { label: "Computadoras", href: "/categoria/computadoras" },
-  { label: "Seguridad", href: "/categoria/camaras-de-vigilancia" },
-  { label: "Redes", href: "/categoria/redes" },
-  { label: "POS", href: "/categoria/punto-de-venta" },
-  { label: "Accesorios", href: "/productos" },
-  { label: "Ofertas", href: "/ofertas" },
-  { label: "Marcas", href: "/marcas" },
-];
-
-export function Header() {
+export function Header({ menu }: { menu: NavItem[] }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { count } = useCart();
   const pathname = usePathname() ?? "/";
-  const solid = true;
 
   return (
     <header className="relative z-40 border-b border-ink-200 bg-white text-ink-900">
@@ -89,7 +78,7 @@ export function Header() {
       </div>
 
       <div className="hidden border-t border-brand-700 bg-brand-900 md:block">
-        <NavHeader items={NAV} variant="solid" />
+        <NavHeader items={menu} />
       </div>
 
       {mobileOpen && (
@@ -106,7 +95,7 @@ export function Header() {
             </label>
           </form>
           <ul className="border-t border-ink-100">
-            {NAV.map((n) => (
+            {menu.map((n) => (
               <li key={n.href}>
                 <Link
                   href={n.href}
