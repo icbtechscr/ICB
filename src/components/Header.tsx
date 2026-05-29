@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, ShoppingCart, Menu, User } from "lucide-react";
+import { Search, ShoppingCart, Menu, LogIn } from "lucide-react";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { NavHeader } from "@/components/ui/nav-header";
@@ -48,11 +48,11 @@ export function Header({ menu }: { menu: NavItem[] }) {
 
         <div className="ml-auto flex items-center gap-2">
           <Link
-            href="/cuenta"
-            className="hidden items-center gap-2 rounded-md border border-ink-200 px-3 py-2 text-sm font-semibold text-ink-700 transition-colors hover:bg-ink-50 lg:inline-flex"
+            href="/ingresar"
+            className="hidden items-center gap-2 rounded-md border border-ink-200 px-3 py-2 text-sm font-semibold text-ink-700 transition-colors hover:bg-ink-50 sm:inline-flex"
           >
-            <User className="size-4" />
-            Mi cuenta
+            <LogIn className="size-4" />
+            Iniciar sesión
           </Link>
           <Link
             href="/carrito"

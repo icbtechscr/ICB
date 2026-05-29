@@ -183,10 +183,10 @@ export function UnifiedCheckout({
   return (
     <div className="space-y-4">
       {/* Header con marcas aceptadas */}
-      <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
+      <div className="flex items-center justify-between rounded-2xl border border-ink-200 bg-ink-50 px-4 py-3">
         <div className="flex items-center gap-2">
-          <CreditCard className="size-4 text-accent-300" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-white/80">
+          <CreditCard className="size-4 text-accent-600" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-ink-600">
             Pago con tarjeta
           </span>
         </div>
@@ -198,22 +198,22 @@ export function UnifiedCheckout({
       </div>
 
       {/* Card del pago - fondo transparente */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-white/5 p-6 backdrop-blur-md">
-        <div className="absolute right-0 top-0 size-32 rounded-full bg-accent-300/20 blur-3xl" />
-        <div className="absolute -bottom-10 -left-10 size-40 rounded-full bg-brand-500/15 blur-3xl" />
+      <div className="relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-6 shadow-sm">
+        <div className="absolute right-0 top-0 size-32 rounded-full bg-accent-300/10 blur-3xl" />
+        <div className="absolute -bottom-10 -left-10 size-40 rounded-full bg-brand-500/10 blur-3xl" />
 
         <div className="relative">
-          <h4 className="mb-1 text-base font-black text-white">
+          <h4 className="mb-1 text-base font-black text-ink-900">
             Listo para pagar de forma segura
           </h4>
-          <p className="mb-5 text-sm text-white/70">
+          <p className="mb-5 text-sm text-ink-500">
             Hacé clic en el botón abajo. Se abrirá la pasarela protegida de BAC
             Costa Rica donde podés ingresar los datos de tu tarjeta.
           </p>
 
           {status === "loading" && (
-            <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
-              <span className="size-4 animate-spin rounded-full border-2 border-white/40 border-r-transparent" />
+            <div className="flex items-center gap-3 rounded-xl border border-ink-200 bg-ink-50 px-4 py-3 text-sm text-ink-600">
+              <span className="size-4 animate-spin rounded-full border-2 border-ink-300 border-r-transparent" />
               Inicializando pasarela segura…
             </div>
           )}
@@ -257,7 +257,7 @@ export function UnifiedCheckout({
         <TrustBadge Icon={CreditCard} label="PCI DSS" />
       </div>
 
-      <p className="text-center text-[10px] uppercase tracking-wider text-white/50">
+      <p className="text-center text-[10px] uppercase tracking-wider text-ink-400">
         Procesado por Cybersource · BAC Credomatic Costa Rica
       </p>
     </div>
@@ -280,9 +280,9 @@ function TrustBadge({
   label: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-1 rounded-xl border border-white/10 bg-white/5 py-2 backdrop-blur-sm">
-      <Icon className="size-3.5 text-accent-300" />
-      <span className="text-[9px] font-bold uppercase tracking-wider text-white/70">
+    <div className="flex flex-col items-center gap-1 rounded-xl border border-ink-200 bg-ink-50 py-2">
+      <Icon className="size-3.5 text-accent-600" />
+      <span className="text-[9px] font-bold uppercase tracking-wider text-ink-500">
         {label}
       </span>
     </div>

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { getUserRole } from "@/lib/roles";
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -30,8 +31,20 @@ export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isLogin = path === "/admin/login";
   const isApi = path.startsWith("/api/admin");
+  const isMarcar = path.startsWith("/marcar");
+  const role = user ? getUserRole(user) : null;
 
-  // Sin sesión → bloquear
+  // Marcaje de horario: solo requiere sesión (admins o colaboradores).
+  if (isMarcar) {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/ingresar";
+      return NextResponse.redirect(url);
+    }
+    return response;
+  }
+
+  // Sin sesión → bloquear panel / api admin
   if (!user && !isLogin) {
     if (isApi) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -41,10 +54,20 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Ya logueado y entrando al login → mandar al panel
+  // Colaborador autenticado intentando entrar al panel → a marcar hora.
+  if (user && role === "colaborador" && !isLogin) {
+    if (isApi) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+    }
+    const url = request.nextUrl.clone();
+    url.pathname = "/marcar";
+    return NextResponse.redirect(url);
+  }
+
+  // Ya logueado y entrando al login → mandar a su destino según rol.
   if (user && isLogin) {
     const url = request.nextUrl.clone();
-    url.pathname = "/admin";
+    url.pathname = role === "colaborador" ? "/marcar" : "/admin";
     return NextResponse.redirect(url);
   }
 
@@ -52,5 +75,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*", "/marcar/:path*"],
 };

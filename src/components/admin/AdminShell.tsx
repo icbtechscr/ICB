@@ -8,6 +8,7 @@ import {
   Settings,
   Home,
   Store,
+  Users,
   LogOut,
   Moon,
   Sun,
@@ -18,8 +19,17 @@ const TABS = [
   { href: "/admin", label: "Productos", Icon: Package },
   { href: "/admin/tienda", label: "Tienda", Icon: Store },
   { href: "/admin/pedidos", label: "Pedidos", Icon: ShoppingBag },
+  { href: "/admin/colaboradores", label: "Colaboradores", Icon: Users },
   { href: "/admin/ajustes", label: "Ajustes", Icon: Settings },
 ];
+
+function tabIsActive(pathname: string, href: string): boolean {
+  if (href === "/admin") {
+    // "Productos" cubre el home y el listado de productos.
+    return pathname === "/admin" || pathname.startsWith("/admin/productos");
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 export function AdminShell({
   children,
@@ -124,7 +134,7 @@ export function AdminShell({
                 <Link
                   href={href}
                   className={`relative inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
-                    pathname === href
+                    tabIsActive(pathname, href)
                       ? "border-brand-600 text-brand-600"
                       : "border-transparent text-ink-600 hover:border-brand-600 hover:text-brand-600"
                   }`}

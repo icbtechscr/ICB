@@ -10,7 +10,7 @@ const STEPS = [
 
 export function CheckoutStepper({ current }: { current: 1 | 2 | 3 }) {
   return (
-    <ol className="mx-auto flex max-w-2xl items-center justify-between gap-2 rounded-full border border-white/15 bg-white/10 p-2 backdrop-blur-xl">
+    <ol className="mx-auto flex max-w-2xl items-center justify-between gap-2 rounded-full border border-ink-200 bg-white p-2 shadow-sm">
       {STEPS.map((s, i) => {
         const done = s.id < current;
         const active = s.id === current;
@@ -29,7 +29,7 @@ export function CheckoutStepper({ current }: { current: 1 | 2 | 3 }) {
                     ? "bg-emerald-500 text-white"
                     : active
                       ? "text-ink-900"
-                      : "bg-white/10 text-white/60"
+                      : "bg-ink-100 text-ink-400"
                 }`}
               >
                 {done ? <Check className="size-4" /> : s.id}
@@ -37,14 +37,14 @@ export function CheckoutStepper({ current }: { current: 1 | 2 | 3 }) {
             </div>
             <span
               className={`hidden text-xs font-bold uppercase tracking-wider sm:inline ${
-                done || active ? "text-white" : "text-white/50"
+                done || active ? "text-ink-900" : "text-ink-400"
               }`}
             >
               {s.label}
             </span>
             {i < STEPS.length - 1 && (
               <div
-                className={`mx-1 h-px flex-1 ${done ? "bg-emerald-400/60" : "bg-white/15"}`}
+                className={`mx-1 h-px flex-1 ${done ? "bg-emerald-400" : "bg-ink-200"}`}
               />
             )}
           </li>

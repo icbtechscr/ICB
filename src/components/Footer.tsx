@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { getSiteContent } from "@/lib/site-content";
+import { BRANCHES } from "@/lib/branches";
 
 const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
@@ -40,12 +41,6 @@ export async function Footer() {
               {footer.description}
             </p>
             <ul className="mt-6 space-y-2 text-sm">
-              <li className="flex items-start gap-2.5">
-                <MapPin className="mt-0.5 size-4 shrink-0 text-accent-500" aria-hidden />
-                <Link href="/sucursales" className="hover:text-white">
-                  {footer.locationsText}
-                </Link>
-              </li>
               <li className="flex items-center gap-2.5">
                 <Phone className="size-4 text-accent-500" aria-hidden />
                 <a href={telHref} className="hover:text-white">
@@ -93,6 +88,50 @@ export async function Footer() {
               </ul>
             </div>
           ))}
+        </div>
+
+        <div className="mt-10 border-t border-white/10 pt-8">
+          <div className="flex items-center justify-between gap-3">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-white">
+              Nuestras sucursales
+            </h4>
+            <Link
+              href="/sucursales"
+              className="text-xs font-semibold text-accent-500 hover:text-accent-400"
+            >
+              Ver mapa y horarios →
+            </Link>
+          </div>
+          <ul className="mt-5 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+            {BRANCHES.map((b) => {
+              const tel = `tel:${b.phone.replace(/[^+\d]/g, "")}`;
+              return (
+                <li key={b.id} className="flex items-start gap-2.5">
+                  <MapPin
+                    className="mt-0.5 size-4 shrink-0 text-accent-500"
+                    aria-hidden
+                  />
+                  <div>
+                    <div className="text-sm font-semibold text-white">
+                      {b.city}
+                      {b.cedi && (
+                        <span className="ml-1.5 rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ink-400">
+                          CEDI
+                        </span>
+                      )}
+                    </div>
+                    <a
+                      href={tel}
+                      className="mt-0.5 inline-flex items-center gap-1.5 text-sm hover:text-white"
+                    >
+                      <Phone className="size-3.5 text-accent-500" aria-hidden />
+                      {b.phone}
+                    </a>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </div>
 

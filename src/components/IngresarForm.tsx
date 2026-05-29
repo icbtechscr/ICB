@@ -1,10 +1,11 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Lock, Mail, ShieldCheck } from "lucide-react";
+import { Loader2, Lock, Mail, LogIn } from "lucide-react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { getUserRole } from "@/lib/roles";
 
-export function LoginForm() {
+export function IngresarForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,7 +18,7 @@ export function LoginForm() {
     setLoading(true);
     try {
       const sb = createSupabaseBrowser();
-      const { error } = await sb.auth.signInWithPassword({
+      const { data, error } = await sb.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
@@ -29,7 +30,9 @@ export function LoginForm() {
         );
         return;
       }
-      router.replace("/admin");
+      // Redirección según rol: admin -> panel, colaborador -> marcaje.
+      const dest = getUserRole(data.user) === "admin" ? "/admin" : "/marcar";
+      router.replace(dest);
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -40,18 +43,19 @@ export function LoginForm() {
 
   return (
     <div className="relative w-full max-w-md">
-      <div className="absolute inset-0 -z-10 rounded-[2rem] bg-gradient-to-br from-accent-400/10 to-brand-500/10 blur-2xl" />
       <form
         onSubmit={onSubmit}
-        className="rounded-[2rem] border border-ink-200 bg-white p-8 shadow-xl"
+        className="rounded-3xl border border-ink-200 bg-white p-8 shadow-sm"
       >
         <div className="mb-7 text-center">
-          <div className="mx-auto mb-4 inline-flex size-14 items-center justify-center rounded-2xl bg-accent-100 ring-1 ring-accent-200">
-            <ShieldCheck className="size-7 text-accent-700" />
+          <div className="mx-auto mb-4 inline-flex size-14 items-center justify-center rounded-2xl bg-brand-50 ring-1 ring-brand-100">
+            <LogIn className="size-7 text-brand-600" />
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-ink-900">ICB Admin</h1>
+          <h1 className="text-2xl font-black tracking-tight text-ink-900">
+            Iniciar sesión
+          </h1>
           <p className="mt-1 text-sm text-ink-500">
-            Ingresá tus credenciales para continuar.
+            Acceso para colaboradores y administradores de ICB.
           </p>
         </div>
 
@@ -72,7 +76,7 @@ export function LoginForm() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@icbtechscr.com"
+              placeholder="tucorreo@icbtechscr.com"
               className="w-full rounded-xl border border-ink-200 bg-white py-3 pl-11 pr-4 text-sm text-ink-900 outline-none placeholder:text-ink-400 focus:border-brand-500"
             />
           </div>
@@ -98,7 +102,7 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent-500 px-6 py-3 text-sm font-bold text-ink-900 shadow-lg shadow-accent-500/30 transition hover:bg-accent-400 disabled:opacity-60"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent-500 px-6 py-3 text-sm font-bold text-ink-900 shadow-lg shadow-accent-500/30 transition hover:bg-accent-400 disabled:opacity-60"
         >
           {loading && <Loader2 className="size-4 animate-spin" />}
           Entrar
