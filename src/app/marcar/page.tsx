@@ -6,6 +6,7 @@ import { listMyEntriesRange } from "@/lib/timeclock-server";
 import { crTodayIso } from "@/lib/timeclock";
 import { PunchPanel } from "@/components/timeclock/PunchPanel";
 import { InstallAppHint } from "@/components/timeclock/InstallAppHint";
+import { PushReminder } from "@/components/timeclock/PushReminder";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,7 @@ export default async function MarcarPage() {
     <div className="bg-white">
       <div className="mx-auto max-w-3xl px-4 pb-20 pt-10">
         <InstallAppHint />
+        <PushReminder />
         <PunchPanel
           employeeName={getUserFullName(user)}
           branch={

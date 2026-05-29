@@ -9,6 +9,7 @@ import {
   Home,
   Store,
   Users,
+  Clock,
   Calculator,
   LogOut,
   Moon,
@@ -47,9 +48,10 @@ const GROUPS: Group[] = [
     label: "Recursos Humanos",
     Icon: Users,
     href: "/admin/colaboradores",
-    prefixes: ["/admin/colaboradores"],
+    prefixes: ["/admin/colaboradores", "/admin/equipo"],
     sub: [
-      { href: "/admin/colaboradores", label: "Colaboradores", Icon: Users },
+      { href: "/admin/colaboradores", label: "Control de horario", Icon: Clock },
+      { href: "/admin/equipo", label: "Colaboradores", Icon: Users },
     ],
   },
   {
@@ -65,9 +67,10 @@ const GROUPS: Group[] = [
     id: "ajustes",
     label: "Ajustes",
     Icon: Settings,
-    href: "/admin/ajustes",
+    href: "#",
     prefixes: ["/admin/ajustes"],
     sub: [],
+    disabled: true,
   },
 ];
 
