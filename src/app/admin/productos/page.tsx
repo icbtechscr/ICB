@@ -87,7 +87,7 @@ export default async function AdminProductsPage({
       <div className="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-ink-50 text-left text-xs font-bold uppercase tracking-wider text-ink-600">
+            <thead className="bg-brand-900 text-left text-xs font-bold uppercase tracking-wider text-accent-400">
               <tr>
                 <th className="px-4 py-3">Producto</th>
                 <th className="px-4 py-3">SKU</th>

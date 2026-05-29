@@ -309,12 +309,12 @@ function DayTable({
     <div className="overflow-x-auto rounded-2xl border border-ink-200 bg-white shadow-sm">
       <table className="w-full border-collapse text-sm">
         <thead>
-          <tr className="bg-ink-50 text-left text-xs font-bold uppercase tracking-wider text-ink-500">
-            <th className="border-b border-r border-ink-200 px-4 py-3">Día</th>
+          <tr className="bg-brand-900 text-left text-xs font-bold uppercase tracking-wider text-accent-400">
+            <th className="border-b border-r border-brand-800 px-4 py-3">Día</th>
             {PUNCH_TYPES.map((t) => (
               <th
                 key={t}
-                className="border-b border-r border-ink-200 px-4 py-3 last:border-r-0"
+                className="border-b border-r border-brand-800 px-4 py-3 last:border-r-0"
               >
                 {PUNCH_COL[t]}
               </th>

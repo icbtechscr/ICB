@@ -321,7 +321,7 @@ function KitTableBlock({ kit }: { kit: { header: string[]; rows: string[][] } })
       <div className="overflow-x-auto rounded-2xl border border-ink-200">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-ink-50 text-left text-xs font-bold uppercase tracking-wider text-brand-600">
+            <tr className="bg-brand-900 text-left text-xs font-bold uppercase tracking-wider text-accent-400">
               {kit.header.map((h, i) => (
                 <th key={i} className="px-4 py-3">
                   {h}

@@ -25,18 +25,18 @@ export function HorarioTable({
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-sm">
         <thead>
-          <tr className="bg-ink-50 text-left text-xs font-bold uppercase tracking-wider text-ink-500">
+          <tr className="bg-brand-900 text-left text-xs font-bold uppercase tracking-wider text-accent-400">
             {showDay && (
-              <th className="border-b border-r border-ink-200 px-4 py-2.5">Día</th>
+              <th className="border-b border-r border-brand-800 px-4 py-2.5">Día</th>
             )}
-            <th className="border-b border-r border-ink-200 px-4 py-2.5">
+            <th className="border-b border-r border-brand-800 px-4 py-2.5">
               Colaborador
             </th>
-            <th className="border-b border-r border-ink-200 px-4 py-2.5">Sede</th>
+            <th className="border-b border-r border-brand-800 px-4 py-2.5">Sede</th>
             {PUNCH_TYPES.map((t) => (
               <th
                 key={t}
-                className="border-b border-r border-ink-200 px-4 py-2.5 last:border-r-0"
+                className="border-b border-r border-brand-800 px-4 py-2.5 last:border-r-0"
               >
                 {PUNCH_COL[t]}
               </th>

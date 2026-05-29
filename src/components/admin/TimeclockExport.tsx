@@ -77,7 +77,7 @@ export function TimeclockExport({
   h1 { font-size: 18px; margin: 0; }
   .sub { color: #64748b; font-size: 12px; margin: 4px 0 20px; }
   table { width: 100%; border-collapse: collapse; font-size: 11px; }
-  th { background: #0a3d62; color: #fff; text-align: left; padding: 8px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+  th { background: #0f1840; color: #6fdb83; text-align: left; padding: 8px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
   td { border: 1px solid #e2e8f0; padding: 7px 10px; }
   td.day { font-weight: 700; white-space: nowrap; }
   tr:nth-child(even) td { background: #f8fafc; }
