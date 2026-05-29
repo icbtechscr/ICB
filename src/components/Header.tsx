@@ -5,10 +5,17 @@ import { Search, ShoppingCart, Menu, LogIn } from "lucide-react";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { NavHeader } from "@/components/ui/nav-header";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useCart } from "@/lib/cart";
 import type { NavItem } from "@/lib/category-tree";
 
-export function Header({ menu }: { menu: NavItem[] }) {
+export function Header({
+  menu,
+  initialDark = false,
+}: {
+  menu: NavItem[];
+  initialDark?: boolean;
+}) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { count } = useCart();
   const pathname = usePathname() ?? "/";
@@ -47,6 +54,7 @@ export function Header({ menu }: { menu: NavItem[] }) {
         </form>
 
         <div className="ml-auto flex items-center gap-2">
+          <ThemeToggle initialDark={initialDark} />
           <Link
             href="/ingresar"
             className="hidden items-center gap-2 rounded-md border border-ink-200 px-3 py-2 text-sm font-semibold text-ink-700 transition-colors hover:bg-ink-50 sm:inline-flex"

@@ -72,6 +72,34 @@
   color-scheme: dark;
 }
 
+/* Modo noche de la TIENDA.
+   A diferencia de .admin-dark, NO remapeamos --color-white, para que `text-white`
+   siga siendo blanco sobre el "chrome" oscuro (footer, banda CTA, navbar azul).
+   En su lugar invertimos la escala ink (texto/bordes) y volteamos solo los
+   FONDOS `bg-white` a una superficie oscura mediante una regla específica. */
+.dark {
+  --surface: #26282d;
+  --color-ink-50: #1c1d21;
+  --color-ink-100: #303237;
+  --color-ink-200: #3b3d43;
+  --color-ink-300: #52555c;
+  --color-ink-400: #8b8d94;
+  --color-ink-500: #a9abb2;
+  --color-ink-600: #c4c6cc;
+  --color-ink-700: #d8dade;
+  --color-ink-800: #e8e9ec;
+  --color-ink-900: #f4f4f5;
+  --color-brand-50: #2a2d3f;
+  --color-accent-50: #233028;
+  --background: #15161a;
+  --foreground: #f4f4f5;
+  color-scheme: dark;
+}
+/* Superficies blancas → superficie oscura (sin afectar text-white). */
+.dark .bg-white {
+  background-color: var(--surface);
+}
+
 html { scroll-behavior: smooth; }
 
 body {

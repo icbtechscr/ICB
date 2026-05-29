@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { Header } from "@/components/Header";
@@ -43,18 +44,19 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const menu = getNavMenu();
+  const dark = (await cookies()).get("site-theme")?.value === "dark";
   return (
-    <html lang="es" className="h-full antialiased">
-      <body className="min-h-full flex flex-col bg-white text-ink-900">
+    <html lang="es" className={`h-full antialiased${dark ? " dark" : ""}`}>
+      <body className="min-h-full flex flex-col text-ink-900">
         <CartProvider>
           <SiteChromeGate>
-            <Header menu={menu} />
+            <Header menu={menu} initialDark={dark} />
           </SiteChromeGate>
           <main className="flex-1">{children}</main>
           <SiteChromeGate>

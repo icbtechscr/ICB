@@ -2,50 +2,68 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  LogIn,
   LogOut,
-  Coffee,
-  Utensils,
   MapPin,
   Loader2,
-  Check,
   AlertTriangle,
-  X,
-  Clock,
+  Sun,
+  Utensils,
+  Coffee,
+  DoorOpen,
 } from "lucide-react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import {
   PUNCH_TYPES,
-  PUNCH_LABELS,
-  PUNCH_SHORT,
+  PUNCH_COL,
+  buildDayRows,
+  crTodayIso,
+  fmtDayLabel,
   type PunchType,
+  type PunchCell,
+  type DayRow,
   type TimeEntry,
 } from "@/lib/timeclock";
 
-const ICONS: Record<PunchType, React.ComponentType<{ className?: string }>> = {
-  entrada: LogIn,
-  salida_almuerzo: Utensils,
-  regreso_almuerzo: Coffee,
-  salida: LogOut,
+type BranchInfo = { id: string; name: string; address: string } | null;
+
+const ACTION: Record<
+  Exclude<PunchType, "entrada">,
+  { label: string; Icon: React.ComponentType<{ className?: string }>; cls: string }
+> = {
+  salida_almuerzo: {
+    label: "Almorzar",
+    Icon: Utensils,
+    cls: "bg-amber-500 text-white hover:bg-amber-600",
+  },
+  regreso_almuerzo: {
+    label: "Entrar",
+    Icon: Coffee,
+    cls: "bg-brand-600 text-white hover:bg-brand-700",
+  },
+  salida: {
+    label: "Salir",
+    Icon: DoorOpen,
+    cls: "bg-red-600 text-white hover:bg-red-700",
+  },
 };
 
-type BranchInfo = {
-  id: string;
-  name: string;
-  address: string;
-} | null;
-
-type GeoState =
-  | { status: "idle" }
-  | { status: "loading" }
-  | { status: "ok"; lat: number; lng: number; accuracy: number }
-  | { status: "error"; message: string };
-
-function fmtTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("es-CR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "America/Costa_Rica",
+function getPosition(): Promise<{
+  lat: number;
+  lng: number;
+  accuracy: number;
+} | null> {
+  return new Promise((resolve) => {
+    if (!("geolocation" in navigator)) return resolve(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) =>
+        resolve({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        }),
+      () => resolve(null),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
   });
 }
 
@@ -60,62 +78,47 @@ export function PunchPanel({
 }) {
   const router = useRouter();
   const [entries, setEntries] = useState<TimeEntry[]>(initialEntries);
-  const [pending, setPending] = useState<PunchType | null>(null);
-  const [geo, setGeo] = useState<GeoState>({ status: "idle" });
-  const [submitting, setSubmitting] = useState(false);
+  const [loadingType, setLoadingType] = useState<PunchType | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const todayIso = crTodayIso();
 
-  const doneTypes = useMemo(
-    () => new Set(entries.map((e) => e.punch_type)),
-    [entries]
-  );
-
-  function openConfirm(type: PunchType) {
-    setError(null);
-    setPending(type);
-    setGeo({ status: "loading" });
-    if (!("geolocation" in navigator)) {
-      setGeo({ status: "error", message: "Tu dispositivo no permite ubicación." });
-      return;
+  const rows = useMemo(() => {
+    const built = buildDayRows(entries);
+    if (!built.some((r) => r.dayIso === todayIso)) {
+      built.unshift({
+        key: `today|${todayIso}`,
+        userId: "",
+        employeeName,
+        branchName: branch?.name ?? null,
+        dayIso: todayIso,
+        cells: {
+          entrada: null,
+          salida_almuerzo: null,
+          regreso_almuerzo: null,
+          salida: null,
+        },
+      });
     }
-    navigator.geolocation.getCurrentPosition(
-      (pos) =>
-        setGeo({
-          status: "ok",
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-        }),
-      (err) =>
-        setGeo({
-          status: "error",
-          message:
-            err.code === err.PERMISSION_DENIED
-              ? "Permiso de ubicación denegado."
-              : "No se pudo obtener la ubicación.",
-        }),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
-  }
+    return built;
+  }, [entries, todayIso, employeeName, branch]);
 
-  function cancel() {
-    setPending(null);
-    setGeo({ status: "idle" });
-  }
+  const todayRow = rows.find((r) => r.dayIso === todayIso)!;
+  const startedToday = !!todayRow.cells.entrada;
+  const historyRows = rows.filter((r) => r.dayIso !== todayIso);
 
-  async function confirm() {
-    if (!pending) return;
-    setSubmitting(true);
+  async function punch(type: PunchType) {
+    setLoadingType(type);
     setError(null);
     try {
+      const pos = await getPosition();
       const res = await fetch("/api/timeclock/punch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          punchType: pending,
-          latitude: geo.status === "ok" ? geo.lat : undefined,
-          longitude: geo.status === "ok" ? geo.lng : undefined,
-          accuracy: geo.status === "ok" ? geo.accuracy : undefined,
+          punchType: type,
+          latitude: pos?.lat,
+          longitude: pos?.lng,
+          accuracy: pos?.accuracy,
         }),
       });
       if (!res.ok) {
@@ -124,24 +127,16 @@ export function PunchPanel({
       }
       const json = (await res.json()) as { entry: TimeEntry };
       setEntries((prev) => [...prev, json.entry]);
-      setPending(null);
-      setGeo({ status: "idle" });
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
-      setSubmitting(false);
+      setLoadingType(null);
     }
   }
 
-  async function logout() {
-    await createSupabaseBrowser().auth.signOut();
-    router.replace("/ingresar");
-    router.refresh();
-  }
-
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-3xl">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm text-ink-500">Hola,</p>
@@ -161,7 +156,11 @@ export function PunchPanel({
           )}
         </div>
         <button
-          onClick={logout}
+          onClick={async () => {
+            await createSupabaseBrowser().auth.signOut();
+            router.replace("/ingresar");
+            router.refresh();
+          }}
           className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:bg-ink-50"
         >
           <LogOut className="size-3.5" />
@@ -169,153 +168,213 @@ export function PunchPanel({
         </button>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {PUNCH_TYPES.map((type) => {
-          const Icon = ICONS[type];
-          const done = doneTypes.has(type);
-          return (
-            <button
-              key={type}
-              onClick={() => openConfirm(type)}
-              className="group flex items-center gap-3 rounded-2xl border border-ink-200 bg-white p-4 text-left shadow-sm transition-all hover:border-brand-300 hover:bg-brand-50/40 active:scale-[0.99]"
-            >
-              <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 ring-1 ring-brand-100">
-                <Icon className="size-5" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-bold text-ink-900">
-                  {PUNCH_LABELS[type]}
-                </span>
-                {done && (
-                  <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
-                    <Check className="size-3" />
-                    Marcado hoy
-                  </span>
-                )}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {error && (
+        <p className="mt-4 rounded-xl border border-danger/30 bg-danger/10 px-4 py-2.5 text-sm text-danger">
+          {error}
+        </p>
+      )}
 
-      {/* Marcajes del día */}
-      <div className="mt-8 rounded-2xl border border-ink-200 bg-white p-5 shadow-sm">
-        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-ink-900">
-          <Clock className="size-4 text-accent-600" />
-          Marcajes de hoy
-        </h2>
-        {entries.length === 0 ? (
-          <p className="mt-3 text-sm text-ink-500">
-            Aún no has marcado nada hoy.
+      {/* Antes de comenzar el día: botón rojo protagonista */}
+      {!startedToday ? (
+        <div className="mt-6 rounded-3xl border border-ink-200 bg-white p-8 text-center shadow-sm">
+          <p className="text-sm font-medium text-ink-500">
+            {fmtDayLabel(todayIso)}
           </p>
-        ) : (
-          <ul className="mt-3 divide-y divide-ink-100">
-            {entries.map((e) => (
-              <li key={e.id} className="flex items-center justify-between gap-3 py-2.5">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-sm font-semibold text-ink-900">
-                    {PUNCH_SHORT[e.punch_type]}
-                  </span>
-                  <span className="font-mono text-sm tabular-nums text-ink-600">
-                    {fmtTime(e.punched_at)}
-                  </span>
-                </div>
-                <LocationBadge entry={e} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {/* Modal de confirmación */}
-      {pending && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/40 p-4 sm:items-center">
-          <div className="w-full max-w-sm rounded-3xl border border-ink-200 bg-white p-6 shadow-xl">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-black text-ink-900">
-                {PUNCH_LABELS[pending]}
-              </h3>
-              <button
-                onClick={cancel}
-                className="inline-flex size-8 items-center justify-center rounded-full text-ink-400 hover:bg-ink-100"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-
-            <div className="mt-4 rounded-2xl border border-ink-200 bg-ink-50 p-4 text-sm">
-              {geo.status === "loading" && (
-                <span className="flex items-center gap-2 text-ink-600">
-                  <Loader2 className="size-4 animate-spin" />
-                  Obteniendo tu ubicación…
-                </span>
-              )}
-              {geo.status === "ok" && (
-                <span className="flex items-center gap-2 text-emerald-700">
-                  <MapPin className="size-4" />
-                  Ubicación lista (±{Math.round(geo.accuracy)} m)
-                </span>
-              )}
-              {geo.status === "error" && (
-                <span className="flex items-start gap-2 text-amber-700">
-                  <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-                  {geo.message} Se registrará el marcaje sin ubicación.
-                </span>
-              )}
-            </div>
-
-            {error && (
-              <p className="mt-3 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
-                {error}
-              </p>
+          <h2 className="mt-1 text-xl font-black text-ink-900">
+            ¿Listo para arrancar?
+          </h2>
+          <button
+            onClick={() => punch("entrada")}
+            disabled={loadingType !== null}
+            className="mt-5 inline-flex w-full max-w-sm items-center justify-center gap-2.5 rounded-2xl bg-red-600 px-8 py-5 text-lg font-black text-white shadow-xl shadow-red-600/30 transition-all hover:bg-red-700 hover:shadow-red-600/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loadingType === "entrada" ? (
+              <Loader2 className="size-6 animate-spin" />
+            ) : (
+              <Sun className="size-6" />
             )}
+            Comenzar Día
+          </button>
+          <p className="mt-3 text-xs text-ink-400">
+            Se registrará tu hora y ubicación al tocar el botón.
+          </p>
+        </div>
+      ) : (
+        <div className="mt-6">
+          <DayTable
+            rows={[todayRow]}
+            todayIso={todayIso}
+            loadingType={loadingType}
+            onPunch={punch}
+          />
+        </div>
+      )}
 
-            <div className="mt-5 flex gap-3">
-              <button
-                onClick={cancel}
-                className="flex-1 rounded-full border border-ink-200 bg-white px-4 py-3 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={confirm}
-                disabled={submitting || geo.status === "loading"}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-accent-500 px-4 py-3 text-sm font-bold text-ink-900 shadow-lg shadow-accent-500/30 transition hover:bg-accent-400 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {submitting ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Check className="size-4" />
-                )}
-                Confirmar
-              </button>
-            </div>
-          </div>
+      {/* Historial de días anteriores */}
+      {historyRows.length > 0 && (
+        <div className="mt-8">
+          <h3 className="mb-2 text-sm font-bold uppercase tracking-wider text-ink-500">
+            Días anteriores
+          </h3>
+          <DayTable
+            rows={historyRows}
+            todayIso={todayIso}
+            loadingType={null}
+            onPunch={punch}
+          />
         </div>
       )}
     </div>
   );
 }
 
-function LocationBadge({ entry }: { entry: TimeEntry }) {
-  if (entry.within_range === null || entry.distance_m === null) {
+function DayTable({
+  rows,
+  todayIso,
+  loadingType,
+  onPunch,
+}: {
+  rows: DayRow[];
+  todayIso: string;
+  loadingType: PunchType | null;
+  onPunch: (t: PunchType) => void;
+}) {
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-ink-200 bg-white shadow-sm">
+      <table className="w-full border-collapse text-sm">
+        <thead>
+          <tr className="bg-ink-50 text-left text-xs font-bold uppercase tracking-wider text-ink-500">
+            <th className="border-b border-r border-ink-200 px-4 py-3">Día</th>
+            {PUNCH_TYPES.map((t) => (
+              <th
+                key={t}
+                className="border-b border-r border-ink-200 px-4 py-3 last:border-r-0"
+              >
+                {PUNCH_COL[t]}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => {
+            const isToday = row.dayIso === todayIso;
+            return (
+              <tr key={row.key} className="align-top">
+                <td className="border-r border-ink-200 px-4 py-3 font-semibold text-ink-900">
+                  {fmtDayLabel(row.dayIso)}
+                  {isToday && (
+                    <span className="ml-2 rounded-full bg-brand-50 px-1.5 py-0.5 text-[10px] font-bold uppercase text-brand-600">
+                      Hoy
+                    </span>
+                  )}
+                </td>
+                {PUNCH_TYPES.map((t) => (
+                  <td
+                    key={t}
+                    className="border-r border-t border-ink-100 px-4 py-3 last:border-r-0"
+                  >
+                    <Cell
+                      cell={row.cells[t]}
+                      type={t}
+                      interactive={isToday}
+                      cells={row.cells}
+                      loading={loadingType === t}
+                      anyLoading={loadingType !== null}
+                      onPunch={onPunch}
+                    />
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function isActionable(
+  type: PunchType,
+  cells: Record<PunchType, PunchCell | null>
+): boolean {
+  if (cells.salida) return false; // día cerrado
+  switch (type) {
+    case "entrada":
+      return false; // se hace con "Comenzar Día"
+    case "salida_almuerzo":
+      return !!cells.entrada && !cells.salida_almuerzo;
+    case "regreso_almuerzo":
+      return !!cells.salida_almuerzo && !cells.regreso_almuerzo;
+    case "salida":
+      return !!cells.entrada;
+  }
+}
+
+function Cell({
+  cell,
+  type,
+  interactive,
+  cells,
+  loading,
+  anyLoading,
+  onPunch,
+}: {
+  cell: PunchCell | null;
+  type: PunchType;
+  interactive: boolean;
+  cells: Record<PunchType, PunchCell | null>;
+  loading: boolean;
+  anyLoading: boolean;
+  onPunch: (t: PunchType) => void;
+}) {
+  if (cell) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-2 py-0.5 text-[11px] font-semibold text-ink-500">
+      <div className="space-y-1">
+        <div className="font-mono text-sm font-semibold tabular-nums text-ink-900">
+          {cell.time}
+        </div>
+        <LocationBadge cell={cell} />
+      </div>
+    );
+  }
+  if (interactive && type !== "entrada" && isActionable(type, cells)) {
+    const a = ACTION[type];
+    return (
+      <button
+        onClick={() => onPunch(type)}
+        disabled={anyLoading}
+        className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold shadow-sm transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${a.cls}`}
+      >
+        {loading ? (
+          <Loader2 className="size-3.5 animate-spin" />
+        ) : (
+          <a.Icon className="size-3.5" />
+        )}
+        {a.label}
+      </button>
+    );
+  }
+  return <span className="text-ink-300">—</span>;
+}
+
+function LocationBadge({ cell }: { cell: PunchCell }) {
+  if (cell.within === null || cell.distance === null) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold text-ink-500">
         Sin ubicación
       </span>
     );
   }
-  const ok = entry.within_range;
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-        ok
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+        cell.within
           ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
           : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
       }`}
     >
       <MapPin className="size-3" />
-      {ok ? "En sede" : `A ${entry.distance_m} m`}
+      {cell.within ? "En sede" : `A ${cell.distance} m`}
     </span>
   );
 }

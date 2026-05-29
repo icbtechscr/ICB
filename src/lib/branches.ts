@@ -4,7 +4,7 @@
 //
 // Las coordenadas se usan para verificar dónde marcó cada colaborador.
 // La mayoría se extrajeron de los enlaces de Waze (parámetro `ll=`).
-// NOTA: las coordenadas de Alajuela son aproximadas — verificarlas en sitio.
+// Coordenadas verificadas contra los enlaces oficiales de Google Maps/Waze.
 
 export type Branch = {
   id: string;
@@ -40,9 +40,9 @@ export const BRANCHES: Branch[] = [
     name: "ICB Technologies Alajuela",
     address:
       "Rio Segundo, Alajuela, Avenida 8. 100 metros al norte del KFC de la radial.",
-    phone: "+506 4001 6421",
-    lat: 10.0098,
-    lng: -84.201,
+    phone: "+506 4000 0865",
+    lat: 10.0127018,
+    lng: -84.2129397,
     gmaps: "https://maps.app.goo.gl/CrJDb1hYDFCgYieg8",
     waze: "https://ul.waze.com/ul?venue_id=180748388.1807418345.25237283&overview=yes&utm_campaign=default&utm_source=waze_website&utm_medium=lm_share_location",
   },
@@ -52,7 +52,7 @@ export const BRANCHES: Branch[] = [
     name: "ICB Technologies Heredia",
     address:
       "Corazón de Jesús, Heredia. Costado Sur de la Biblioteca pública de Heredia. Frente al INA.",
-    phone: "+506 4001 6421",
+    phone: "+506 4001 1931",
     lat: 10.0010731,
     lng: -84.1140483,
     gmaps: "https://maps.app.goo.gl/UannZMobJRLRWmrDA",
@@ -63,7 +63,7 @@ export const BRANCHES: Branch[] = [
     city: "Cartago",
     name: "ICB Technologies Cartago",
     address: "Boulevard el Molino, segundo piso, a mano izquierda. Local #9.",
-    phone: "+506 4001 6421",
+    phone: "+506 4001 7961",
     lat: 9.8575258,
     lng: -83.9322683,
     gmaps: "https://maps.app.goo.gl/AVNN5RFG5w2T9fTv8",
@@ -75,7 +75,7 @@ export const BRANCHES: Branch[] = [
     name: "ICB Technologies Ciudad Quesada",
     address:
       "Ciudad Quesada, San Carlos. Contiguo a la casa Cural. Plaza comercial Casazul, local al fondo.",
-    phone: "+506 4001 6421",
+    phone: "+506 4001 6449",
     lat: 10.3225147,
     lng: -84.429679,
     gmaps: "https://maps.app.goo.gl/tAfXJkaFGKvPWe4e8",

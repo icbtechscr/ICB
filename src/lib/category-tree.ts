@@ -52,7 +52,6 @@ const CURATED: { label: string; href: string; parentWooId: number | null }[] = [
   { label: "POS", href: "/categoria/punto-de-venta-pos", parentWooId: 55 },
   { label: "Accesorios", href: "/productos", parentWooId: 195 },
   { label: "Ofertas", href: "/ofertas", parentWooId: null },
-  { label: "Marcas", href: "/marcas", parentWooId: null },
 ];
 
 export function getNavMenu(): NavItem[] {

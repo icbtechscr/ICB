@@ -2,24 +2,35 @@
 import { useRouter } from "next/navigation";
 
 type BranchOpt = { id: string; city: string };
+type EmployeeOpt = { id: string; name: string };
 
 export function HorarioFilters({
-  day,
+  from,
+  to,
   branchId,
+  userId,
   branches,
+  employees,
 }: {
-  day: string;
+  from: string;
+  to: string;
   branchId: string;
+  userId: string;
   branches: BranchOpt[];
+  employees: EmployeeOpt[];
 }) {
   const router = useRouter();
 
-  function update(next: { day?: string; branch?: string }) {
+  function update(next: Partial<{ from: string; to: string; branch: string; user: string }>) {
     const params = new URLSearchParams();
-    const d = next.day ?? day;
+    const f = next.from ?? from;
+    const t = next.to ?? to;
     const b = next.branch ?? branchId;
-    if (d) params.set("day", d);
+    const u = next.user ?? userId;
+    if (f) params.set("from", f);
+    if (t) params.set("to", t);
     if (b) params.set("branch", b);
+    if (u) params.set("user", u);
     router.push(`/admin/colaboradores/horario?${params.toString()}`);
   }
 
@@ -27,12 +38,25 @@ export function HorarioFilters({
     <div className="flex flex-wrap items-end gap-3">
       <label className="block">
         <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-ink-500">
-          Día
+          Desde
         </span>
         <input
           type="date"
-          value={day}
-          onChange={(e) => update({ day: e.target.value })}
+          value={from}
+          max={to}
+          onChange={(e) => update({ from: e.target.value })}
+          className="rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500"
+        />
+      </label>
+      <label className="block">
+        <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-ink-500">
+          Hasta
+        </span>
+        <input
+          type="date"
+          value={to}
+          min={from}
+          onChange={(e) => update({ to: e.target.value })}
           className="rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500"
         />
       </label>
@@ -49,6 +73,23 @@ export function HorarioFilters({
           {branches.map((b) => (
             <option key={b.id} value={b.id}>
               {b.city}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block">
+        <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-ink-500">
+          Colaborador
+        </span>
+        <select
+          value={userId}
+          onChange={(e) => update({ user: e.target.value })}
+          className="rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500"
+        >
+          <option value="">Todos</option>
+          {employees.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name}
             </option>
           ))}
         </select>

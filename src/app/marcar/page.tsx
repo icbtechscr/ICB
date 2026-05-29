@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/supabase-server";
 import { getUserBranchId, getUserFullName } from "@/lib/roles";
 import { getBranch } from "@/lib/branches";
-import { listMyEntriesToday } from "@/lib/timeclock-server";
+import { listMyEntriesRange } from "@/lib/timeclock-server";
+import { crTodayIso } from "@/lib/timeclock";
 import { PunchPanel } from "@/components/timeclock/PunchPanel";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +18,10 @@ export default async function MarcarPage() {
 
   const branchId = getUserBranchId(user);
   const branch = getBranch(branchId);
-  const entries = await listMyEntriesToday(user.id);
+  // Hoy + últimos 13 días de historial.
+  const today = crTodayIso();
+  const from = crTodayIso(new Date(Date.now() - 13 * 24 * 60 * 60 * 1000));
+  const entries = await listMyEntriesRange(user.id, from, today);
 
   return (
     <div className="bg-white">
