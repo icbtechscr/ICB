@@ -1,10 +1,11 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Clock, UserCog } from "lucide-react";
+import { Clock, History, UserCog } from "lucide-react";
 
 const SUBTABS = [
   { href: "/admin/colaboradores/horario", label: "Control de horario", Icon: Clock },
+  { href: "/admin/colaboradores/historial", label: "Historial", Icon: History },
   { href: "/admin/colaboradores/usuarios", label: "Usuarios y permisos", Icon: UserCog },
 ];
 

@@ -1,4 +1,4 @@
-import { CalendarDays } from "lucide-react";
+import { History } from "lucide-react";
 import { crTodayIso, buildDayRows, fmtDayLabel } from "@/lib/timeclock";
 import { adminListEntries } from "@/lib/timeclock-server";
 import { createAdminClient } from "@/lib/supabase";
@@ -10,23 +10,33 @@ import { TimeclockExport } from "@/components/admin/TimeclockExport";
 
 export const dynamic = "force-dynamic";
 
-export default async function ControlHorarioPage({
+export default async function HistorialPage({
   searchParams,
 }: {
-  searchParams: Promise<{ branch?: string; user?: string }>;
+  searchParams: Promise<{
+    from?: string;
+    to?: string;
+    branch?: string;
+    user?: string;
+  }>;
 }) {
   const sp = await searchParams;
   const today = crTodayIso();
+  const yesterday = crTodayIso(new Date(Date.now() - 24 * 60 * 60 * 1000));
+  const to = sp.to || yesterday;
+  const from =
+    sp.from || crTodayIso(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
   const branchId = sp.branch || "";
   const userId = sp.user || "";
 
   const entries = await adminListEntries({
-    from: today,
-    to: today,
+    from,
+    to,
     branchId: branchId || undefined,
     userId: userId || undefined,
   });
-  const rows = buildDayRows(entries);
+  // El historial son días pasados: excluimos el día de hoy.
+  const rows = buildDayRows(entries).filter((r) => r.dayIso !== today);
 
   let employees: { id: string; name: string }[] = [];
   try {
@@ -46,39 +56,33 @@ export default async function ControlHorarioPage({
     employees = [];
   }
 
-  const rangeLabel = `Hoy · ${fmtDayLabel(today)}${
+  const rangeLabel = `Del ${fmtDayLabel(from)} al ${fmtDayLabel(to)}${
     branchId ? ` · ${BRANCHES.find((b) => b.id === branchId)?.city ?? ""}` : ""
-  }`;
+  }${userId ? ` · ${employees.find((e) => e.id === userId)?.name ?? ""}` : ""}`;
 
   return (
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <HorarioFilters
-          basePath="/admin/colaboradores/horario"
-          from={today}
-          to={today}
+          basePath="/admin/colaboradores/historial"
+          from={from}
+          to={to}
           branchId={branchId}
           userId={userId}
           branches={BRANCHES.map((b) => ({ id: b.id, city: b.city }))}
           employees={employees}
-          showDates={false}
         />
         <TimeclockExport rows={rows} rangeLabel={rangeLabel} />
       </div>
 
       <div className="mt-5 overflow-hidden rounded-2xl border border-ink-200 bg-white">
         <div className="flex items-center gap-2 border-b border-ink-100 px-4 py-3">
-          <CalendarDays className="size-4 text-brand-600" />
+          <History className="size-4 text-brand-600" />
           <h2 className="text-sm font-bold text-ink-900">
-            Hoy · {fmtDayLabel(today)} — {rows.length} colaborador
-            {rows.length === 1 ? "" : "es"}
+            {rows.length} día{rows.length === 1 ? "" : "s"} con marcajes
           </h2>
         </div>
-        <HorarioTable
-          rows={rows}
-          showDay={false}
-          emptyText="Nadie ha marcado hoy todavía."
-        />
+        <HorarioTable rows={rows} emptyText="No hay marcajes en este rango." />
       </div>
     </div>
   );
