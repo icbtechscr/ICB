@@ -1,20 +1,23 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, ShoppingCart, Menu, LogIn } from "lucide-react";
+import { Search, ShoppingCart, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { NavHeader } from "@/components/ui/nav-header";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AuthButton } from "@/components/AuthButton";
 import { useCart } from "@/lib/cart";
 import type { NavItem } from "@/lib/category-tree";
 
 export function Header({
   menu,
   initialDark = false,
+  initialAuthed = false,
 }: {
   menu: NavItem[];
   initialDark?: boolean;
+  initialAuthed?: boolean;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { count } = useCart();
@@ -22,14 +25,14 @@ export function Header({
 
   return (
     <header className="relative z-40 border-b border-ink-200 bg-white text-ink-900">
-      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 md:py-4">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
+      <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-3 sm:gap-4 sm:px-4 md:py-4">
+        <Link href="/" className="flex shrink-0 items-center gap-2">
           <Image
             src="/icb-logo.png"
             alt="ICB Tech"
             width={200}
             height={64}
-            className="h-12 w-auto object-contain transition sm:h-14"
+            className="h-10 w-auto object-contain transition sm:h-14"
             priority
           />
         </Link>
@@ -53,34 +56,28 @@ export function Header({
           </label>
         </form>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
           <ThemeToggle initialDark={initialDark} />
-          <Link
-            href="/ingresar"
-            className="hidden items-center gap-2 rounded-md border border-ink-200 px-3 py-2 text-sm font-semibold text-ink-700 transition-colors hover:bg-ink-50 sm:inline-flex"
-          >
-            <LogIn className="size-4" />
-            Iniciar sesión
-          </Link>
+          <AuthButton initialAuthed={initialAuthed} />
           <Link
             href="/carrito"
             aria-label="Carrito"
-            className="relative inline-flex items-center gap-2 rounded-md border border-ink-200 px-3 py-2 text-sm font-semibold text-ink-700 transition-colors hover:bg-ink-50"
+            className="relative inline-flex h-10 items-center gap-2 rounded-md border border-ink-200 px-2.5 text-sm font-semibold text-ink-700 transition-colors hover:bg-ink-50 sm:px-3"
           >
             <ShoppingCart className="size-5" />
             <span className="hidden sm:inline">Carrito</span>
             {count > 0 && (
-              <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-500 px-1 text-[10px] font-bold text-ink-900 ring-2 ring-white">
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-500 px-1 text-[10px] font-bold text-ink-900 ring-2 ring-white">
                 {count > 99 ? "99+" : count}
               </span>
             )}
           </Link>
           <button
-            aria-label="Menú"
+            aria-label={mobileOpen ? "Cerrar menú" : "Menú"}
             onClick={() => setMobileOpen((v) => !v)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-md text-ink-700 hover:bg-ink-100 md:hidden"
+            className="inline-flex size-10 items-center justify-center rounded-md text-ink-700 hover:bg-ink-100 md:hidden"
           >
-            <Menu className="size-5" />
+            {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
         </div>
       </div>
@@ -107,7 +104,7 @@ export function Header({
               <li key={n.href}>
                 <Link
                   href={n.href}
-                  className={`flex items-center px-4 py-3 text-sm font-medium ${
+                  className={`flex items-center px-4 py-3.5 text-sm font-medium ${
                     pathname === n.href ? "bg-ink-50 text-brand-600" : "text-ink-700"
                   }`}
                   onClick={() => setMobileOpen(false)}
@@ -117,6 +114,13 @@ export function Header({
               </li>
             ))}
           </ul>
+          <div className="border-t border-ink-100 p-4">
+            <AuthButton
+              initialAuthed={initialAuthed}
+              full
+              onNavigate={() => setMobileOpen(false)}
+            />
+          </div>
         </div>
       )}
     </header>

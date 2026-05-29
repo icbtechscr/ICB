@@ -7,6 +7,7 @@ import { Footer } from "@/components/Footer";
 import { SiteChromeGate } from "@/components/SiteChromeGate";
 import { CartProvider } from "@/lib/cart";
 import { getNavMenu } from "@/lib/category-tree";
+import { getCurrentUser } from "@/lib/supabase-server";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -51,12 +52,13 @@ export default async function RootLayout({
 }>) {
   const menu = getNavMenu();
   const dark = (await cookies()).get("site-theme")?.value === "dark";
+  const user = await getCurrentUser();
   return (
     <html lang="es" className={`h-full antialiased${dark ? " dark" : ""}`}>
       <body className="min-h-full flex flex-col text-ink-900">
         <CartProvider>
           <SiteChromeGate>
-            <Header menu={menu} initialDark={dark} />
+            <Header menu={menu} initialDark={dark} initialAuthed={!!user} />
           </SiteChromeGate>
           <main className="flex-1">{children}</main>
           <SiteChromeGate>
