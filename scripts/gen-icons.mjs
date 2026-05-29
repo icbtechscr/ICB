@@ -50,4 +50,28 @@ await Promise.all([
   sharp(m).resize(180, 180).png().toFile("public/apple-touch-icon.png"),
 ]);
 
+// Favicon (pestaña del navegador): logo de marca ICB sobre fondo blanco cuadrado.
+const faviconBase = await sharp({
+  create: { width: 512, height: 512, channels: 4, background: "#ffffff" },
+})
+  .composite([
+    {
+      input: await sharp("public/icb-logo.png")
+        .resize(472, 472, {
+          fit: "contain",
+          background: { r: 255, g: 255, b: 255, alpha: 0 },
+        })
+        .toBuffer(),
+      gravity: "center",
+    },
+  ])
+  .png()
+  .toBuffer();
+
+await Promise.all([
+  sharp(faviconBase).resize(192, 192).png().toFile("public/favicon-192.png"),
+  sharp(faviconBase).resize(48, 48).png().toFile("public/favicon-48.png"),
+  sharp(faviconBase).resize(32, 32).png().toFile("public/favicon-32.png"),
+]);
+
 console.log("Iconos generados ✔");

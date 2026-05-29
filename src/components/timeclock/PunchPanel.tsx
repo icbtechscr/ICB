@@ -1,9 +1,10 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   LogOut,
   MapPin,
+  MapPinOff,
   Loader2,
   AlertTriangle,
   Sun,
@@ -25,6 +26,8 @@ import {
 } from "@/lib/timeclock";
 
 type BranchInfo = { id: string; name: string; address: string } | null;
+type Coords = { lat: number; lng: number; accuracy: number };
+type GeoStatus = "loading" | "ready" | "denied" | "unsupported";
 
 const ACTION: Record<
   Exclude<PunchType, "entrada">,
@@ -47,26 +50,6 @@ const ACTION: Record<
   },
 };
 
-function getPosition(): Promise<{
-  lat: number;
-  lng: number;
-  accuracy: number;
-} | null> {
-  return new Promise((resolve) => {
-    if (!("geolocation" in navigator)) return resolve(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) =>
-        resolve({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-        }),
-      () => resolve(null),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
-  });
-}
-
 export function PunchPanel({
   employeeName,
   branch,
@@ -81,6 +64,49 @@ export function PunchPanel({
   const [loadingType, setLoadingType] = useState<PunchType | null>(null);
   const [error, setError] = useState<string | null>(null);
   const todayIso = crTodayIso();
+
+  // --- Geolocalización: se precalienta al entrar y se mantiene fresca ---
+  const coordsRef = useRef<Coords | null>(null);
+  const [geoStatus, setGeoStatus] = useState<GeoStatus>("loading");
+  const [accuracy, setAccuracy] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+      setGeoStatus("unsupported");
+      return;
+    }
+    let settled = false;
+    const id = navigator.geolocation.watchPosition(
+      (pos) => {
+        settled = true;
+        coordsRef.current = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        };
+        setAccuracy(pos.coords.accuracy);
+        setGeoStatus("ready");
+      },
+      (err) => {
+        settled = true;
+        setGeoStatus(
+          err.code === err.PERMISSION_DENIED ? "denied" : "ready"
+        );
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
+    );
+    // Salvavidas: si el GPS no responde en 12s, no bloquear al colaborador.
+    const fallback = setTimeout(() => {
+      if (!settled) setGeoStatus("ready");
+    }, 12000);
+    return () => {
+      navigator.geolocation.clearWatch(id);
+      clearTimeout(fallback);
+    };
+  }, []);
+
+  const geoLoading = geoStatus === "loading";
+  const busy = geoLoading || loadingType !== null;
 
   const rows = useMemo(() => {
     const built = buildDayRows(entries);
@@ -107,10 +133,11 @@ export function PunchPanel({
   const historyRows = rows.filter((r) => r.dayIso !== todayIso);
 
   async function punch(type: PunchType) {
+    if (geoLoading) return; // no debería pasar (botones deshabilitados)
     setLoadingType(type);
     setError(null);
     try {
-      const pos = await getPosition();
+      const pos = coordsRef.current;
       const res = await fetch("/api/timeclock/punch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -168,6 +195,8 @@ export function PunchPanel({
         </button>
       </div>
 
+      <GeoBanner status={geoStatus} accuracy={accuracy} />
+
       {error && (
         <p className="mt-4 rounded-xl border border-danger/30 bg-danger/10 px-4 py-2.5 text-sm text-danger">
           {error}
@@ -185,15 +214,15 @@ export function PunchPanel({
           </h2>
           <button
             onClick={() => punch("entrada")}
-            disabled={loadingType !== null}
+            disabled={busy}
             className="mt-5 inline-flex w-full max-w-sm items-center justify-center gap-2.5 rounded-2xl bg-red-600 px-8 py-5 text-lg font-black text-white shadow-xl shadow-red-600/30 transition-all hover:bg-red-700 hover:shadow-red-600/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loadingType === "entrada" ? (
+            {loadingType === "entrada" || geoLoading ? (
               <Loader2 className="size-6 animate-spin" />
             ) : (
               <Sun className="size-6" />
             )}
-            Comenzar Día
+            {geoLoading ? "Obteniendo ubicación…" : "Comenzar Día"}
           </button>
           <p className="mt-3 text-xs text-ink-400">
             Se registrará tu hora y ubicación al tocar el botón.
@@ -205,6 +234,7 @@ export function PunchPanel({
             rows={[todayRow]}
             todayIso={todayIso}
             loadingType={loadingType}
+            busy={busy}
             onPunch={punch}
           />
         </div>
@@ -220,6 +250,7 @@ export function PunchPanel({
             rows={historyRows}
             todayIso={todayIso}
             loadingType={null}
+            busy={false}
             onPunch={punch}
           />
         </div>
@@ -228,15 +259,50 @@ export function PunchPanel({
   );
 }
 
+function GeoBanner({
+  status,
+  accuracy,
+}: {
+  status: GeoStatus;
+  accuracy: number | null;
+}) {
+  if (status === "loading") {
+    return (
+      <div className="mt-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+        <Loader2 className="size-4 shrink-0 animate-spin" />
+        Activando ubicación… aceptá el permiso de GPS para poder marcar.
+      </div>
+    );
+  }
+  if (status === "ready") {
+    return (
+      <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700">
+        <MapPin className="size-4 shrink-0" />
+        Ubicación lista{accuracy ? ` (±${Math.round(accuracy)} m)` : ""}.
+      </div>
+    );
+  }
+  // denied / unsupported
+  return (
+    <div className="mt-4 flex items-center gap-2 rounded-xl border border-ink-200 bg-ink-50 px-4 py-2.5 text-sm text-ink-600">
+      <MapPinOff className="size-4 shrink-0" />
+      Ubicación desactivada — podés marcar igual, pero quedará registrado sin
+      ubicación.
+    </div>
+  );
+}
+
 function DayTable({
   rows,
   todayIso,
   loadingType,
+  busy,
   onPunch,
 }: {
   rows: DayRow[];
   todayIso: string;
   loadingType: PunchType | null;
+  busy: boolean;
   onPunch: (t: PunchType) => void;
 }) {
   return (
@@ -279,7 +345,7 @@ function DayTable({
                       interactive={isToday}
                       cells={row.cells}
                       loading={loadingType === t}
-                      anyLoading={loadingType !== null}
+                      busy={busy}
                       onPunch={onPunch}
                     />
                   </td>
@@ -316,7 +382,7 @@ function Cell({
   interactive,
   cells,
   loading,
-  anyLoading,
+  busy,
   onPunch,
 }: {
   cell: PunchCell | null;
@@ -324,7 +390,7 @@ function Cell({
   interactive: boolean;
   cells: Record<PunchType, PunchCell | null>;
   loading: boolean;
-  anyLoading: boolean;
+  busy: boolean;
   onPunch: (t: PunchType) => void;
 }) {
   if (cell) {
@@ -342,7 +408,7 @@ function Cell({
     return (
       <button
         onClick={() => onPunch(type)}
-        disabled={anyLoading}
+        disabled={busy}
         className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold shadow-sm transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${a.cls}`}
       >
         {loading ? (
