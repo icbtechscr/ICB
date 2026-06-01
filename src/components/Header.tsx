@@ -49,7 +49,7 @@ export function Header({
             />
             <button
               type="submit"
-              className="absolute right-1 top-1/2 -translate-y-1/2 rounded-sm bg-accent-600 px-5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-accent-500"
+              className="absolute right-1 top-1/2 -translate-y-1/2 rounded-sm bg-accent-600 px-5 py-1.5 text-xs font-bold text-ink-900 transition-colors hover:bg-accent-500"
             >
               Buscar
             </button>

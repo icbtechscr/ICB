@@ -16,7 +16,7 @@ export function NavHeader({ items }: { items: NavItem[] }) {
       <li className="relative z-10 shrink-0">
         <Link
           href="/productos"
-          className="inline-flex items-center gap-2 rounded-sm bg-accent-600 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-accent-500"
+          className="inline-flex items-center gap-2 rounded-sm bg-accent-600 px-4 py-2 text-xs font-bold uppercase tracking-wide text-ink-900 transition-colors hover:bg-accent-500"
         >
           <Menu className="size-4" />
           Categorías

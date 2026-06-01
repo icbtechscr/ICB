@@ -26,7 +26,7 @@ export function HeroBanner({
           <h1 className="mt-5 text-4xl font-black leading-[1.05] tracking-tight text-brand-900 sm:text-5xl md:text-6xl">
             {hero.titleLine1}
             <br />
-            <span className="text-accent-600">{hero.titleLine2}</span>
+            <span className="text-accent-700">{hero.titleLine2}</span>
           </h1>
 
           <p className="mt-5 max-w-md text-base text-ink-700 md:text-lg">
@@ -36,7 +36,7 @@ export function HeroBanner({
           <div className="mt-7 flex flex-wrap gap-3">
             <Link
               href={hero.primaryCtaHref}
-              className="group inline-flex items-center gap-2 rounded-md bg-accent-600 px-6 py-3 text-sm font-bold text-white transition-all hover:bg-accent-500 active:scale-95"
+              className="group inline-flex items-center gap-2 rounded-md bg-accent-600 px-6 py-3 text-sm font-bold text-ink-900 transition-all hover:bg-accent-500 active:scale-95"
             >
               {hero.primaryCtaLabel}
               <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />

@@ -20,7 +20,7 @@ export function SectionHeader({
     accent === "danger"
       ? "text-danger"
       : accent === "accent"
-        ? "text-accent-700"
+        ? "text-accent-800"
         : "text-brand-600";
 
   return (

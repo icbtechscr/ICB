@@ -68,7 +68,7 @@ export default function CartPage() {
 
                   <div className="min-w-0 flex-1">
                     {it.brand && (
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-accent-700">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-accent-800">
                         {it.brand}
                       </span>
                     )}
@@ -133,7 +133,7 @@ export default function CartPage() {
                   </div>
                   <div className="flex justify-between border-b border-ink-200 pb-3">
                     <dt className="text-ink-500">Envío</dt>
-                    <dd className="font-semibold text-accent-700">A calcular</dd>
+                    <dd className="font-semibold text-accent-800">A calcular</dd>
                   </div>
                   <div className="flex items-end justify-between pt-2">
                     <div>
