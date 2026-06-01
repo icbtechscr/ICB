@@ -250,6 +250,31 @@ export async function getProductsByCategory(slug: string): Promise<Product[]> {
     .map(rowToProduct);
 }
 
+// Junta productos de varias subcategorías (para categorías "padre" sin página).
+export async function getProductsByCategorySlugs(
+  slugs: string[]
+): Promise<Product[]> {
+  if (!slugs.length) return [];
+  const { data: cats } = await supabase
+    .from("categories")
+    .select("id")
+    .in("slug", slugs);
+  const ids = (cats ?? []).map((c) => c.id);
+  if (!ids.length) return [];
+  const { data: pcs, error } = await supabase
+    .from("product_categories")
+    .select("product:products(" + SELECT + ")")
+    .in("category_id", ids);
+  if (error) throw error;
+  const map = new Map<string, Product>();
+  for (const r of (pcs ?? []) as unknown as { product: Row | null }[]) {
+    if (r.product && !map.has(r.product.id)) {
+      map.set(r.product.id, rowToProduct(r.product));
+    }
+  }
+  return [...map.values()];
+}
+
 export async function getCategoryBySlug(
   slug: string
 ): Promise<{ id: string; name: string; slug: string } | null> {

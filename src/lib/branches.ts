@@ -86,7 +86,7 @@ export const BRANCHES: Branch[] = [
     city: "Barreal de Heredia",
     name: "CEDI Barreal de Heredia",
     address: "Barreal, Heredia, ModyPlaza Local 14, frente a CENADA.",
-    phone: "+506 4001 6421",
+    phone: "+506 4002 5649",
     lat: 9.9812842,
     lng: -84.1513852,
     gmaps: "https://maps.app.goo.gl/jatydzHVitGKQ4Av6",

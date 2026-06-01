@@ -11,6 +11,9 @@ import {
   Utensils,
   Coffee,
   DoorOpen,
+  Settings,
+  X,
+  KeyRound,
 } from "lucide-react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import {
@@ -108,6 +111,40 @@ export function PunchPanel({
   const geoLoading = geoStatus === "loading";
   const busy = geoLoading || loadingType !== null;
 
+  // --- Configuración: cambiar contraseña ---
+  const [showSettings, setShowSettings] = useState(false);
+  const [newPass, setNewPass] = useState("");
+  const [confirmPass, setConfirmPass] = useState("");
+  const [savingPass, setSavingPass] = useState(false);
+  const [passMsg, setPassMsg] = useState<{ ok: boolean; text: string } | null>(
+    null
+  );
+
+  async function changePassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (newPass.length < 8) {
+      setPassMsg({ ok: false, text: "La contraseña debe tener mínimo 8 caracteres." });
+      return;
+    }
+    if (newPass !== confirmPass) {
+      setPassMsg({ ok: false, text: "Las contraseñas no coinciden." });
+      return;
+    }
+    setSavingPass(true);
+    setPassMsg(null);
+    const { error } = await createSupabaseBrowser().auth.updateUser({
+      password: newPass,
+    });
+    setSavingPass(false);
+    if (error) {
+      setPassMsg({ ok: false, text: error.message });
+    } else {
+      setPassMsg({ ok: true, text: "Contraseña actualizada correctamente." });
+      setNewPass("");
+      setConfirmPass("");
+    }
+  }
+
   const rows = useMemo(() => {
     const built = buildDayRows(entries);
     if (!built.some((r) => r.dayIso === todayIso)) {
@@ -182,18 +219,102 @@ export function PunchPanel({
             </p>
           )}
         </div>
-        <button
-          onClick={async () => {
-            await createSupabaseBrowser().auth.signOut();
-            router.replace("/ingresar");
-            router.refresh();
-          }}
-          className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:bg-ink-50"
-        >
-          <LogOut className="size-3.5" />
-          Salir
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setShowSettings(true);
+              setPassMsg(null);
+            }}
+            aria-label="Configuración"
+            title="Configuración"
+            className="inline-flex size-9 items-center justify-center rounded-full border border-ink-200 text-ink-600 transition hover:bg-ink-50"
+          >
+            <Settings className="size-4" />
+          </button>
+          <button
+            onClick={async () => {
+              await createSupabaseBrowser().auth.signOut();
+              router.replace("/ingresar");
+              router.refresh();
+            }}
+            className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:bg-ink-50"
+          >
+            <LogOut className="size-3.5" />
+            Salir
+          </button>
+        </div>
       </div>
+
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/40 p-4 sm:items-center">
+          <div className="w-full max-w-sm rounded-3xl border border-ink-200 bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-lg font-black text-ink-900">
+                <Settings className="size-5 text-brand-600" />
+                Configuración
+              </h3>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="inline-flex size-8 items-center justify-center rounded-full text-ink-400 hover:bg-ink-100"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <form onSubmit={changePassword} className="mt-5">
+              <h4 className="flex items-center gap-2 text-sm font-bold text-ink-900">
+                <KeyRound className="size-4 text-ink-500" />
+                Cambiar contraseña
+              </h4>
+              <label className="mt-3 block">
+                <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-ink-500">
+                  Nueva contraseña
+                </span>
+                <input
+                  type="password"
+                  value={newPass}
+                  onChange={(e) => setNewPass(e.target.value)}
+                  placeholder="mínimo 8 caracteres"
+                  className="w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5 text-sm text-ink-900 outline-none focus:border-brand-500"
+                />
+              </label>
+              <label className="mt-3 block">
+                <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-ink-500">
+                  Confirmar contraseña
+                </span>
+                <input
+                  type="password"
+                  value={confirmPass}
+                  onChange={(e) => setConfirmPass(e.target.value)}
+                  placeholder="repetí la contraseña"
+                  className="w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5 text-sm text-ink-900 outline-none focus:border-brand-500"
+                />
+              </label>
+
+              {passMsg && (
+                <p
+                  className={`mt-3 rounded-xl px-3 py-2 text-xs ${
+                    passMsg.ok
+                      ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border border-danger/30 bg-danger/10 text-danger"
+                  }`}
+                >
+                  {passMsg.text}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={savingPass}
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700 disabled:opacity-60"
+              >
+                {savingPass && <Loader2 className="size-4 animate-spin" />}
+                Guardar contraseña
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       <GeoBanner status={geoStatus} accuracy={accuracy} />
 

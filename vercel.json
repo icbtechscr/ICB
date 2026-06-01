@@ -1,6 +1,5 @@
 {
   "crons": [
-    { "path": "/api/cron/marcaje-reminder", "schedule": "0 14 * * *" },
-    { "path": "/api/cron/marcaje-reminder", "schedule": "10 14 * * *" }
+    { "path": "/api/cron/marcaje-reminder", "schedule": "35 14 * * *" }
   ]
 }

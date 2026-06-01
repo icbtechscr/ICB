@@ -121,7 +121,7 @@ export function PushReminder() {
       <div className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
         <span className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
           <BellRing className="size-4 shrink-0" />
-          Recordatorios activados (8:00 y 8:10 a. m.)
+          Recordatorios activados (8:35 a. m.)
         </span>
         <button
           onClick={disable}
@@ -146,7 +146,7 @@ export function PushReminder() {
             Activá los recordatorios
           </p>
           <p className="mt-0.5 text-xs text-ink-600">
-            Te avisamos a las 8:00 y 8:10 a. m. si no has marcado tu entrada.
+            Te avisamos a las 8:35 a. m. si no has marcado tu entrada.
           </p>
         </div>
       </div>

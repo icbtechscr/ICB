@@ -61,3 +61,17 @@ export function getNavMenu(): NavItem[] {
     children: getChildren(item.parentWooId),
   }));
 }
+
+// Para slugs que son categorías "padre" sin página propia (ej. "redes"):
+// devuelve el nombre y los slugs de sus subcategorías para juntar sus productos.
+export function getCategoryGroup(
+  slug: string
+): { name: string; childSlugs: string[] } | null {
+  const item = CURATED.find(
+    (c) => c.href === `/categoria/${slug}` && c.parentWooId != null
+  );
+  if (!item) return null;
+  const children = getChildren(item.parentWooId, 100);
+  if (!children.length) return null;
+  return { name: item.label, childSlugs: children.map((c) => c.slug) };
+}
