@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { rewriteMediaUrl } from "./image-url";
 
 export type Product = {
   id: string;
@@ -45,7 +46,11 @@ const SELECT = `
 function rowToProduct(r: Row): Product {
   const images = [...(r.product_images ?? [])]
     .sort((a, b) => a.position - b.position)
-    .map((i) => ({ src: i.url, alt: i.alt ?? "", position: i.position }));
+    .map((i) => ({
+      src: rewriteMediaUrl(i.url),
+      alt: i.alt ?? "",
+      position: i.position,
+    }));
   const categories = (r.product_categories ?? [])
     .map((pc) => pc.category)
     .filter((c): c is { id: string; name: string; slug: string } => !!c);
@@ -193,7 +198,7 @@ export async function getTopCategoriesWithImage(
         const imgs = r.product?.product_images ?? [];
         const first = [...imgs].sort((a, b) => a.position - b.position)[0];
         if (first?.url) {
-          imageUrl = first.url;
+          imageUrl = rewriteMediaUrl(first.url);
           break;
         }
       }

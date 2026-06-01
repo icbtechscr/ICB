@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { rewriteMediaUrl } from "./image-url";
 
 export type HeroContent = {
   badge: string;
@@ -182,9 +183,15 @@ export async function getSiteContent(): Promise<SiteContent> {
     const map = new Map(
       (data ?? []).map((r) => [r.key as string, r.value as Record<string, unknown>])
     );
+    const categories = mergeSection("categories", map.get("categories"));
+    // Reescribe las imágenes de categorías (legacy WordPress) al subdominio CDN.
+    categories.items = (categories.items ?? []).map((it) => ({
+      ...it,
+      imageUrl: rewriteMediaUrl(it.imageUrl),
+    }));
     return {
       hero: mergeSection("hero", map.get("hero")),
-      categories: mergeSection("categories", map.get("categories")),
+      categories,
       ofertas: mergeSection("ofertas", map.get("ofertas")),
       destacados: mergeSection("destacados", map.get("destacados")),
       cta: mergeSection("cta", map.get("cta")),

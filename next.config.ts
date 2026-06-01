@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "www.icbtechscr.com" },
       { protocol: "https", hostname: "icbtechscr.com" },
+      // Host de medios (WordPress legacy): subdominio que se queda en el cPanel
+      // y sirve las imágenes tras migrar el dominio principal a Vercel.
+      { protocol: "https", hostname: "cdn.icbtechscr.com" },
       { protocol: "https", hostname: "fnnzlkvohsaxwnmdymvc.supabase.co" },
       { protocol: "https", hostname: "logo.clearbit.com" },
       { protocol: "https", hostname: "cdn.simpleicons.org" },

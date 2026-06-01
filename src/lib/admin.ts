@@ -1,4 +1,14 @@
 import { createAdminClient } from "./supabase";
+import { rewriteMediaUrl } from "./image-url";
+
+function rewriteProductImages<T extends { product_images?: { url: string }[] }>(
+  p: T
+): T {
+  if (p.product_images) {
+    for (const img of p.product_images) img.url = rewriteMediaUrl(img.url);
+  }
+  return p;
+}
 
 export type AdminProduct = {
   id: string;
@@ -57,7 +67,10 @@ export async function adminListProducts(opts: {
 
   const { data, error, count } = await query;
   if (error) throw error;
-  return { products: (data ?? []) as unknown as AdminProduct[], total: count ?? 0 };
+  const products = ((data ?? []) as unknown as AdminProduct[]).map(
+    rewriteProductImages
+  );
+  return { products, total: count ?? 0 };
 }
 
 export async function adminGetProduct(id: string): Promise<AdminProduct | null> {
@@ -68,7 +81,7 @@ export async function adminGetProduct(id: string): Promise<AdminProduct | null> 
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
-  return (data as unknown as AdminProduct) ?? null;
+  return data ? rewriteProductImages(data as unknown as AdminProduct) : null;
 }
 
 export async function adminListBrands(): Promise<{ id: string; name: string; slug: string }[]> {
