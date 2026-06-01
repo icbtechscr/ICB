@@ -67,7 +67,6 @@ export function CategoryCarousel({
                     fill
                     sizes="(max-width: 640px) 112px, 144px"
                     className="object-contain p-4 transition-transform duration-500 group-hover/item:scale-110"
-                    unoptimized
                   />
                 ) : (
                   <span className="text-xs text-ink-400">{c.name}</span>

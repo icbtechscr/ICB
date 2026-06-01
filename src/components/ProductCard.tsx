@@ -30,7 +30,6 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
               className="object-contain p-4 transition-transform duration-500 ease-out group-hover:scale-110"
-              unoptimized
             />
           ) : (
             <div className="flex h-full items-center justify-center text-xs text-ink-400">

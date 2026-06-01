@@ -133,7 +133,6 @@ export default async function ProductPage({
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-contain p-6"
                   priority
-                  unoptimized
                 />
               ) : (
                 <div className="flex h-full items-center justify-center text-ink-500">
@@ -160,7 +159,6 @@ export default async function ProductPage({
                       fill
                       sizes="120px"
                       className="object-contain p-2"
-                      unoptimized
                     />
                   </div>
                 ))}
@@ -299,11 +297,6 @@ export default async function ProductPage({
                 label: "Especificaciones",
                 content: <SpecsBlock product={product} />,
               },
-              {
-                id: "warranty",
-                label: "Garantía & envío",
-                content: <WarrantyBlock />,
-              },
             ]}
           />
         </div>
@@ -395,38 +388,3 @@ function SpecsBlock({
   );
 }
 
-function WarrantyBlock() {
-  const items = [
-    {
-      Icon: ShieldCheck,
-      title: "Garantía oficial",
-      desc: "Todos nuestros productos cuentan con respaldo de fábrica. Cambios y soporte en sitio para clientes empresariales.",
-    },
-    {
-      Icon: Truck,
-      title: "Envío a todo Costa Rica",
-      desc: "Despacho 24-48h en GAM y 2-4 días al resto del país. Recogida gratuita en sucursal disponible.",
-    },
-    {
-      Icon: Headphones,
-      title: "Soporte técnico ICB",
-      desc: "Equipo de ingenieros disponible para instalación, configuración y mantenimiento preventivo.",
-    },
-  ];
-  return (
-    <div className="grid gap-5 sm:grid-cols-3">
-      {items.map(({ Icon, title, desc }) => (
-        <div
-          key={title}
-          className="rounded-2xl border border-ink-200 bg-white p-5 transition-colors hover:border-accent-500/50 hover:bg-ink-50"
-        >
-          <div className="flex size-10 items-center justify-center rounded-xl bg-accent-100 text-accent-700 ring-1 ring-accent-200">
-            <Icon className="size-5" />
-          </div>
-          <h4 className="mt-3 text-sm font-bold text-ink-900">{title}</h4>
-          <p className="mt-1 text-xs leading-relaxed text-ink-500">{desc}</p>
-        </div>
-      ))}
-    </div>
-  );
-}

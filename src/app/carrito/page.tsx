@@ -58,7 +58,6 @@ export default function CartPage() {
                         fill
                         sizes="(max-width: 640px) 100vw, 112px"
                         className="object-contain p-3"
-                        unoptimized
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center text-xs text-ink-400">

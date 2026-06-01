@@ -1,13 +1,12 @@
-"use client";
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
 import { ArrowRight, Sparkles, Zap, ShieldCheck } from "lucide-react";
 import type { Product } from "@/lib/products";
 import type { HeroContent } from "@/lib/site-content";
 
 const BULLET_ICONS = [ShieldCheck, Zap, Sparkles];
 
+// Server component, sin framer-motion: el texto (LCP) se pinta de inmediato.
 export function HeroBanner({
   featured,
   hero,
@@ -17,47 +16,24 @@ export function HeroBanner({
 }) {
   return (
     <section className="relative isolate overflow-hidden border-b border-ink-200 bg-white text-ink-900">
-
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-14 md:grid-cols-2 md:py-16 lg:py-20">
         <div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700"
-          >
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
             <Sparkles className="size-3.5" />
             {hero.badge}
-          </motion.div>
+          </div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="mt-5 text-4xl font-black leading-[1.05] tracking-tight text-brand-900 sm:text-5xl md:text-6xl"
-          >
+          <h1 className="mt-5 text-4xl font-black leading-[1.05] tracking-tight text-brand-900 sm:text-5xl md:text-6xl">
             {hero.titleLine1}
             <br />
-            <span className="text-accent-600">
-              {hero.titleLine2}
-            </span>
-          </motion.h1>
+            <span className="text-accent-600">{hero.titleLine2}</span>
+          </h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-5 max-w-md text-base text-ink-700 md:text-lg"
-          >
+          <p className="mt-5 max-w-md text-base text-ink-700 md:text-lg">
             {hero.subtitle}
-          </motion.p>
+          </p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-7 flex flex-wrap gap-3"
-          >
+          <div className="mt-7 flex flex-wrap gap-3">
             <Link
               href={hero.primaryCtaHref}
               className="group inline-flex items-center gap-2 rounded-md bg-accent-600 px-6 py-3 text-sm font-bold text-white transition-all hover:bg-accent-500 active:scale-95"
@@ -72,14 +48,9 @@ export function HeroBanner({
               <Zap className="size-4 text-brand-700" />
               {hero.secondaryCtaLabel}
             </Link>
-          </motion.div>
+          </div>
 
-          <motion.ul
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="mt-10 grid grid-cols-3 gap-3 border-t border-ink-200 pt-6 text-xs text-ink-700 sm:gap-4"
-          >
+          <ul className="mt-10 grid grid-cols-3 gap-3 border-t border-ink-200 pt-6 text-xs text-ink-700 sm:gap-4">
             {hero.bullets.map((b, i) => {
               const Icon = BULLET_ICONS[i] ?? Sparkles;
               return (
@@ -89,16 +60,11 @@ export function HeroBanner({
                 </li>
               );
             })}
-          </motion.ul>
+          </ul>
         </div>
 
         {featured && featured.images[0] && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="relative mx-auto w-full max-w-xl"
-          >
+          <div className="relative mx-auto w-full max-w-xl">
             <Link
               href={`/productos/${featured.slug}`}
               className="group relative block overflow-hidden rounded-xl border border-ink-200 bg-white p-4 transition-all hover:border-brand-200"
@@ -111,7 +77,6 @@ export function HeroBanner({
                   sizes="(max-width: 768px) 90vw, 640px"
                   className="object-contain transition-transform duration-500 group-hover:scale-105"
                   priority
-                  unoptimized
                 />
               </div>
               <div className="mt-3 border-t border-ink-100 pt-3">
@@ -128,7 +93,7 @@ export function HeroBanner({
                 </span>
               </div>
             </Link>
-          </motion.div>
+          </div>
         )}
       </div>
     </section>
