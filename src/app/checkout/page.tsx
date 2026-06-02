@@ -22,7 +22,7 @@ import {
   type PickedLocation,
 } from "@/components/checkout/LocationPicker";
 import {
-  SHIPPING_ZONES,
+  ZONE_GROUPS,
   getZone,
   zoneRate,
   zoneFromLocation,
@@ -33,7 +33,7 @@ import {
   type PackageSize,
 } from "@/lib/shipping";
 
-const STORAGE_KEY = "icb-checkout-v2";
+const STORAGE_KEY = "icb-checkout-v3";
 
 type ShipMethod = "recogida" | "envio" | "encomienda";
 
@@ -79,7 +79,7 @@ const DEFAULT_FORM: ShippingForm = {
   lat: null,
   lng: null,
   method: "envio",
-  zoneId: "nacional",
+  zoneId: "correos",
   size: "moto",
 };
 
@@ -309,26 +309,30 @@ export default function CheckoutPage() {
                       <MapPin className="size-4 shrink-0" />
                       <span>
                         {form.lat !== null
-                          ? "Zona detectada del mapa: "
+                          ? "Zona sugerida del mapa: "
                           : "Zona: "}
-                        <b>{zone.label}</b>. Podés ajustarla abajo.
+                        <b>{zone.zone}</b> · {zone.label}. Podés cambiarla abajo.
                       </span>
                     </div>
                   )}
                   <div className="grid gap-4 rounded-2xl border border-ink-200 bg-ink-50 p-4 sm:grid-cols-2">
                     <label className="block">
                       <span className="text-xs font-bold uppercase tracking-wider text-ink-600">
-                        Zona / destino
+                        Encomienda / destino
                       </span>
                       <select
                         value={form.zoneId}
                         onChange={(e) => set("zoneId", e.target.value)}
                         className="mt-1 w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5 text-sm text-ink-900 outline-none focus:border-brand-500"
                       >
-                        {SHIPPING_ZONES.map((z) => (
-                          <option key={z.id} value={z.id}>
-                            {z.label}
-                          </option>
+                        {ZONE_GROUPS.map((g) => (
+                          <optgroup key={g.zone} label={g.zone}>
+                            {g.services.map((z) => (
+                              <option key={z.id} value={z.id}>
+                                {z.label}
+                              </option>
+                            ))}
+                          </optgroup>
                         ))}
                       </select>
                       {zone && (

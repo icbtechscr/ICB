@@ -50,7 +50,7 @@ export async function POST(req: Request) {
       const size = shipping.size === "carro" ? "carro" : "moto";
       if (zone)
         shippingDetailParts.push(
-          `Encomienda: ${zone.label} (${size}) · ${zone.service}`
+          `Encomienda: ${zone.label} · ${zone.zone} (${size})`
         );
     }
     if (

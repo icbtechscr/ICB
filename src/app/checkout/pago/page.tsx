@@ -24,7 +24,7 @@ import {
   type PackageSize,
 } from "@/lib/shipping";
 
-const SHIPPING_KEY = "icb-checkout-v2";
+const SHIPPING_KEY = "icb-checkout-v3";
 const PAYMENT_KEY = "icb-payment-v1";
 
 type Method = "tarjeta" | "sinpe" | "transferencia";

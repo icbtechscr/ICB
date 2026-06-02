@@ -1,99 +1,171 @@
-// Zonas y tarifas de encomienda en Costa Rica.
-// Basado en el Excel "encomiendas_costa_rica.xlsx".
-// Cada zona tiene dos tarifas: pedido pequeño (cabe en motocicleta) o grande
-// (requiere carro). El cliente elige zona + tamaño y se calcula el costo.
+// Encomiendas de Costa Rica — basado 1:1 en "encomiendas_costa_rica.xlsx".
+// Cada servicio tiene su zona principal y dos tarifas:
+//   - motoRate: pedido pequeño (cabe en motocicleta)
+//   - carRate:  pedido grande (requiere carro)
+// El cliente elige el servicio/zona + tamaño y se calcula el costo.
 
 export type PackageSize = "moto" | "carro";
 
 export type ShippingZone = {
   id: string;
-  label: string; // nombre amigable para el selector
-  service: string; // encomienda recomendada
-  coverage: string; // descripción de cobertura
+  label: string; // nombre del servicio de encomienda (Excel)
+  zone: string; // zona principal (Excel)
+  coverage: string; // destinos / cobertura (Excel)
   motoRate: number;
   carRate: number;
 };
 
 export const SHIPPING_ZONES: ShippingZone[] = [
   {
-    id: "nacional",
-    label: "Nacional (GAM y todo el país)",
-    service: "Correos de Costa Rica",
-    coverage: "Cobertura nacional: GAM y resto del país.",
+    id: "correos",
+    label: "Correos de Costa Rica - Encomienda Nacional",
+    zone: "Nacional",
+    coverage: "Cobertura nacional: GAM y todo el país.",
     motoRate: 8000,
     carRate: 10000,
   },
   {
-    id: "caribe",
-    label: "Caribe / Limón",
-    service: "Encomiendas Caribeños",
-    coverage:
-      "Guápiles, Siquirres, Limón, Matina, Guácimo, Pocora, Cariari y zona Caribe.",
+    id: "bodega-anay",
+    label: "Bodega ANAY",
+    zone: "Nacional",
+    coverage: "Encomiendas a domicilio en diversos puntos del país.",
+    motoRate: 7000,
+    carRate: 11000,
+  },
+  {
+    id: "caribenos",
+    label: "Encomiendas Caribeños",
+    zone: "Caribe / Limón",
+    coverage: "Guápiles, Siquirres, Limón, Matina, Guácimo, Cariari y zona Caribe.",
     motoRate: 4000,
     carRate: 8000,
   },
   {
-    id: "pococi",
-    label: "Pococí / Guápiles",
-    service: "Encomiendas Guapileños",
+    id: "guapilenos",
+    label: "Encomiendas Guapileños",
+    zone: "Caribe / Pococí",
     coverage: "Guápiles, Cariari, Roxana, La Rita, Jiménez, Pococí y alrededores.",
     motoRate: 4000,
     carRate: 8000,
   },
   {
-    id: "zona-sur",
-    label: "Zona Sur / Pacífico Sur",
-    service: "TRACOPA",
+    id: "tracopa",
+    label: "TRACOPA Encomiendas",
+    zone: "Zona Sur / Pacífico Sur",
     coverage:
-      "Quepos, Manuel Antonio, Parrita, Uvita, Dominical, Palmar, Golfito, Ciudad Neily, Paso Canoas, Buenos Aires, San Vito.",
+      "Quepos, Parrita, Uvita, Dominical, Palmar, Golfito, Ciudad Neily, Paso Canoas, Buenos Aires, San Vito.",
     motoRate: 7000,
     carRate: 12000,
   },
   {
-    id: "perez-zeledon",
-    label: "Pérez Zeledón / Los Santos",
-    service: "MUSOC",
+    id: "musoc",
+    label: "MUSOC Encomiendas",
+    zone: "Pérez Zeledón / Los Santos",
     coverage: "San Isidro de Pérez Zeledón, Tarrazú, Dota, León Cortés.",
     motoRate: 4000,
     carRate: 8000,
   },
   {
-    id: "puntarenas",
-    label: "Puntarenas / Pacífico Central",
-    service: "Empresarios Unidos de Puntarenas",
+    id: "blanco",
+    label: "Transportes Blanco",
+    zone: "Zona Sur",
+    coverage:
+      "Ciudad Neily, Dominical, San Isidro del General, Puerto Jiménez, Palmar Norte, Quepos.",
+    motoRate: 4000,
+    carRate: 8000,
+  },
+  {
+    id: "transcama",
+    label: "Transcama",
+    zone: "Zona Sur y nacional",
+    coverage: "Zona sur y resto del país (encomiendas, carga y mudanzas).",
+    motoRate: 5000,
+    carRate: 9000,
+  },
+  {
+    id: "empresarios-unidos",
+    label: "Empresarios Unidos de Puntarenas",
+    zone: "Puntarenas / Pacífico Central",
     coverage: "Puntarenas, Esparza, El Roble y San Ramón.",
     motoRate: 4000,
     carRate: 9000,
   },
   {
-    id: "guanacaste",
-    label: "Guanacaste",
-    service: "Curubandé Express / TIG",
+    id: "curubande",
+    label: "Curubandé Express",
+    zone: "Guanacaste",
     coverage:
-      "Liberia, Playas del Coco, Tamarindo, Santa Cruz, Nicoya, Nosara, Cañas, La Cruz y más.",
+      "Liberia, Playas del Coco, Tamarindo, Santa Cruz, Cañas, La Cruz, Papagayo.",
     motoRate: 5000,
     carRate: 9000,
   },
   {
-    id: "zona-norte",
-    label: "Zona Norte (San Carlos)",
-    service: "Transportes Sancarleños",
+    id: "tig",
+    label: "TIG - Transporte Inteligente de Guanacaste",
+    zone: "Guanacaste",
+    coverage: "Nicoya, Nosara, Santa Cruz y Tamarindo.",
+    motoRate: 5000,
+    carRate: 9000,
+  },
+  {
+    id: "sancarlenos",
+    label: "Transportes Sancarleños / DESC",
+    zone: "Zona Norte",
     coverage: "Ciudad Quesada, La Fortuna, Guatuso, Pital, Venecia, Zarcero.",
     motoRate: 4000,
     carRate: 8000,
   },
   {
-    id: "cartago-turrialba",
-    label: "Cartago / Turrialba",
-    service: "Transtusa",
+    id: "ocampo",
+    label: "Transportes Ocampo",
+    zone: "Caribe / Zona Norte / conexiones",
+    coverage:
+      "Guápiles, Cariari, Guácimo; conexiones con Alajuela, Heredia, Cañas, Tilarán, Arenal.",
+    motoRate: 4000,
+    carRate: 8000,
+  },
+  {
+    id: "ms-mc",
+    label: "Transportes MS y MC",
+    zone: "Caribe / Limón",
+    coverage: "Limón, Siquirres, Batán y otros puntos del Caribe.",
+    motoRate: 4000,
+    carRate: 8000,
+  },
+  {
+    id: "transtusa",
+    label: "Transtusa",
+    zone: "Cartago / Turrialba",
     coverage: "Cartago, Paraíso y Turrialba.",
     motoRate: 4000,
     carRate: 8000,
   },
+  {
+    id: "morita",
+    label: "Morita Express",
+    zone: "Zona Norte",
+    coverage: "Ciudad Quesada, La Fortuna y Chachagua.",
+    motoRate: 5000,
+    carRate: 9000,
+  },
 ];
+
+// Servicios agrupados por zona principal (para el selector con optgroups).
+export const ZONE_GROUPS: { zone: string; services: ShippingZone[] }[] = (() => {
+  const m = new Map<string, ShippingZone[]>();
+  for (const z of SHIPPING_ZONES) {
+    if (!m.has(z.zone)) m.set(z.zone, []);
+    m.get(z.zone)!.push(z);
+  }
+  return [...m.entries()].map(([zone, services]) => ({ zone, services }));
+})();
 
 export function getZone(id: string | null | undefined): ShippingZone | undefined {
   return SHIPPING_ZONES.find((z) => z.id === id);
+}
+
+export function zoneRate(zone: ShippingZone, size: PackageSize): number {
+  return size === "carro" ? zone.carRate : zone.motoRate;
 }
 
 // Origen de los envíos: ICB San José.
@@ -112,8 +184,7 @@ export function distanceShippingCost(
   return km * PER_KM_RATE;
 }
 
-// Determina la zona de encomienda a partir de la provincia/cantón
-// (obtenidos del reverse-geocoding del punto marcado en el mapa).
+// Sugiere un servicio de encomienda según la provincia/cantón del punto marcado.
 export function zoneFromLocation(
   province?: string | null,
   canton?: string | null
@@ -122,12 +193,12 @@ export function zoneFromLocation(
   const c = (canton || "").toLowerCase();
   const has = (s: string) => c.includes(s);
 
-  if (p.includes("guanacaste")) return "guanacaste";
+  if (p.includes("guanacaste")) return "curubande";
 
   if (p.includes("limón") || p.includes("limon")) {
     if (has("pococí") || has("pococi") || has("guápiles") || has("guapiles"))
-      return "pococi";
-    return "caribe";
+      return "guapilenos";
+    return "caribenos";
   }
 
   if (p.includes("puntarenas")) {
@@ -141,11 +212,11 @@ export function zoneFromLocation(
       "parrita",
       "garabito",
     ];
-    if (sur.some(has)) return "zona-sur";
-    return "puntarenas";
+    if (sur.some(has)) return "tracopa";
+    return "empresarios-unidos";
   }
 
-  if (p.includes("cartago")) return "cartago-turrialba";
+  if (p.includes("cartago")) return "transtusa";
 
   if (p.includes("san josé") || p.includes("san jose")) {
     const losSantos = [
@@ -157,8 +228,8 @@ export function zoneFromLocation(
       "león cortés",
       "leon cortes",
     ];
-    if (losSantos.some(has)) return "perez-zeledon";
-    return "nacional"; // GAM
+    if (losSantos.some(has)) return "musoc";
+    return "correos";
   }
 
   if (p.includes("alajuela")) {
@@ -173,16 +244,16 @@ export function zoneFromLocation(
       "sarchi",
       "naranjo",
     ];
-    if (norte.some(has)) return "zona-norte";
-    return "nacional"; // GAM
+    if (norte.some(has)) return "sancarlenos";
+    return "correos";
   }
 
   if (p.includes("heredia")) {
-    if (has("sarapiquí") || has("sarapiqui")) return "zona-norte";
-    return "nacional"; // GAM
+    if (has("sarapiquí") || has("sarapiqui")) return "sancarlenos";
+    return "correos";
   }
 
-  return "nacional";
+  return "correos";
 }
 
 /** Distancia aproximada en km entre dos coordenadas (Haversine). */
@@ -200,8 +271,4 @@ export function distanceKm(
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
   return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-}
-
-export function zoneRate(zone: ShippingZone, size: PackageSize): number {
-  return size === "carro" ? zone.carRate : zone.motoRate;
 }
