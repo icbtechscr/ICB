@@ -136,11 +136,8 @@ export async function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-5 text-xs text-ink-500 md:flex-row">
+        <div className="mx-auto flex max-w-7xl items-center justify-center px-4 py-5 text-xs text-ink-500">
           <p>© {new Date().getFullYear()} ICB Technologies. Todos los derechos reservados.</p>
-          <p className="text-ink-500">
-            Hecho con cuidado en Costa Rica 🇨🇷
-          </p>
         </div>
       </div>
     </footer>

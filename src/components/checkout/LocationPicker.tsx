@@ -84,8 +84,7 @@ export function LocationPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function search(e: React.FormEvent) {
-    e.preventDefault();
+  async function doSearch() {
     if (!query.trim()) return;
     setSearching(true);
     try {
@@ -121,17 +120,24 @@ export function LocationPicker({
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       />
 
-      <form onSubmit={search} className="relative">
+      <div className="relative">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                doSearch();
+              }
+            }}
             placeholder="Ejemplo: Condominio Las Flores, Heredia"
             className="w-full rounded-xl border border-ink-200 bg-white py-3 pl-10 pr-24 text-sm text-ink-900 outline-none focus:border-brand-500"
           />
           <button
-            type="submit"
+            type="button"
+            onClick={doSearch}
             disabled={searching}
             className="absolute right-1.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-brand-700 disabled:opacity-60"
           >
@@ -154,7 +160,7 @@ export function LocationPicker({
             ))}
           </ul>
         )}
-      </form>
+      </div>
 
       <p className="mt-1.5 text-[11px] text-ink-400">
         Buscá tu zona y luego <b>arrastrá el pin</b> (o tocá el mapa) al punto
