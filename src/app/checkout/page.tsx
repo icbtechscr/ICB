@@ -22,13 +22,20 @@ import {
   type PickedLocation,
 } from "@/components/checkout/LocationPicker";
 import {
+  SHIPPING_ZONES,
+  getZone,
+  zoneRate,
+  zoneFromLocation,
   distanceKm,
   distanceShippingCost,
   ORIGIN,
   PER_KM_RATE,
+  type PackageSize,
 } from "@/lib/shipping";
 
 const STORAGE_KEY = "icb-checkout-v2";
+
+type ShipMethod = "recogida" | "envio" | "encomienda";
 
 type ShippingForm = {
   firstName: string;
@@ -43,7 +50,9 @@ type ShippingForm = {
   reference: string;
   lat: number | null;
   lng: number | null;
-  method: "recogida" | "encomienda";
+  method: ShipMethod;
+  zoneId: string;
+  size: PackageSize;
 };
 
 const PROVINCES = [
@@ -69,7 +78,9 @@ const DEFAULT_FORM: ShippingForm = {
   reference: "",
   lat: null,
   lng: null,
-  method: "encomienda",
+  method: "envio",
+  zoneId: "nacional",
+  size: "moto",
 };
 
 export default function CheckoutPage() {
@@ -84,8 +95,15 @@ export default function CheckoutPage() {
     } catch {}
   }, []);
 
+  const zone = getZone(form.zoneId);
   const shippingCost =
-    form.method === "recogida" ? 0 : distanceShippingCost(form.lat, form.lng);
+    form.method === "recogida"
+      ? 0
+      : form.method === "envio"
+        ? distanceShippingCost(form.lat, form.lng)
+        : zone
+          ? zoneRate(zone, form.size)
+          : 0;
   const total = subtotal + shippingCost;
 
   function set<K extends keyof ShippingForm>(key: K, value: ShippingForm[K]) {
@@ -115,6 +133,8 @@ export default function CheckoutPage() {
         const prov = normalizeProvince(v.province);
         if (prov) next.province = prov;
         if (v.canton) next.canton = v.canton;
+        // Para encomienda, auto-detecta la zona según el punto del mapa.
+        next.zoneId = zoneFromLocation(v.province, v.canton);
       }
       return next;
     });
@@ -234,27 +254,33 @@ export default function CheckoutPage() {
                   active={form.method === "recogida"}
                   onClick={() => set("method", "recogida")}
                   Icon={Store}
-                  title="Recogida en sucursal"
+                  title="Recoger en sucursal"
                   desc="Retirás en cualquiera de nuestras sucursales"
                   price="Gratis"
+                />
+                <MethodOption
+                  active={form.method === "envio"}
+                  onClick={() => set("method", "envio")}
+                  Icon={Truck}
+                  title="Envío a domicilio"
+                  desc={`Tarifa por distancia · ${formatCRC(PER_KM_RATE)}/km`}
+                  price={
+                    distance !== null
+                      ? formatCRC(distanceShippingCost(form.lat, form.lng))
+                      : "Marcá ubicación"
+                  }
                 />
                 <MethodOption
                   active={form.method === "encomienda"}
                   onClick={() => set("method", "encomienda")}
                   Icon={Package}
-                  title="Envío a domicilio"
-                  desc={`Tarifa por distancia · ${formatCRC(PER_KM_RATE)}/km`}
-                  price={
-                    form.method === "recogida"
-                      ? "—"
-                      : distance !== null
-                        ? formatCRC(shippingCost)
-                        : "Marcá ubicación"
-                  }
+                  title="Encomienda"
+                  desc="Envío por encomienda según tu zona"
+                  price={zone ? formatCRC(zoneRate(zone, form.size)) : "—"}
                 />
               </div>
 
-              {form.method === "encomienda" && (
+              {form.method === "envio" && (
                 <div className="mt-4 rounded-2xl border border-ink-200 bg-ink-50 p-4 text-sm">
                   {distance !== null ? (
                     <div className="flex items-center justify-between gap-3">
@@ -275,9 +301,75 @@ export default function CheckoutPage() {
                   )}
                 </div>
               )}
+
+              {form.method === "encomienda" && (
+                <div className="mt-4 space-y-3">
+                  {zone && (
+                    <div className="flex items-center gap-2 rounded-xl border border-brand-100 bg-brand-50 px-4 py-2.5 text-xs text-brand-700">
+                      <MapPin className="size-4 shrink-0" />
+                      <span>
+                        {form.lat !== null
+                          ? "Zona detectada del mapa: "
+                          : "Zona: "}
+                        <b>{zone.label}</b>. Podés ajustarla abajo.
+                      </span>
+                    </div>
+                  )}
+                  <div className="grid gap-4 rounded-2xl border border-ink-200 bg-ink-50 p-4 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="text-xs font-bold uppercase tracking-wider text-ink-600">
+                        Zona / destino
+                      </span>
+                      <select
+                        value={form.zoneId}
+                        onChange={(e) => set("zoneId", e.target.value)}
+                        className="mt-1 w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5 text-sm text-ink-900 outline-none focus:border-brand-500"
+                      >
+                        {SHIPPING_ZONES.map((z) => (
+                          <option key={z.id} value={z.id}>
+                            {z.label}
+                          </option>
+                        ))}
+                      </select>
+                      {zone && (
+                        <span className="mt-1 block text-[11px] text-ink-400">
+                          {zone.coverage}
+                        </span>
+                      )}
+                    </label>
+                    <div>
+                      <span className="text-xs font-bold uppercase tracking-wider text-ink-600">
+                        Tamaño del pedido
+                      </span>
+                      <div className="mt-1 grid grid-cols-2 gap-2">
+                        {(["moto", "carro"] as PackageSize[]).map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => set("size", s)}
+                            className={`rounded-xl border px-3 py-2.5 text-left text-xs transition ${
+                              form.size === s
+                                ? "border-accent-500 bg-accent-50 ring-1 ring-accent-500/30"
+                                : "border-ink-200 bg-white hover:bg-ink-50"
+                            }`}
+                          >
+                            <span className="block font-bold text-ink-900">
+                              {s === "moto" ? "Pequeño" : "Grande"}
+                            </span>
+                            <span className="text-ink-500">
+                              {s === "moto" ? "Cabe en moto" : "Requiere carro"} ·{" "}
+                              {formatCRC(zone ? zoneRate(zone, s) : 0)}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
               <p className="mt-3 text-[11px] text-ink-400">
-                El costo de envío es estimado según la distancia. ICB confirma el
-                monto final según el caso.
+                El costo de envío es estimado. ICB confirma el monto final según el
+                caso.
               </p>
             </Card>
           </div>

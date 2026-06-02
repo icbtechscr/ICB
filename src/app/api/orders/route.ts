@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { getProductsByIds } from "@/lib/products";
 import { computeShippingCost, generateOrderNumber } from "@/lib/orders";
-import { distanceKm, ORIGIN } from "@/lib/shipping";
+import { distanceKm, ORIGIN, getZone } from "@/lib/shipping";
 
 type Body = {
   items?: { id: string; qty: number }[];
@@ -45,16 +45,26 @@ export async function POST(req: Request) {
 
     // Detalle del envío para el equipo de despacho.
     const shippingDetailParts = [shipping.notes ?? ""];
+    if (shippingMethod === "encomienda") {
+      const zone = getZone(shipping.zoneId);
+      const size = shipping.size === "carro" ? "carro" : "moto";
+      if (zone)
+        shippingDetailParts.push(
+          `Encomienda: ${zone.label} (${size}) · ${zone.service}`
+        );
+    }
     if (
       shippingMethod !== "recogida" &&
       typeof shipping.lat === "number" &&
       typeof shipping.lng === "number"
     ) {
-      const km = Math.max(
-        1,
-        distanceKm(ORIGIN.lat, ORIGIN.lng, shipping.lat, shipping.lng)
-      );
-      shippingDetailParts.push(`Distancia: ~${km} km desde ICB San José`);
+      if (shippingMethod === "envio") {
+        const km = Math.max(
+          1,
+          distanceKm(ORIGIN.lat, ORIGIN.lng, shipping.lat, shipping.lng)
+        );
+        shippingDetailParts.push(`Distancia: ~${km} km desde ICB San José`);
+      }
       shippingDetailParts.push(
         `Ubicación: https://maps.google.com/?q=${shipping.lat},${shipping.lng}`
       );
@@ -93,6 +103,8 @@ export async function POST(req: Request) {
       method: shippingMethod,
       lat: shipping.lat,
       lng: shipping.lng,
+      zoneId: shipping.zoneId,
+      size: shipping.size,
     });
     const total = subtotal + shippingCost;
     const orderNumber = generateOrderNumber();

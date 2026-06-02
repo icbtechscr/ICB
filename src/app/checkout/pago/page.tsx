@@ -17,7 +17,12 @@ import { useCart } from "@/lib/cart";
 import { formatCRC } from "@/lib/utils";
 import { CheckoutStepper } from "@/components/CheckoutStepper";
 import { UnifiedCheckout } from "@/components/UnifiedCheckout";
-import { distanceShippingCost } from "@/lib/shipping";
+import {
+  getZone,
+  zoneRate,
+  distanceShippingCost,
+  type PackageSize,
+} from "@/lib/shipping";
 
 const SHIPPING_KEY = "icb-checkout-v2";
 const PAYMENT_KEY = "icb-payment-v1";
@@ -54,7 +59,7 @@ const METHODS: { id: Method; label: string; desc: string; Icon: typeof CreditCar
 ];
 
 type Shipping = {
-  method: "recogida" | "encomienda";
+  method: "recogida" | "envio" | "encomienda";
   firstName: string;
   lastName: string;
   email: string;
@@ -67,11 +72,14 @@ type Shipping = {
   reference: string;
   lat: number | null;
   lng: number | null;
+  zoneId: string;
+  size: PackageSize;
 };
 
 const SHIPPING_LABELS: Record<string, string> = {
   recogida: "Recogida en sucursal",
-  encomienda: "Envío a domicilio",
+  envio: "Envío a domicilio",
+  encomienda: "Encomienda",
 };
 
 export default function PagoPage() {
@@ -109,10 +117,15 @@ export default function PagoPage() {
     if (!shipping) router.replace("/checkout");
   }, [hydrated, shipping, router]);
 
+  const shippingZone = shipping ? getZone(shipping.zoneId) : undefined;
   const shippingCost =
     !shipping || shipping.method === "recogida"
       ? 0
-      : distanceShippingCost(shipping.lat, shipping.lng);
+      : shipping.method === "encomienda"
+        ? shippingZone
+          ? zoneRate(shippingZone, shipping.size)
+          : 0
+        : distanceShippingCost(shipping.lat, shipping.lng);
   const total = subtotal + shippingCost;
 
   async function createOrder(): Promise<{ orderId: string; orderNumber: string } | null> {
@@ -145,6 +158,8 @@ export default function PagoPage() {
           notes: noteParts.join(" · "),
           lat: shipping.lat,
           lng: shipping.lng,
+          zoneId: shipping.zoneId,
+          size: shipping.size,
         },
         paymentMethod: form.method,
       }),
@@ -586,6 +601,9 @@ export default function PagoPage() {
                   </div>
                   <div className="mt-1 font-semibold text-brand-600">
                     {SHIPPING_LABELS[shipping.method] ?? shipping.method}
+                    {shipping.method === "encomienda" && shippingZone
+                      ? ` · ${shippingZone.label}`
+                      : ""}
                   </div>
                 </div>
               )}

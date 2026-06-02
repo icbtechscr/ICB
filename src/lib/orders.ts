@@ -17,23 +17,33 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
   cancelado: "Cancelado",
 };
 
-import { distanceShippingCost } from "./shipping";
+import { distanceShippingCost, getZone, zoneRate } from "./shipping";
 
 export const SHIPPING_LABEL: Record<string, string> = {
   express: "Express (24h)",
   estandar: "Estándar (2-4 días)",
   recogida: "Recogida en sucursal",
-  encomienda: "Envío a domicilio",
+  envio: "Envío a domicilio",
+  encomienda: "Encomienda",
 };
 
 // Calcula el costo de envío en el servidor (no se confía en el cliente).
-// Envío a domicilio = ₡750 por km desde ICB San José al punto marcado.
+//  - recogida: gratis
+//  - envio: ₡750 por km desde ICB San José al punto marcado
+//  - encomienda: tarifa por zona del Excel (moto/carro)
 export function computeShippingCost(opts: {
   method?: string | null;
   lat?: number | null;
   lng?: number | null;
+  zoneId?: string | null;
+  size?: string | null;
 }): number {
   if (opts.method === "recogida") return 0;
+  if (opts.method === "encomienda") {
+    const zone = getZone(opts.zoneId);
+    if (!zone) return 0;
+    return zoneRate(zone, opts.size === "carro" ? "carro" : "moto");
+  }
   return distanceShippingCost(opts.lat, opts.lng);
 }
 
