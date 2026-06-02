@@ -17,8 +17,16 @@ import {
 import { useCart } from "@/lib/cart";
 import { formatCRC } from "@/lib/utils";
 import { CheckoutStepper } from "@/components/CheckoutStepper";
-import { LocationPicker, type LatLng } from "@/components/checkout/LocationPicker";
-import { SHIPPING_ZONES, getZone, zoneRate, type PackageSize } from "@/lib/shipping";
+import {
+  LocationPicker,
+  type PickedLocation,
+} from "@/components/checkout/LocationPicker";
+import {
+  distanceKm,
+  distanceShippingCost,
+  ORIGIN,
+  PER_KM_RATE,
+} from "@/lib/shipping";
 
 const STORAGE_KEY = "icb-checkout-v2";
 
@@ -36,8 +44,6 @@ type ShippingForm = {
   lat: number | null;
   lng: number | null;
   method: "recogida" | "encomienda";
-  zoneId: string;
-  size: PackageSize;
 };
 
 const PROVINCES = [
@@ -64,8 +70,6 @@ const DEFAULT_FORM: ShippingForm = {
   lat: null,
   lng: null,
   method: "encomienda",
-  zoneId: "nacional",
-  size: "moto",
 };
 
 export default function CheckoutPage() {
@@ -80,18 +84,46 @@ export default function CheckoutPage() {
     } catch {}
   }, []);
 
-  const zone = getZone(form.zoneId);
   const shippingCost =
-    form.method === "recogida" ? 0 : zone ? zoneRate(zone, form.size) : 0;
+    form.method === "recogida" ? 0 : distanceShippingCost(form.lat, form.lng);
   const total = subtotal + shippingCost;
 
   function set<K extends keyof ShippingForm>(key: K, value: ShippingForm[K]) {
     setForm((p) => ({ ...p, [key]: value }));
   }
 
-  function onLocation(v: LatLng) {
-    setForm((p) => ({ ...p, lat: v.lat, lng: v.lng }));
+  function normalizeProvince(raw?: string): string | null {
+    if (!raw) return null;
+    const r = raw
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "");
+    for (const p of PROVINCES) {
+      const base = p
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "");
+      if (r.includes(base)) return p;
+    }
+    return null;
   }
+
+  function onLocation(v: PickedLocation) {
+    setForm((p) => {
+      const next: ShippingForm = { ...p, lat: v.lat, lng: v.lng };
+      if (v.province || v.canton) {
+        const prov = normalizeProvince(v.province);
+        if (prov) next.province = prov;
+        if (v.canton) next.canton = v.canton;
+      }
+      return next;
+    });
+  }
+
+  const distance =
+    form.lat !== null && form.lng !== null
+      ? distanceKm(ORIGIN.lat, ORIGIN.lng, form.lat, form.lng)
+      : null;
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -210,59 +242,42 @@ export default function CheckoutPage() {
                   active={form.method === "encomienda"}
                   onClick={() => set("method", "encomienda")}
                   Icon={Package}
-                  title="Encomienda"
-                  desc="Envío por encomienda según tu zona"
-                  price={shippingCost === 0 && form.method !== "recogida" ? "—" : formatCRC(zone ? zoneRate(zone, form.size) : 0)}
+                  title="Envío a domicilio"
+                  desc={`Tarifa por distancia · ${formatCRC(PER_KM_RATE)}/km`}
+                  price={
+                    form.method === "recogida"
+                      ? "—"
+                      : distance !== null
+                        ? formatCRC(shippingCost)
+                        : "Marcá ubicación"
+                  }
                 />
               </div>
 
               {form.method === "encomienda" && (
-                <div className="mt-4 grid gap-4 rounded-2xl border border-ink-200 bg-ink-50 p-4 sm:grid-cols-2">
-                  <label className="block">
-                    <span className="text-xs font-bold uppercase tracking-wider text-ink-600">Zona / destino</span>
-                    <select
-                      value={form.zoneId}
-                      onChange={(e) => set("zoneId", e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5 text-sm text-ink-900 outline-none focus:border-brand-500"
-                    >
-                      {SHIPPING_ZONES.map((z) => (
-                        <option key={z.id} value={z.id}>{z.label}</option>
-                      ))}
-                    </select>
-                    {zone && (
-                      <span className="mt-1 block text-[11px] text-ink-400">{zone.coverage}</span>
-                    )}
-                  </label>
-                  <div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-ink-600">Tamaño del pedido</span>
-                    <div className="mt-1 grid grid-cols-2 gap-2">
-                      {(["moto", "carro"] as PackageSize[]).map((s) => (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => set("size", s)}
-                          className={`rounded-xl border px-3 py-2.5 text-left text-xs transition ${
-                            form.size === s
-                              ? "border-accent-500 bg-accent-50 ring-1 ring-accent-500/30"
-                              : "border-ink-200 bg-white hover:bg-ink-50"
-                          }`}
-                        >
-                          <span className="block font-bold text-ink-900">
-                            {s === "moto" ? "Pequeño" : "Grande"}
-                          </span>
-                          <span className="text-ink-500">
-                            {s === "moto" ? "Cabe en moto" : "Requiere carro"} ·{" "}
-                            {formatCRC(zone ? zoneRate(zone, s) : 0)}
-                          </span>
-                        </button>
-                      ))}
+                <div className="mt-4 rounded-2xl border border-ink-200 bg-ink-50 p-4 text-sm">
+                  {distance !== null ? (
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="flex items-center gap-2 text-ink-700">
+                        <MapPin className="size-4 shrink-0 text-brand-600" />
+                        ~{distance} km desde ICB San José × {formatCRC(PER_KM_RATE)}
+                      </span>
+                      <span className="text-base font-black tabular-nums text-ink-900">
+                        {formatCRC(shippingCost)}
+                      </span>
                     </div>
-                  </div>
+                  ) : (
+                    <p className="flex items-center gap-2 text-ink-600">
+                      <MapPin className="size-4 shrink-0 text-brand-600" />
+                      Marcá tu ubicación en el mapa para calcular el costo del
+                      envío.
+                    </p>
+                  )}
                 </div>
               )}
               <p className="mt-3 text-[11px] text-ink-400">
-                El costo de envío es estimado según la zona. ICB confirma el monto
-                final según el tamaño/peso real del pedido.
+                El costo de envío es estimado según la distancia. ICB confirma el
+                monto final según el caso.
               </p>
             </Card>
           </div>

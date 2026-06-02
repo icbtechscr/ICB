@@ -1,9 +1,15 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { Map as LeafletMap, Marker } from "leaflet";
-import { Search, Loader2, MapPin } from "lucide-react";
+import { Search, Loader2, MapPin, LocateFixed } from "lucide-react";
 
 export type LatLng = { lat: number; lng: number };
+export type PickedLocation = {
+  lat: number;
+  lng: number;
+  province?: string;
+  canton?: string;
+};
 
 type NominatimResult = {
   lat: string;
@@ -19,14 +25,38 @@ export function LocationPicker({
   onChange,
 }: {
   value: LatLng | null;
-  onChange: (v: LatLng) => void;
+  onChange: (v: PickedLocation) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markerRef = useRef<Marker | null>(null);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<NominatimResult[]>([]);
   const [searching, setSearching] = useState(false);
+  const [locating, setLocating] = useState(false);
+
+  // Emite la ubicación y, en segundo plano, agrega provincia/cantón.
+  async function emit(lat: number, lng: number) {
+    onChangeRef.current({ lat, lng });
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&lat=${lat}&lon=${lng}`
+      );
+      const j = (await res.json()) as {
+        address?: Record<string, string>;
+      };
+      const a = j.address ?? {};
+      const province = a.state;
+      const canton =
+        a.county || a.city || a.town || a.municipality || a.village;
+      onChangeRef.current({ lat, lng, province, canton });
+    } catch {
+      /* sin reverse-geocoding, queda solo lat/lng */
+    }
+  }
 
   // Inicializa el mapa una sola vez.
   useEffect(() => {
@@ -66,14 +96,13 @@ export function LocationPicker({
 
       marker.on("dragend", () => {
         const p = marker.getLatLng();
-        onChange({ lat: p.lat, lng: p.lng });
+        emit(p.lat, p.lng);
       });
       map.on("click", (e) => {
         marker.setLatLng(e.latlng);
-        onChange({ lat: e.latlng.lat, lng: e.latlng.lng });
+        emit(e.latlng.lat, e.latlng.lng);
       });
 
-      // Necesario cuando el contenedor se monta dentro de layouts flex.
       setTimeout(() => map.invalidateSize(), 200);
     })();
     return () => {
@@ -101,20 +130,34 @@ export function LocationPicker({
     }
   }
 
-  function pick(item: NominatimResult) {
-    const lat = parseFloat(item.lat);
-    const lng = parseFloat(item.lon);
-    mapRef.current?.setView([lat, lng], 16);
+  function moveTo(lat: number, lng: number, zoom = 16) {
+    mapRef.current?.setView([lat, lng], zoom);
     markerRef.current?.setLatLng([lat, lng]);
-    onChange({ lat, lng });
+    emit(lat, lng);
+  }
+
+  function pick(item: NominatimResult) {
+    moveTo(parseFloat(item.lat), parseFloat(item.lon));
     setResults([]);
     setQuery(item.display_name.split(",").slice(0, 2).join(", "));
+  }
+
+  function locateMe() {
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        moveTo(pos.coords.latitude, pos.coords.longitude, 17);
+        setLocating(false);
+      },
+      () => setLocating(false),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
   }
 
   return (
     <div>
       {/* Leaflet CSS — React 19 lo eleva al <head> */}
-      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
       <link
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -162,10 +205,24 @@ export function LocationPicker({
         )}
       </div>
 
-      <p className="mt-1.5 text-[11px] text-ink-400">
-        Buscá tu zona y luego <b>arrastrá el pin</b> (o tocá el mapa) al punto
-        exacto de referencia.
-      </p>
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <p className="text-[11px] text-ink-400">
+          Buscá tu zona y <b>arrastrá el pin</b> al punto exacto.
+        </p>
+        <button
+          type="button"
+          onClick={locateMe}
+          disabled={locating}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-brand-100 disabled:opacity-60"
+        >
+          {locating ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <LocateFixed className="size-3.5" />
+          )}
+          Marcar mi ubicación
+        </button>
+      </div>
 
       <div
         ref={containerRef}

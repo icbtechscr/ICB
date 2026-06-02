@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { getProductsByIds } from "@/lib/products";
 import { computeShippingCost, generateOrderNumber } from "@/lib/orders";
-import { getZone } from "@/lib/shipping";
+import { distanceKm, ORIGIN } from "@/lib/shipping";
 
 type Body = {
   items?: { id: string; qty: number }[];
@@ -43,16 +43,18 @@ export async function POST(req: Request) {
     const shippingMethod = shipping.method ?? "encomienda";
     const paymentMethod = body.paymentMethod ?? "tarjeta";
 
-    // Detalle de la encomienda para que el equipo sepa por dónde despachar.
-    const zone = getZone(shipping.zoneId);
+    // Detalle del envío para el equipo de despacho.
     const shippingDetailParts = [shipping.notes ?? ""];
-    if (shippingMethod !== "recogida" && zone) {
-      const size = shipping.size === "carro" ? "carro" : "moto";
-      shippingDetailParts.push(
-        `Encomienda: ${zone.label} (${size}) · ${zone.service}`
+    if (
+      shippingMethod !== "recogida" &&
+      typeof shipping.lat === "number" &&
+      typeof shipping.lng === "number"
+    ) {
+      const km = Math.max(
+        1,
+        distanceKm(ORIGIN.lat, ORIGIN.lng, shipping.lat, shipping.lng)
       );
-    }
-    if (typeof shipping.lat === "number" && typeof shipping.lng === "number") {
+      shippingDetailParts.push(`Distancia: ~${km} km desde ICB San José`);
       shippingDetailParts.push(
         `Ubicación: https://maps.google.com/?q=${shipping.lat},${shipping.lng}`
       );
@@ -89,8 +91,8 @@ export async function POST(req: Request) {
     const subtotal = lineItems.reduce((a, i) => a + i.line_total_crc, 0);
     const shippingCost = computeShippingCost({
       method: shippingMethod,
-      zoneId: shipping.zoneId,
-      size: shipping.size,
+      lat: shipping.lat,
+      lng: shipping.lng,
     });
     const total = subtotal + shippingCost;
     const orderNumber = generateOrderNumber();

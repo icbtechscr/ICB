@@ -52,7 +52,7 @@ const SHIPPING_LABEL: Record<string, string> = {
   express: "Express (24h)",
   estandar: "Estándar (2-4 días)",
   recogida: "Recogida en sucursal",
-  encomienda: "Encomienda",
+  encomienda: "Envío a domicilio",
 };
 
 export default function ConfirmacionPage() {

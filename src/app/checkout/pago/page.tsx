@@ -17,7 +17,7 @@ import { useCart } from "@/lib/cart";
 import { formatCRC } from "@/lib/utils";
 import { CheckoutStepper } from "@/components/CheckoutStepper";
 import { UnifiedCheckout } from "@/components/UnifiedCheckout";
-import { getZone, zoneRate, type PackageSize } from "@/lib/shipping";
+import { distanceShippingCost } from "@/lib/shipping";
 
 const SHIPPING_KEY = "icb-checkout-v2";
 const PAYMENT_KEY = "icb-payment-v1";
@@ -67,13 +67,11 @@ type Shipping = {
   reference: string;
   lat: number | null;
   lng: number | null;
-  zoneId: string;
-  size: PackageSize;
 };
 
 const SHIPPING_LABELS: Record<string, string> = {
   recogida: "Recogida en sucursal",
-  encomienda: "Encomienda",
+  encomienda: "Envío a domicilio",
 };
 
 export default function PagoPage() {
@@ -111,13 +109,10 @@ export default function PagoPage() {
     if (!shipping) router.replace("/checkout");
   }, [hydrated, shipping, router]);
 
-  const shippingZone = shipping ? getZone(shipping.zoneId) : undefined;
   const shippingCost =
     !shipping || shipping.method === "recogida"
       ? 0
-      : shippingZone
-        ? zoneRate(shippingZone, shipping.size)
-        : 0;
+      : distanceShippingCost(shipping.lat, shipping.lng);
   const total = subtotal + shippingCost;
 
   async function createOrder(): Promise<{ orderId: string; orderNumber: string } | null> {
@@ -148,8 +143,6 @@ export default function PagoPage() {
           address: shipping.address,
           method: shipping.method,
           notes: noteParts.join(" · "),
-          zoneId: shipping.zoneId,
-          size: shipping.size,
           lat: shipping.lat,
           lng: shipping.lng,
         },
@@ -593,9 +586,6 @@ export default function PagoPage() {
                   </div>
                   <div className="mt-1 font-semibold text-brand-600">
                     {SHIPPING_LABELS[shipping.method] ?? shipping.method}
-                    {shipping.method === "encomienda" && shippingZone
-                      ? ` · ${shippingZone.label}`
-                      : ""}
                   </div>
                 </div>
               )}
