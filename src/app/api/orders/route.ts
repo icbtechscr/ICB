@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { getProductsByIds } from "@/lib/products";
-import { SHIPPING_COST, generateOrderNumber } from "@/lib/orders";
+import { computeShippingCost, generateOrderNumber } from "@/lib/orders";
+import { getZone } from "@/lib/shipping";
 
 type Body = {
   items?: { id: string; qty: number }[];
@@ -17,6 +18,10 @@ type Body = {
     address?: string;
     method?: string;
     notes?: string;
+    zoneId?: string | null;
+    size?: string | null;
+    lat?: number | null;
+    lng?: number | null;
   };
   paymentMethod?: string;
 };
@@ -35,8 +40,24 @@ export async function POST(req: Request) {
       return new NextResponse("Faltan datos del cliente", { status: 400 });
     }
     const shipping = body.shipping ?? {};
-    const shippingMethod = shipping.method ?? "estandar";
+    const shippingMethod = shipping.method ?? "encomienda";
     const paymentMethod = body.paymentMethod ?? "tarjeta";
+
+    // Detalle de la encomienda para que el equipo sepa por dónde despachar.
+    const zone = getZone(shipping.zoneId);
+    const shippingDetailParts = [shipping.notes ?? ""];
+    if (shippingMethod !== "recogida" && zone) {
+      const size = shipping.size === "carro" ? "carro" : "moto";
+      shippingDetailParts.push(
+        `Encomienda: ${zone.label} (${size}) · ${zone.service}`
+      );
+    }
+    if (typeof shipping.lat === "number" && typeof shipping.lng === "number") {
+      shippingDetailParts.push(
+        `Ubicación: https://maps.google.com/?q=${shipping.lat},${shipping.lng}`
+      );
+    }
+    const shippingNotes = shippingDetailParts.filter(Boolean).join(" · ") || null;
 
     // Recalcular precios desde la base de datos (no confiar en el cliente)
     const products = await getProductsByIds(items.map((i) => i.id));
@@ -66,7 +87,11 @@ export async function POST(req: Request) {
     }
 
     const subtotal = lineItems.reduce((a, i) => a + i.line_total_crc, 0);
-    const shippingCost = SHIPPING_COST[shippingMethod] ?? 0;
+    const shippingCost = computeShippingCost({
+      method: shippingMethod,
+      zoneId: shipping.zoneId,
+      size: shipping.size,
+    });
     const total = subtotal + shippingCost;
     const orderNumber = generateOrderNumber();
 
@@ -84,7 +109,7 @@ export async function POST(req: Request) {
         shipping_canton: shipping.canton ?? null,
         shipping_address: shipping.address ?? null,
         shipping_method: shippingMethod,
-        shipping_notes: shipping.notes ?? null,
+        shipping_notes: shippingNotes,
         payment_method: paymentMethod,
         payment_status: "pendiente",
         subtotal_crc: subtotal,

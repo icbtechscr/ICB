@@ -17,8 +17,9 @@ import { useCart } from "@/lib/cart";
 import { formatCRC } from "@/lib/utils";
 import { CheckoutStepper } from "@/components/CheckoutStepper";
 import { UnifiedCheckout } from "@/components/UnifiedCheckout";
+import { getZone, zoneRate, type PackageSize } from "@/lib/shipping";
 
-const SHIPPING_KEY = "icb-checkout-v1";
+const SHIPPING_KEY = "icb-checkout-v2";
 const PAYMENT_KEY = "icb-payment-v1";
 
 type Method = "tarjeta" | "sinpe" | "transferencia";
@@ -26,14 +27,10 @@ type Method = "tarjeta" | "sinpe" | "transferencia";
 type PaymentForm = {
   method: Method;
   sinpePhone: string;
+  payerName: string;
   acceptTerms: boolean;
 };
 
-const SHIPPING_OPTIONS_PRICE: Record<string, number> = {
-  express: 4500,
-  estandar: 2500,
-  recogida: 0,
-};
 
 const METHODS: { id: Method; label: string; desc: string; Icon: typeof CreditCard }[] = [
   {
@@ -57,14 +54,26 @@ const METHODS: { id: Method; label: string; desc: string; Icon: typeof CreditCar
 ];
 
 type Shipping = {
-  method: string;
-  fullName: string;
+  method: "recogida" | "encomienda";
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
+  idNumber: string;
   province: string;
   canton: string;
+  postalCode: string;
   address: string;
-  notes: string;
+  reference: string;
+  lat: number | null;
+  lng: number | null;
+  zoneId: string;
+  size: PackageSize;
+};
+
+const SHIPPING_LABELS: Record<string, string> = {
+  recogida: "Recogida en sucursal",
+  encomienda: "Encomienda",
 };
 
 export default function PagoPage() {
@@ -75,6 +84,7 @@ export default function PagoPage() {
   const [form, setForm] = useState<PaymentForm>({
     method: "tarjeta",
     sinpePhone: "",
+    payerName: "",
     acceptTerms: false,
   });
   const [submitting, setSubmitting] = useState(false);
@@ -101,32 +111,47 @@ export default function PagoPage() {
     if (!shipping) router.replace("/checkout");
   }, [hydrated, shipping, router]);
 
-  const shippingCost = shipping
-    ? SHIPPING_OPTIONS_PRICE[shipping.method] ?? 0
-    : 0;
+  const shippingZone = shipping ? getZone(shipping.zoneId) : undefined;
+  const shippingCost =
+    !shipping || shipping.method === "recogida"
+      ? 0
+      : shippingZone
+        ? zoneRate(shippingZone, shipping.size)
+        : 0;
   const total = subtotal + shippingCost;
 
   async function createOrder(): Promise<{ orderId: string; orderNumber: string } | null> {
     if (!shipping) return null;
-    const cedula = (shipping.notes ?? "").split("||")[0] || "";
-    const realNotes = (shipping.notes ?? "").split("||")[1] || "";
+    const fullName = `${shipping.firstName} ${shipping.lastName}`.trim();
+    const noteParts = [shipping.reference?.trim()].filter(Boolean) as string[];
+    // Para SINPE/transferencia, dejar registrado a nombre de quién se pagó.
+    if (
+      (form.method === "sinpe" || form.method === "transferencia") &&
+      form.payerName.trim()
+    ) {
+      noteParts.push(`Pago (${form.method}) a nombre de: ${form.payerName.trim()}`);
+    }
     const res = await fetch("/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         items: items.map((it) => ({ id: it.id, qty: it.qty })),
         customer: {
-          name: shipping.fullName,
+          name: fullName,
           email: shipping.email,
           phone: shipping.phone,
-          idNumber: cedula,
+          idNumber: shipping.idNumber,
         },
         shipping: {
           province: shipping.province,
           canton: shipping.canton,
           address: shipping.address,
           method: shipping.method,
-          notes: realNotes,
+          notes: noteParts.join(" · "),
+          zoneId: shipping.zoneId,
+          size: shipping.size,
+          lat: shipping.lat,
+          lng: shipping.lng,
         },
         paymentMethod: form.method,
       }),
@@ -151,7 +176,15 @@ export default function PagoPage() {
         subtotal: data.subtotal,
         shippingCost: data.shippingCost,
         total: data.total,
-        shipping,
+        shipping: {
+          fullName,
+          email: shipping.email,
+          phone: shipping.phone,
+          province: shipping.province,
+          canton: shipping.canton,
+          address: shipping.address,
+          method: shipping.method,
+        },
         paymentMethod: form.method,
       })
     );
@@ -417,11 +450,15 @@ export default function PagoPage() {
                   <div className="rounded-2xl border border-accent-200 bg-accent-50 p-5 text-sm leading-relaxed text-ink-700">
                     <div className="flex items-center justify-between border-b border-accent-200 pb-3">
                       <span className="text-xs uppercase tracking-wider text-ink-500">Enviar a</span>
-                      <span className="font-mono text-base font-black text-accent-700">8888-8888</span>
+                      <span className="font-mono text-base font-black text-accent-700">8960 8298</span>
+                    </div>
+                    <div className="flex items-center justify-between border-b border-accent-200 py-3">
+                      <span className="text-xs uppercase tracking-wider text-ink-500">A nombre de</span>
+                      <span className="text-sm font-bold text-ink-900">ICB TECHNOLOGIES SRL</span>
                     </div>
                     <div className="flex items-center justify-between border-b border-accent-200 py-3">
                       <span className="text-xs uppercase tracking-wider text-ink-500">Cédula jurídica</span>
-                      <span className="font-mono text-sm font-bold text-ink-900">3-101-XXXXXX</span>
+                      <span className="font-mono text-sm font-bold text-ink-900">3-102-742735</span>
                     </div>
                     <div className="flex items-center justify-between pt-3">
                       <span className="text-xs uppercase tracking-wider text-ink-500">Monto</span>
@@ -441,6 +478,17 @@ export default function PagoPage() {
                     inputMode="tel"
                     className="mt-5"
                   />
+                  <Field
+                    label="Nombre de quien efectúa el SINPE"
+                    value={form.payerName}
+                    onChange={(v) => setForm({ ...form, payerName: v })}
+                    placeholder="Nombre exacto del titular del SINPE"
+                    required
+                    className="mt-4"
+                  />
+                  <p className="mt-1 text-[11px] text-ink-400">
+                    Por favor escribí el nombre exacto al que aparece el SINPE Móvil.
+                  </p>
                   <p className="mt-3 text-xs text-ink-500">
                     Confirmaremos tu pago manualmente en menos de 30 minutos en horario laboral.
                   </p>
@@ -454,21 +502,41 @@ export default function PagoPage() {
                   </h3>
                   <ul className="space-y-3 text-sm">
                     {[
-                      { bank: "BAC Credomatic", acc: "CR05 1010 0001 2345 6789 01" },
-                      { bank: "Banco Nacional", acc: "CR12 1510 0001 9876 5432 10" },
-                      { bank: "BCR", acc: "CR99 1520 0001 5555 4444 33" },
+                      { bank: "BAC Credomatic", iban: "CR39010200009370805391" },
+                      { bank: "Banco Nacional", iban: "CR03015112320010312817" },
+                      { bank: "BCR", iban: null },
                     ].map((b) => (
                       <li
                         key={b.bank}
-                        className="flex items-center justify-between gap-3 rounded-xl border border-ink-200 bg-ink-50 p-4"
+                        className="rounded-xl border border-ink-200 bg-ink-50 p-4"
                       >
-                        <div>
-                          <div className="text-xs uppercase tracking-wider text-ink-500">{b.bank}</div>
-                          <div className="mt-1 font-mono text-sm text-ink-900">{b.acc}</div>
+                        <div className="text-xs font-bold uppercase tracking-wider text-ink-500">
+                          {b.bank}
                         </div>
+                        <div className="mt-1 text-sm font-semibold text-ink-900">
+                          ICB TECHNOLOGIES SRL
+                        </div>
+                        <div className="text-xs text-ink-600">
+                          Cédula jurídica:{" "}
+                          <span className="font-mono text-ink-900">3-102-742735</span>
+                        </div>
+                        {b.iban && (
+                          <div className="mt-1 text-sm">
+                            <span className="text-xs text-ink-500">IBAN: </span>
+                            <span className="font-mono text-ink-900">{b.iban}</span>
+                          </div>
+                        )}
                       </li>
                     ))}
                   </ul>
+                  <Field
+                    label="Nombre de quien efectúa el depósito"
+                    value={form.payerName}
+                    onChange={(v) => setForm({ ...form, payerName: v })}
+                    placeholder="Nombre exacto del titular de la cuenta"
+                    required
+                    className="mt-4"
+                  />
                   <p className="mt-4 text-xs text-ink-500">
                     Enviá el comprobante al WhatsApp 8888-8888 con el número de orden.
                   </p>
@@ -517,9 +585,17 @@ export default function PagoPage() {
               <h2 className="text-lg font-black text-ink-900">Resumen</h2>
               {shipping && (
                 <div className="mt-3 rounded-2xl border border-ink-200 bg-ink-50 p-3 text-xs text-ink-600">
-                  <div className="font-bold text-ink-900">{shipping.fullName}</div>
+                  <div className="font-bold text-ink-900">
+                    {`${shipping.firstName} ${shipping.lastName}`.trim()}
+                  </div>
                   <div className="mt-0.5 text-ink-500">
                     {shipping.address}, {shipping.canton}, {shipping.province}
+                  </div>
+                  <div className="mt-1 font-semibold text-brand-600">
+                    {SHIPPING_LABELS[shipping.method] ?? shipping.method}
+                    {shipping.method === "encomienda" && shippingZone
+                      ? ` · ${shippingZone.label}`
+                      : ""}
                   </div>
                 </div>
               )}

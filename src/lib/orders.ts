@@ -17,17 +17,27 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
   cancelado: "Cancelado",
 };
 
-export const SHIPPING_COST: Record<string, number> = {
-  express: 4500,
-  estandar: 2500,
-  recogida: 0,
-};
+import { getZone, zoneRate, type PackageSize } from "./shipping";
 
 export const SHIPPING_LABEL: Record<string, string> = {
   express: "Express (24h)",
   estandar: "Estándar (2-4 días)",
   recogida: "Recogida en sucursal",
+  encomienda: "Encomienda",
 };
+
+// Calcula el costo de envío en el servidor (no se confía en el cliente).
+export function computeShippingCost(opts: {
+  method?: string | null;
+  zoneId?: string | null;
+  size?: string | null;
+}): number {
+  if (opts.method === "recogida") return 0;
+  const zone = getZone(opts.zoneId);
+  if (!zone) return 0;
+  const size: PackageSize = opts.size === "carro" ? "carro" : "moto";
+  return zoneRate(zone, size);
+}
 
 export const PAYMENT_LABEL: Record<string, string> = {
   tarjeta: "Tarjeta",

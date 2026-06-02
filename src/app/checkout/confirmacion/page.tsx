@@ -52,6 +52,7 @@ const SHIPPING_LABEL: Record<string, string> = {
   express: "Express (24h)",
   estandar: "Estándar (2-4 días)",
   recogida: "Recogida en sucursal",
+  encomienda: "Encomienda",
 };
 
 export default function ConfirmacionPage() {
@@ -88,9 +89,8 @@ export default function ConfirmacionPage() {
   }
 
   const eta = new Date(order.createdAt);
-  if (order.shipping.method === "express") eta.setDate(eta.getDate() + 1);
-  else if (order.shipping.method === "estandar") eta.setDate(eta.getDate() + 3);
-  else eta.setDate(eta.getDate() + 1);
+  if (order.shipping.method === "recogida") eta.setDate(eta.getDate() + 1);
+  else eta.setDate(eta.getDate() + 3);
 
   function copyId() {
     if (!order) return;

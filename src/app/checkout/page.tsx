@@ -3,22 +3,41 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronRight, ArrowRight, Truck, MapPin, Mail, Phone, User } from "lucide-react";
+import {
+  ChevronRight,
+  ArrowRight,
+  Truck,
+  MapPin,
+  Mail,
+  Phone,
+  User,
+  Store,
+  Package,
+} from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { formatCRC } from "@/lib/utils";
 import { CheckoutStepper } from "@/components/CheckoutStepper";
+import { LocationPicker, type LatLng } from "@/components/checkout/LocationPicker";
+import { SHIPPING_ZONES, getZone, zoneRate, type PackageSize } from "@/lib/shipping";
 
-const STORAGE_KEY = "icb-checkout-v1";
+const STORAGE_KEY = "icb-checkout-v2";
 
 type ShippingForm = {
-  fullName: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
+  idNumber: string;
   province: string;
   canton: string;
+  postalCode: string;
   address: string;
-  notes: string;
-  method: "express" | "estandar" | "recogida";
+  reference: string;
+  lat: number | null;
+  lng: number | null;
+  method: "recogida" | "encomienda";
+  zoneId: string;
+  size: PackageSize;
 };
 
 const PROVINCES = [
@@ -31,40 +50,28 @@ const PROVINCES = [
   "Limón",
 ];
 
-const SHIPPING_OPTIONS = [
-  {
-    id: "express" as const,
-    label: "Express (24h)",
-    desc: "Solo GAM, despacho mismo día si pedís antes de las 2 PM",
-    price: 4500,
-  },
-  {
-    id: "estandar" as const,
-    label: "Estándar (2-4 días)",
-    desc: "Envío a todo Costa Rica vía Correos de CR",
-    price: 2500,
-  },
-  {
-    id: "recogida" as const,
-    label: "Recogida en sucursal",
-    desc: "San José centro · Sin costo",
-    price: 0,
-  },
-];
+const DEFAULT_FORM: ShippingForm = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  idNumber: "",
+  province: "San José",
+  canton: "",
+  postalCode: "",
+  address: "",
+  reference: "",
+  lat: null,
+  lng: null,
+  method: "encomienda",
+  zoneId: "nacional",
+  size: "moto",
+};
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, subtotal, count } = useCart();
-  const [form, setForm] = useState<ShippingForm>({
-    fullName: "",
-    email: "",
-    phone: "",
-    province: "San José",
-    canton: "",
-    address: "",
-    notes: "",
-    method: "estandar",
-  });
+  const [form, setForm] = useState<ShippingForm>(DEFAULT_FORM);
 
   useEffect(() => {
     try {
@@ -73,9 +80,18 @@ export default function CheckoutPage() {
     } catch {}
   }, []);
 
+  const zone = getZone(form.zoneId);
   const shippingCost =
-    SHIPPING_OPTIONS.find((o) => o.id === form.method)?.price ?? 0;
+    form.method === "recogida" ? 0 : zone ? zoneRate(zone, form.size) : 0;
   const total = subtotal + shippingCost;
+
+  function set<K extends keyof ShippingForm>(key: K, value: ShippingForm[K]) {
+    setForm((p) => ({ ...p, [key]: value }));
+  }
+
+  function onLocation(v: LatLng) {
+    setForm((p) => ({ ...p, lat: v.lat, lng: v.lng }));
+  }
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -131,106 +147,123 @@ export default function CheckoutPage() {
           <div className="space-y-6">
             <Card title="Información personal" Icon={User}>
               <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Nombre" value={form.firstName} required onChange={(v) => set("firstName", v)} />
+                <Field label="Apellidos" value={form.lastName} required onChange={(v) => set("lastName", v)} />
+                <Field label="Número de cédula o ID" value={form.idNumber} onChange={(v) => set("idNumber", v)} />
+                <Field label="Email" type="email" value={form.email} required Icon={Mail} onChange={(v) => set("email", v)} />
+                <Field label="Teléfono" type="tel" value={form.phone} required Icon={Phone} onChange={(v) => set("phone", v)} />
+              </div>
+            </Card>
+
+            <Card title="Ubicación de entrega" Icon={MapPin}>
+              <p className="mb-3 text-xs text-ink-500">
+                Ubicá tu casa en el mapa usando un punto de referencia. Podés
+                ingresar la dirección exacta abajo.
+              </p>
+              <LocationPicker
+                value={form.lat !== null && form.lng !== null ? { lat: form.lat, lng: form.lng } : null}
+                onChange={onLocation}
+              />
+              <div className="mt-4">
                 <Field
-                  label="Nombre completo"
-                  value={form.fullName}
-                  required
-                  onChange={(v) => setForm({ ...form, fullName: v })}
-                />
-                <Field
-                  label="Cédula"
-                  value={form.notes.split("||")[0] ?? ""}
-                  onChange={(v) => setForm({ ...form, notes: `${v}||${form.notes.split("||")[1] ?? ""}` })}
-                />
-                <Field
-                  label="Email"
-                  type="email"
-                  value={form.email}
-                  required
-                  Icon={Mail}
-                  onChange={(v) => setForm({ ...form, email: v })}
-                />
-                <Field
-                  label="Teléfono"
-                  type="tel"
-                  value={form.phone}
-                  required
-                  Icon={Phone}
-                  onChange={(v) => setForm({ ...form, phone: v })}
+                  label="Punto de referencia / señas"
+                  value={form.reference}
+                  placeholder="Ej: portón verde, contiguo a la pulpería"
+                  onChange={(v) => set("reference", v)}
                 />
               </div>
             </Card>
 
-            <Card title="Dirección de entrega" Icon={MapPin}>
+            <Card title="Dirección" Icon={MapPin}>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-ink-600">
-                    Provincia
-                  </label>
+                <label className="block">
+                  <span className="text-xs font-bold uppercase tracking-wider text-ink-600">Provincia</span>
                   <select
                     value={form.province}
-                    onChange={(e) => setForm({ ...form, province: e.target.value })}
+                    onChange={(e) => set("province", e.target.value)}
                     className="mt-1 w-full rounded-xl border border-ink-200 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition-colors focus:border-brand-500"
                   >
                     {PROVINCES.map((p) => (
-                      <option key={p} value={p} className="bg-white">
-                        {p}
-                      </option>
+                      <option key={p} value={p} className="bg-white">{p}</option>
                     ))}
                   </select>
-                </div>
-                <Field
-                  label="Cantón"
-                  value={form.canton}
-                  required
-                  onChange={(v) => setForm({ ...form, canton: v })}
-                />
+                </label>
+                <Field label="Cantón" value={form.canton} required onChange={(v) => set("canton", v)} />
+                <Field label="Código postal" value={form.postalCode} onChange={(v) => set("postalCode", v)} />
                 <div className="sm:col-span-2">
-                  <Field
-                    label="Dirección exacta"
-                    value={form.address}
-                    required
-                    onChange={(v) => setForm({ ...form, address: v })}
-                  />
+                  <Field label="Dirección escrita o señas" value={form.address} required onChange={(v) => set("address", v)} />
                 </div>
               </div>
             </Card>
 
             <Card title="Método de envío" Icon={Truck}>
               <div className="grid gap-3">
-                {SHIPPING_OPTIONS.map((o) => {
-                  const selected = form.method === o.id;
-                  return (
-                    <button
-                      key={o.id}
-                      type="button"
-                      onClick={() => setForm({ ...form, method: o.id })}
-                      className={`group flex items-center justify-between gap-4 rounded-2xl border p-4 text-left transition-all ${
-                        selected
-                          ? "border-accent-500 bg-accent-50 ring-2 ring-accent-500/30"
-                          : "border-ink-200 bg-white hover:border-ink-300 hover:bg-ink-50"
-                      }`}
-                    >
-                      <div>
-                        <div className="text-sm font-bold text-ink-900">{o.label}</div>
-                        <div className="mt-0.5 text-xs text-ink-500">{o.desc}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-black tabular-nums text-ink-900">
-                          {o.price === 0 ? "Gratis" : formatCRC(o.price)}
-                        </div>
-                        <div
-                          className={`mt-1 inline-block size-4 rounded-full ring-2 ${
-                            selected
-                              ? "bg-accent-500 ring-accent-300"
-                              : "bg-transparent ring-ink-300"
-                          }`}
-                        />
-                      </div>
-                    </button>
-                  );
-                })}
+                <MethodOption
+                  active={form.method === "recogida"}
+                  onClick={() => set("method", "recogida")}
+                  Icon={Store}
+                  title="Recogida en sucursal"
+                  desc="Retirás en cualquiera de nuestras sucursales"
+                  price="Gratis"
+                />
+                <MethodOption
+                  active={form.method === "encomienda"}
+                  onClick={() => set("method", "encomienda")}
+                  Icon={Package}
+                  title="Encomienda"
+                  desc="Envío por encomienda según tu zona"
+                  price={shippingCost === 0 && form.method !== "recogida" ? "—" : formatCRC(zone ? zoneRate(zone, form.size) : 0)}
+                />
               </div>
+
+              {form.method === "encomienda" && (
+                <div className="mt-4 grid gap-4 rounded-2xl border border-ink-200 bg-ink-50 p-4 sm:grid-cols-2">
+                  <label className="block">
+                    <span className="text-xs font-bold uppercase tracking-wider text-ink-600">Zona / destino</span>
+                    <select
+                      value={form.zoneId}
+                      onChange={(e) => set("zoneId", e.target.value)}
+                      className="mt-1 w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5 text-sm text-ink-900 outline-none focus:border-brand-500"
+                    >
+                      {SHIPPING_ZONES.map((z) => (
+                        <option key={z.id} value={z.id}>{z.label}</option>
+                      ))}
+                    </select>
+                    {zone && (
+                      <span className="mt-1 block text-[11px] text-ink-400">{zone.coverage}</span>
+                    )}
+                  </label>
+                  <div>
+                    <span className="text-xs font-bold uppercase tracking-wider text-ink-600">Tamaño del pedido</span>
+                    <div className="mt-1 grid grid-cols-2 gap-2">
+                      {(["moto", "carro"] as PackageSize[]).map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => set("size", s)}
+                          className={`rounded-xl border px-3 py-2.5 text-left text-xs transition ${
+                            form.size === s
+                              ? "border-accent-500 bg-accent-50 ring-1 ring-accent-500/30"
+                              : "border-ink-200 bg-white hover:bg-ink-50"
+                          }`}
+                        >
+                          <span className="block font-bold text-ink-900">
+                            {s === "moto" ? "Pequeño" : "Grande"}
+                          </span>
+                          <span className="text-ink-500">
+                            {s === "moto" ? "Cabe en moto" : "Requiere carro"} ·{" "}
+                            {formatCRC(zone ? zoneRate(zone, s) : 0)}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              <p className="mt-3 text-[11px] text-ink-400">
+                El costo de envío es estimado según la zona. ICB confirma el monto
+                final según el tamaño/peso real del pedido.
+              </p>
             </Card>
           </div>
 
@@ -245,35 +278,23 @@ export default function CheckoutPage() {
                 {items.map((it) => (
                   <li key={it.id} className="flex items-start justify-between gap-3 border-b border-ink-200 pb-3 last:border-0">
                     <div className="min-w-0">
-                      <div className="line-clamp-2 text-xs font-semibold text-ink-900">
-                        {it.name}
-                      </div>
-                      <div className="mt-0.5 text-[11px] text-ink-500">
-                        x{it.qty} · {formatCRC(it.unitPrice)}
-                      </div>
+                      <div className="line-clamp-2 text-xs font-semibold text-ink-900">{it.name}</div>
+                      <div className="mt-0.5 text-[11px] text-ink-500">x{it.qty} · {formatCRC(it.unitPrice)}</div>
                     </div>
-                    <div className="text-sm font-bold tabular-nums text-ink-900">
-                      {formatCRC(it.qty * it.unitPrice)}
-                    </div>
+                    <div className="text-sm font-bold tabular-nums text-ink-900">{formatCRC(it.qty * it.unitPrice)}</div>
                   </li>
                 ))}
               </ul>
 
               <dl className="mt-4 space-y-2 border-t border-ink-200 pt-4 text-sm">
                 <Row label="Subtotal" value={formatCRC(subtotal)} />
-                <Row
-                  label="Envío"
-                  value={shippingCost === 0 ? "Gratis" : formatCRC(shippingCost)}
-                  highlight={shippingCost === 0}
-                />
+                <Row label="Envío" value={shippingCost === 0 ? "Gratis" : formatCRC(shippingCost)} highlight={shippingCost === 0} />
                 <div className="mt-2 flex items-end justify-between border-t border-ink-200 pt-3">
                   <div>
                     <dt className="text-sm font-bold text-ink-900">Total</dt>
                     <span className="text-[11px] text-ink-400">IVA incluido (13%)</span>
                   </div>
-                  <dd className="text-2xl font-black tabular-nums text-ink-900">
-                    {formatCRC(total)}
-                  </dd>
+                  <dd className="text-2xl font-black tabular-nums text-ink-900">{formatCRC(total)}</dd>
                 </div>
               </dl>
 
@@ -289,6 +310,45 @@ export default function CheckoutPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+function MethodOption({
+  active,
+  onClick,
+  Icon,
+  title,
+  desc,
+  price,
+}: {
+  active: boolean;
+  onClick: () => void;
+  Icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  desc: string;
+  price: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-center justify-between gap-4 rounded-2xl border p-4 text-left transition-all ${
+        active
+          ? "border-accent-500 bg-accent-50 ring-2 ring-accent-500/30"
+          : "border-ink-200 bg-white hover:border-ink-300 hover:bg-ink-50"
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <span className="inline-flex size-10 items-center justify-center rounded-xl bg-white ring-1 ring-ink-200">
+          <Icon className="size-5 text-brand-600" />
+        </span>
+        <div>
+          <div className="text-sm font-bold text-ink-900">{title}</div>
+          <div className="mt-0.5 text-xs text-ink-500">{desc}</div>
+        </div>
+      </div>
+      <div className="font-black tabular-nums text-ink-900">{price}</div>
+    </button>
   );
 }
 
@@ -320,6 +380,7 @@ function Field({
   onChange,
   type = "text",
   required,
+  placeholder,
   Icon,
 }: {
   label: string;
@@ -327,6 +388,7 @@ function Field({
   onChange: (v: string) => void;
   type?: string;
   required?: boolean;
+  placeholder?: string;
   Icon?: React.ComponentType<{ className?: string }>;
 }) {
   return (
@@ -343,6 +405,7 @@ function Field({
           type={type}
           required={required}
           value={value}
+          placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
           className={`w-full rounded-xl border border-ink-200 bg-white py-3 text-sm text-ink-900 outline-none transition-colors placeholder:text-ink-400 focus:border-brand-500 ${
             Icon ? "pl-10 pr-4" : "px-4"
