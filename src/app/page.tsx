@@ -76,7 +76,7 @@ export default async function HomePage() {
       />
 
       {onSale.length > 0 && (
-        <section className="bg-gradient-to-b from-white to-ink-50 py-14">
+        <section className="bg-gradient-to-b from-[var(--surface)] to-ink-50 py-14">
           <div className="mx-auto max-w-7xl px-4">
             <SectionHeader
               eyebrow={content.ofertas.eyebrow}

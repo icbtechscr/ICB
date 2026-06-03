@@ -49,8 +49,8 @@ export function CategoryCarousel({
       </div>
 
       <div className="group relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-white to-transparent sm:w-32" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-white to-transparent sm:w-32" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[var(--surface)] to-transparent sm:w-32" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[var(--surface)] to-transparent sm:w-32" />
 
         <div className="flex w-max gap-6 animate-marquee-slow group-hover:[animation-play-state:paused] sm:gap-10">
           {items.map((c, i) => (
@@ -59,7 +59,7 @@ export function CategoryCarousel({
               href={`/categoria/${c.slug}`}
               className="group/item flex w-32 shrink-0 flex-col items-center sm:w-40"
             >
-              <div className="relative flex aspect-square w-28 items-center justify-center overflow-hidden rounded-full bg-ink-50 ring-1 ring-ink-200 transition-all duration-300 group-hover/item:-translate-y-1 group-hover/item:ring-brand-400 group-hover/item:shadow-lift sm:w-36">
+              <div className="relative flex aspect-square w-28 items-center justify-center overflow-hidden rounded-full bg-[#ffffff] ring-1 ring-ink-200 transition-all duration-300 group-hover/item:-translate-y-1 group-hover/item:ring-brand-400 group-hover/item:shadow-lift sm:w-36">
                 {c.imageUrl ? (
                   <Image
                     src={c.imageUrl}

@@ -45,7 +45,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
       className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white card-lift hover:border-brand-300 hover:shadow-[var(--shadow-lift)]"
     >
       <Link href={`/productos/${product.slug}`} className="flex h-full flex-col" prefetch={false}>
-        <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-ink-50 to-white">
+        <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-ink-50 to-[var(--surface)]">
           {img ? (
             <Image
               src={img.src}

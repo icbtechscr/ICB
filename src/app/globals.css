@@ -51,6 +51,7 @@
 :root {
   --background: #ffffff;
   --foreground: #18181b;
+  --surface: #ffffff;
 }
 
 /* Admin night mode — dark gray, not full black.
@@ -98,6 +99,27 @@
 /* Superficies blancas → superficie oscura (sin afectar text-white). */
 .dark .bg-white {
   background-color: var(--surface);
+}
+
+/* En modo noche, los textos en azul (brand) y verde (accent) se aclaran a
+   tonos pastel para que se lean sobre el fondo oscuro. Solo afecta el COLOR
+   de texto, no los fondos de botones. */
+.dark .text-brand-900,
+.dark .text-brand-800,
+.dark .text-brand-700,
+.dark .text-brand-600,
+.dark .text-brand-500 {
+  color: #aebbf2;
+}
+.dark .text-accent-800,
+.dark .text-accent-700,
+.dark .text-accent-600,
+.dark .text-accent-500 {
+  color: #86efac;
+}
+.dark .hover\:text-brand-600:hover,
+.dark .hover\:text-brand-700:hover {
+  color: #c7d0f7;
 }
 
 html { scroll-behavior: smooth; }
