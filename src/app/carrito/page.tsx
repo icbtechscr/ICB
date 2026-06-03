@@ -9,6 +9,9 @@ import { formatCRC } from "@/lib/utils";
 export default function CartPage() {
   const { items, subtotal, count, setQty, remove } = useCart();
   const total = subtotal;
+  const MIN_ORDER = 10000;
+  const missing = Math.max(0, MIN_ORDER - subtotal);
+  const canCheckout = subtotal >= MIN_ORDER;
 
   return (
     <div className="bg-white">
@@ -146,13 +149,28 @@ export default function CartPage() {
                   </div>
                 </dl>
 
-                <Link
-                  href="/checkout"
-                  className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent-500 px-6 py-3.5 text-sm font-bold text-ink-900 shadow-lg shadow-accent-500/30 transition-all hover:bg-accent-400 active:scale-95"
-                >
-                  Proceder al pago
-                  <ArrowRight className="size-4" />
-                </Link>
+                {canCheckout ? (
+                  <Link
+                    href="/checkout"
+                    className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent-500 px-6 py-3.5 text-sm font-bold text-ink-900 shadow-lg shadow-accent-500/30 transition-all hover:bg-accent-400 active:scale-95"
+                  >
+                    Proceder al pago
+                    <ArrowRight className="size-4" />
+                  </Link>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      disabled
+                      className="mt-6 inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-full bg-ink-200 px-6 py-3.5 text-sm font-bold text-ink-500"
+                    >
+                      Mínimo de compra {formatCRC(MIN_ORDER)}
+                    </button>
+                    <p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs font-semibold text-amber-700">
+                      Te faltan {formatCRC(missing)} para proceder al pago.
+                    </p>
+                  </>
+                )}
                 <Link
                   href="/productos"
                   className="mt-2 inline-flex w-full items-center justify-center rounded-full border border-ink-200 bg-white px-6 py-3 text-xs font-semibold text-ink-600 transition hover:bg-ink-50"

@@ -99,6 +99,11 @@ export async function POST(req: Request) {
     }
 
     const subtotal = lineItems.reduce((a, i) => a + i.line_total_crc, 0);
+    if (subtotal < 10000) {
+      return new NextResponse("El mínimo de compra es ₡10.000", {
+        status: 400,
+      });
+    }
     const shippingCost = computeShippingCost({
       method: shippingMethod,
       lat: shipping.lat,
