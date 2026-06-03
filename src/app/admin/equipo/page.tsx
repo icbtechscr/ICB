@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/supabase-server";
-import { getUserRole, getUserBranchId } from "@/lib/roles";
+import { getUserRole, getUserBranchIds } from "@/lib/roles";
 import {
   CollaboratorsManager,
   type Collaborator,
@@ -19,7 +19,7 @@ export default async function EquipoPage() {
       email: u.email ?? "",
       name: (u.user_metadata?.full_name as string) ?? "",
       role: getUserRole(u),
-      branchId: getUserBranchId(u),
+      branchIds: getUserBranchIds(u),
       createdAt: u.created_at,
       lastSignInAt: u.last_sign_in_at ?? null,
     }));

@@ -13,7 +13,7 @@ export async function PATCH(
       name?: string;
       password?: string;
       role?: string;
-      branchId?: string | null;
+      branchIds?: string[];
     };
 
     const admin = createAdminClient();
@@ -28,10 +28,17 @@ export async function PATCH(
     >;
 
     if (typeof body.name === "string") meta.full_name = body.name.trim();
-    if (body.role === "admin" || body.role === "colaborador") {
+    if (
+      body.role === "admin" ||
+      body.role === "colaborador" ||
+      body.role === "dev"
+    ) {
       meta.role = body.role;
     }
-    if ("branchId" in body) meta.branch_id = body.branchId || null;
+    if (Array.isArray(body.branchIds)) {
+      meta.branch_ids = body.branchIds.filter((x) => typeof x === "string");
+      delete meta.branch_id; // limpiar el campo legacy
+    }
 
     const attrs: {
       user_metadata: Record<string, unknown>;

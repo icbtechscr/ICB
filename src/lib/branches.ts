@@ -19,6 +19,8 @@ export type Branch = {
   waze: string;
   /** true para el centro de distribución (no es sucursal de atención). */
   cedi?: boolean;
+  /** true para "Trabajo remoto": marca verde desde cualquier lugar. */
+  remote?: boolean;
 };
 
 export const BRANCHES: Branch[] = [
@@ -98,9 +100,32 @@ export const BRANCHES: Branch[] = [
 /** Radio (metros) dentro del cual un marcaje se considera "en sede". */
 export const BRANCH_RADIUS_M = 200;
 
+/** "Trabajo remoto": ubicación asignable que marca en verde desde cualquier lado. */
+export const REMOTE_LOCATION: Branch = {
+  id: "remoto",
+  city: "Trabajo remoto",
+  name: "Trabajo remoto",
+  address: "Desde casa / cualquier lugar",
+  phone: "",
+  lat: 0,
+  lng: 0,
+  gmaps: "",
+  waze: "",
+  remote: true,
+};
+
+/** Ubicaciones de trabajo asignables a colaboradores (sucursales + remoto). */
+export const WORK_LOCATIONS: Branch[] = [...BRANCHES, REMOTE_LOCATION];
+
 export function getBranch(id: string | null | undefined): Branch | undefined {
   if (!id) return undefined;
   return BRANCHES.find((b) => b.id === id);
+}
+
+/** Busca entre todas las ubicaciones de trabajo (incluye "remoto"). */
+export function getLocation(id: string | null | undefined): Branch | undefined {
+  if (!id) return undefined;
+  return WORK_LOCATIONS.find((l) => l.id === id);
 }
 
 /** Distancia en metros entre dos coordenadas (fórmula de Haversine). */

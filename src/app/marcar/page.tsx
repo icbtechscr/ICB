@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/supabase-server";
-import { getUserBranchId, getUserFullName } from "@/lib/roles";
-import { getBranch } from "@/lib/branches";
+import { getUserBranchIds, getUserFullName } from "@/lib/roles";
+import { getLocation, type Branch } from "@/lib/branches";
 import { listMyEntriesRange } from "@/lib/timeclock-server";
 import { crTodayIso } from "@/lib/timeclock";
 import { PunchPanel } from "@/components/timeclock/PunchPanel";
@@ -18,8 +18,9 @@ export default async function MarcarPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/ingresar");
 
-  const branchId = getUserBranchId(user);
-  const branch = getBranch(branchId);
+  const locations = getUserBranchIds(user)
+    .map(getLocation)
+    .filter((l): l is Branch => !!l);
   // Hoy + últimos 13 días de historial.
   const today = crTodayIso();
   const from = crTodayIso(new Date(Date.now() - 13 * 24 * 60 * 60 * 1000));
@@ -32,11 +33,11 @@ export default async function MarcarPage() {
         <PushReminder />
         <PunchPanel
           employeeName={getUserFullName(user)}
-          branch={
-            branch
-              ? { id: branch.id, name: branch.name, address: branch.address }
-              : null
-          }
+          branches={locations.map((l) => ({
+            id: l.id,
+            name: l.name,
+            remote: !!l.remote,
+          }))}
           initialEntries={entries}
         />
       </div>

@@ -1,4 +1,4 @@
-import { MapPin } from "lucide-react";
+import { MapPin, Home } from "lucide-react";
 import {
   fmtDayLabel,
   PUNCH_TYPES,
@@ -75,25 +75,45 @@ export function HorarioTable({
   );
 }
 
-function Cell({ cell }: { cell: PunchCell | null }) {
-  if (!cell) return <span className="text-ink-300">—</span>;
-  const badge =
-    cell.within === null || cell.distance === null ? (
-      <span className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-1.5 py-0.5 text-[10px] font-semibold text-ink-500">
-        Sin ubic.
-      </span>
-    ) : (
-      <span
-        className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
-          cell.within
-            ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-            : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
-        }`}
-      >
-        <MapPin className="size-2.5" />
-        {cell.within ? "En sede" : `${cell.distance} m`}
+function locationBadge(cell: PunchCell) {
+  const isRemote = cell.branchId === "remoto";
+  const shortName = (cell.branchName ?? "")
+    .replace(/^ICB Technologies /, "")
+    .replace(/^ICB /, "");
+  if (isRemote && cell.within) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
+        <Home className="size-2.5" />
+        Casa
       </span>
     );
+  }
+  if (cell.within === true) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
+        <MapPin className="size-2.5" />
+        {shortName || "En sede"}
+      </span>
+    );
+  }
+  if (cell.within === false && cell.distance !== null) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200">
+        <MapPin className="size-2.5" />
+        {cell.distance} m
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-1.5 py-0.5 text-[10px] font-semibold text-ink-500">
+      Sin ubic.
+    </span>
+  );
+}
+
+function Cell({ cell }: { cell: PunchCell | null }) {
+  if (!cell) return <span className="text-ink-300">—</span>;
+  const badge = locationBadge(cell);
   const content = (
     <div className="space-y-1">
       <div className="font-mono text-sm font-semibold tabular-nums text-ink-900">

@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { createAdminClient } from "@/lib/supabase";
-import { getUserBranchId, getUserFullName } from "@/lib/roles";
+import { getUserBranchIds, getUserFullName } from "@/lib/roles";
 import { isPunchType } from "@/lib/timeclock";
-import { getBranch, distanceMeters, BRANCH_RADIUS_M } from "@/lib/branches";
+import {
+  getLocation,
+  REMOTE_LOCATION,
+  distanceMeters,
+  BRANCH_RADIUS_M,
+  type Branch,
+} from "@/lib/branches";
 
 export async function POST(req: Request) {
   try {
-    // 1. Validar sesión: solo un usuario autenticado puede marcar, y solo
-    //    puede marcar por sí mismo (tomamos su id de la sesión, no del body).
+    // 1. Validar sesión: solo un usuario autenticado puede marcar por sí mismo.
     const sb = await createSupabaseServer();
     const {
       data: { user },
@@ -28,29 +33,59 @@ export async function POST(req: Request) {
       return new NextResponse("Tipo de marcaje inválido", { status: 400 });
     }
 
-    const branchId = getUserBranchId(user);
-    const branch = getBranch(branchId);
+    // 2. Ubicaciones asignadas al colaborador (puede tener varias + remoto).
+    const locations = getUserBranchIds(user)
+      .map(getLocation)
+      .filter((l): l is Branch => !!l);
+    const hasRemote = locations.some((l) => l.remote);
+    const physical = locations.filter((l) => !l.remote);
 
     const lat = typeof body.latitude === "number" ? body.latitude : null;
     const lng = typeof body.longitude === "number" ? body.longitude : null;
 
-    // 2. Calcular distancia a la sede asignada (si hay coordenadas).
+    // 3. Determinar la sede del marcaje y si quedó "en sede".
+    let matched: Branch | null = null;
     let distance: number | null = null;
     let withinRange: boolean | null = null;
-    if (branch && lat !== null && lng !== null) {
-      distance = distanceMeters(lat, lng, branch.lat, branch.lng);
-      withinRange = distance <= BRANCH_RADIUS_M;
+
+    if (lat !== null && lng !== null) {
+      // Sede física más cercana de las suyas.
+      let best = Infinity;
+      for (const l of physical) {
+        const d = distanceMeters(lat, lng, l.lat, l.lng);
+        if (d < best) {
+          best = d;
+          matched = l;
+        }
+      }
+      if (matched && best <= BRANCH_RADIUS_M) {
+        distance = best;
+        withinRange = true; // está en una de sus sedes
+      } else if (hasRemote) {
+        matched = REMOTE_LOCATION; // trabaja remoto → verde "Casa"
+        distance = null;
+        withinRange = true;
+      } else {
+        distance = matched ? best : null; // fuera de rango (sede más cercana)
+        withinRange = false;
+      }
+    } else if (hasRemote) {
+      matched = REMOTE_LOCATION;
+      withinRange = true;
+    } else {
+      matched = physical[0] ?? null; // sin ubicación
+      withinRange = null;
     }
 
-    // 3. Insertar con el service role (la tabla tiene RLS sin políticas).
+    // 4. Insertar (RLS sin políticas → service role).
     const admin = createAdminClient();
     const { data, error } = await admin
       .from("time_entries")
       .insert({
         user_id: user.id,
         employee_name: getUserFullName(user),
-        branch_id: branchId,
-        branch_name: branch?.name ?? null,
+        branch_id: matched?.id ?? null,
+        branch_name: matched?.name ?? null,
         punch_type: body.punchType,
         latitude: lat,
         longitude: lng,

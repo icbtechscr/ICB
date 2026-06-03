@@ -14,22 +14,31 @@ import {
   ShieldCheck,
   MapPin,
   KeyRound,
+  Code,
 } from "lucide-react";
-import { BRANCHES } from "@/lib/branches";
+import { WORK_LOCATIONS } from "@/lib/branches";
+
+type Role = "admin" | "colaborador" | "dev";
 
 export type Collaborator = {
   id: string;
   email: string;
   name: string;
-  role: "admin" | "colaborador";
-  branchId: string | null;
+  role: Role;
+  branchIds: string[];
   createdAt: string;
   lastSignInAt: string | null;
 };
 
-const BRANCH_NAME: Record<string, string> = Object.fromEntries(
-  BRANCHES.map((b) => [b.id, b.city])
+const LOCATION_NAME: Record<string, string> = Object.fromEntries(
+  WORK_LOCATIONS.map((l) => [l.id, l.remote ? "Trabajo remoto" : l.city])
 );
+
+const ROLE_LABEL: Record<Role, string> = {
+  admin: "Administrador",
+  colaborador: "Colaborador",
+  dev: "Dev",
+};
 
 function fmt(d: string | null) {
   if (!d) return "—";
@@ -38,6 +47,43 @@ function fmt(d: string | null) {
     month: "short",
     year: "numeric",
   });
+}
+
+function BranchPicker({
+  selected,
+  onChange,
+}: {
+  selected: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  function toggle(id: string) {
+    onChange(
+      selected.includes(id)
+        ? selected.filter((x) => x !== id)
+        : [...selected, id]
+    );
+  }
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {WORK_LOCATIONS.map((l) => {
+        const on = selected.includes(l.id);
+        return (
+          <button
+            key={l.id}
+            type="button"
+            onClick={() => toggle(l.id)}
+            className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
+              on
+                ? "border-brand-500 bg-brand-50 text-brand-700"
+                : "border-ink-200 text-ink-600 hover:bg-ink-50"
+            }`}
+          >
+            {l.remote ? "Trabajo remoto" : l.city}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 export function CollaboratorsManager({
@@ -52,8 +98,8 @@ export function CollaboratorsManager({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"admin" | "colaborador">("colaborador");
-  const [branchId, setBranchId] = useState<string>(BRANCHES[0]?.id ?? "");
+  const [role, setRole] = useState<Role>("colaborador");
+  const [branchIds, setBranchIds] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
@@ -62,8 +108,10 @@ export function CollaboratorsManager({
   // Edición inline
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const [editRole, setEditRole] = useState<"admin" | "colaborador">("colaborador");
-  const [editBranch, setEditBranch] = useState<string>("");
+  const [editRole, setEditRole] = useState<Role>("colaborador");
+  const [editBranches, setEditBranches] = useState<string[]>([]);
+
+  const needsBranches = role !== "admin";
 
   async function reload() {
     try {
@@ -81,6 +129,10 @@ export function CollaboratorsManager({
     e.preventDefault();
     setError(null);
     setOk(null);
+    if (needsBranches && branchIds.length === 0) {
+      setError("Asigná al menos una sede (o Trabajo remoto).");
+      return;
+    }
     setCreating(true);
     try {
       const res = await fetch("/api/admin/collaborators", {
@@ -91,7 +143,7 @@ export function CollaboratorsManager({
           email,
           password,
           role,
-          branchId: role === "colaborador" ? branchId : null,
+          branchIds: role === "admin" ? [] : branchIds,
         }),
       });
       if (!res.ok) {
@@ -103,6 +155,7 @@ export function CollaboratorsManager({
       setEmail("");
       setPassword("");
       setRole("colaborador");
+      setBranchIds([]);
       await reload();
       router.refresh();
     } catch (err) {
@@ -116,7 +169,7 @@ export function CollaboratorsManager({
     setEditId(u.id);
     setEditName(u.name);
     setEditRole(u.role);
-    setEditBranch(u.branchId ?? BRANCHES[0]?.id ?? "");
+    setEditBranches(u.branchIds);
     setError(null);
     setOk(null);
   }
@@ -131,7 +184,7 @@ export function CollaboratorsManager({
         body: JSON.stringify({
           name: editName,
           role: editRole,
-          branchId: editRole === "colaborador" ? editBranch : null,
+          branchIds: editRole === "admin" ? [] : editBranches,
         }),
       });
       if (!res.ok) {
@@ -145,7 +198,7 @@ export function CollaboratorsManager({
                 ...x,
                 name: editName.trim(),
                 role: editRole,
-                branchId: editRole === "colaborador" ? editBranch : null,
+                branchIds: editRole === "admin" ? [] : editBranches,
               }
             : x
         )
@@ -211,35 +264,44 @@ export function CollaboratorsManager({
   }
 
   const admins = users
-    .filter((u) => u.role === "admin")
+    .filter((u) => u.role === "admin" || u.role === "dev")
     .sort((a, b) => a.name.localeCompare(b.name));
   const colabs = users
     .filter((u) => u.role === "colaborador")
-    .sort((a, b) => {
-      const ba = BRANCH_NAME[a.branchId ?? ""] ?? "";
-      const bb = BRANCH_NAME[b.branchId ?? ""] ?? "";
-      return ba.localeCompare(bb) || a.name.localeCompare(b.name);
-    });
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  function RoleBadge({ r }: { r: Role }) {
+    const cls =
+      r === "admin"
+        ? "bg-brand-50 text-brand-600"
+        : r === "dev"
+          ? "bg-amber-50 text-amber-700"
+          : "bg-accent-50 text-accent-700";
+    return (
+      <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${cls}`}>
+        {ROLE_LABEL[r]}
+      </span>
+    );
+  }
 
   function userRow(u: Collaborator) {
     const isSelf = u.id === currentUserId;
     const editing = editId === u.id;
+    const Icon = u.role === "dev" ? Code : u.role === "admin" ? ShieldCheck : User;
     return (
       <li key={u.id} className="py-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
             <div
               className={`inline-flex size-9 shrink-0 items-center justify-center rounded-full ${
-                u.role === "admin"
-                  ? "bg-brand-50 text-brand-600"
-                  : "bg-accent-50 text-accent-700"
+                u.role === "colaborador"
+                  ? "bg-accent-50 text-accent-700"
+                  : u.role === "dev"
+                    ? "bg-amber-50 text-amber-700"
+                    : "bg-brand-50 text-brand-600"
               }`}
             >
-              {u.role === "admin" ? (
-                <ShieldCheck className="size-4" />
-              ) : (
-                <User className="size-4" />
-              )}
+              <Icon className="size-4" />
             </div>
             <div className="min-w-0">
               {editing ? (
@@ -251,23 +313,26 @@ export function CollaboratorsManager({
                   className="w-48 rounded-lg border border-ink-200 bg-transparent px-2 py-1 text-sm text-ink-900 outline-none focus:border-brand-500"
                 />
               ) : (
-                <p className="truncate text-sm font-semibold text-ink-900">
+                <p className="flex items-center gap-2 truncate text-sm font-semibold text-ink-900">
                   {u.name || (
                     <span className="italic text-ink-400">Sin nombre</span>
                   )}
+                  <RoleBadge r={u.role} />
                   {isSelf && (
-                    <span className="ml-2 rounded-full bg-accent-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase text-accent-700">
+                    <span className="rounded-full bg-accent-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase text-accent-700">
                       Vos
                     </span>
                   )}
                 </p>
               )}
               <p className="truncate text-xs text-ink-500">{u.email}</p>
-              {u.role === "colaborador" && (
-                <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-ink-400">
+              {u.role !== "admin" && (
+                <p className="mt-0.5 flex flex-wrap items-center gap-1 text-xs text-ink-400">
                   <MapPin className="size-3" />
-                  {u.branchId
-                    ? BRANCH_NAME[u.branchId] ?? u.branchId
+                  {u.branchIds.length
+                    ? u.branchIds
+                        .map((id) => LOCATION_NAME[id] ?? id)
+                        .join(" · ")
                     : "Sin sede"}
                 </p>
               )}
@@ -338,39 +403,32 @@ export function CollaboratorsManager({
         </div>
 
         {editing && (
-          <div className="mt-3 grid grid-cols-2 gap-3 pl-12">
-            <label className="block">
+          <div className="mt-3 space-y-3 pl-12">
+            <label className="block max-w-xs">
               <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-ink-500">
                 Rol
               </span>
               <select
                 value={editRole}
-                onChange={(e) =>
-                  setEditRole(e.target.value as "admin" | "colaborador")
-                }
+                onChange={(e) => setEditRole(e.target.value as Role)}
                 className="w-full rounded-lg border border-ink-200 bg-transparent px-2 py-1.5 text-sm text-ink-900 outline-none focus:border-brand-500"
               >
                 <option value="colaborador">Colaborador</option>
                 <option value="admin">Administrador</option>
+                <option value="dev">Dev</option>
               </select>
             </label>
-            <label className="block">
-              <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-ink-500">
-                Sede
-              </span>
-              <select
-                value={editBranch}
-                onChange={(e) => setEditBranch(e.target.value)}
-                disabled={editRole === "admin"}
-                className="w-full rounded-lg border border-ink-200 bg-transparent px-2 py-1.5 text-sm text-ink-900 outline-none focus:border-brand-500 disabled:opacity-50"
-              >
-                {BRANCHES.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.city}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {editRole !== "admin" && (
+              <div>
+                <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-ink-500">
+                  Sedes (podés elegir varias)
+                </span>
+                <BranchPicker
+                  selected={editBranches}
+                  onChange={setEditBranches}
+                />
+              </div>
+            )}
           </div>
         )}
       </li>
@@ -378,7 +436,7 @@ export function CollaboratorsManager({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
+    <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
       {/* Crear */}
       <div className="lg:sticky lg:top-6 lg:self-start">
         <div className="rounded-2xl border border-ink-200 bg-white p-6">
@@ -448,40 +506,28 @@ export function CollaboratorsManager({
                 />
               </div>
             </label>
-            <div className="mb-4 grid grid-cols-2 gap-3">
-              <label className="block">
+            <label className="mb-3 block">
+              <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-ink-500">
+                Rol
+              </span>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as Role)}
+                className="w-full rounded-xl border border-ink-200 bg-transparent py-2.5 px-3 text-sm text-ink-900 outline-none focus:border-brand-500"
+              >
+                <option value="colaborador">Colaborador</option>
+                <option value="admin">Administrador</option>
+                <option value="dev">Dev (acceso total + marca)</option>
+              </select>
+            </label>
+            {needsBranches && (
+              <div className="mb-4">
                 <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-ink-500">
-                  Rol
+                  Sedes (podés elegir varias)
                 </span>
-                <select
-                  value={role}
-                  onChange={(e) =>
-                    setRole(e.target.value as "admin" | "colaborador")
-                  }
-                  className="w-full rounded-xl border border-ink-200 bg-transparent py-2.5 px-3 text-sm text-ink-900 outline-none focus:border-brand-500"
-                >
-                  <option value="colaborador">Colaborador</option>
-                  <option value="admin">Administrador</option>
-                </select>
-              </label>
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-ink-500">
-                  Sede
-                </span>
-                <select
-                  value={branchId}
-                  onChange={(e) => setBranchId(e.target.value)}
-                  disabled={role === "admin"}
-                  className="w-full rounded-xl border border-ink-200 bg-transparent py-2.5 px-3 text-sm text-ink-900 outline-none focus:border-brand-500 disabled:opacity-50"
-                >
-                  {BRANCHES.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.city}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+                <BranchPicker selected={branchIds} onChange={setBranchIds} />
+              </div>
+            )}
             <button
               type="submit"
               disabled={creating}
@@ -496,11 +542,7 @@ export function CollaboratorsManager({
 
       {/* Lista agrupada */}
       <div className="space-y-6">
-        <Group
-          title="Administradores"
-          count={admins.length}
-          tint="text-brand-600"
-        >
+        <Group title="Acceso al panel (admin / dev)" count={admins.length}>
           {admins.length ? (
             <ul className="divide-y divide-ink-100">{admins.map(userRow)}</ul>
           ) : (
@@ -508,11 +550,7 @@ export function CollaboratorsManager({
           )}
         </Group>
 
-        <Group
-          title="Colaboradores"
-          count={colabs.length}
-          tint="text-accent-700"
-        >
+        <Group title="Colaboradores" count={colabs.length}>
           {colabs.length ? (
             <ul className="divide-y divide-ink-100">{colabs.map(userRow)}</ul>
           ) : (
@@ -527,21 +565,17 @@ export function CollaboratorsManager({
 function Group({
   title,
   count,
-  tint,
   children,
 }: {
   title: string;
   count: number;
-  tint: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="rounded-2xl border border-ink-200 bg-white p-6">
       <div className="mb-2 flex items-center gap-2">
         <h2 className="text-base font-bold text-ink-900">{title}</h2>
-        <span
-          className={`rounded-full bg-ink-100 px-2 py-0.5 text-xs font-bold ${tint}`}
-        >
+        <span className="rounded-full bg-ink-100 px-2 py-0.5 text-xs font-bold text-ink-600">
           {count}
         </span>
       </div>

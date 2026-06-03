@@ -2,7 +2,7 @@ import { CalendarDays } from "lucide-react";
 import { crTodayIso, buildDayRows, fmtDayLabel } from "@/lib/timeclock";
 import { adminListEntries } from "@/lib/timeclock-server";
 import { createAdminClient } from "@/lib/supabase";
-import { getUserRole } from "@/lib/roles";
+import { getUserRole, mustClockIn } from "@/lib/roles";
 import { BRANCHES } from "@/lib/branches";
 import { HorarioFilters } from "@/components/admin/HorarioFilters";
 import { HorarioTable } from "@/components/admin/HorarioTable";
@@ -33,7 +33,7 @@ export default async function ControlHorarioPage({
     const sb = createAdminClient();
     const { data } = await sb.auth.admin.listUsers({ page: 1, perPage: 500 });
     employees = data.users
-      .filter((u) => getUserRole(u) === "colaborador")
+      .filter((u) => mustClockIn(getUserRole(u)))
       .map((u) => ({
         id: u.id,
         name:

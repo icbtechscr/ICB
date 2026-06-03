@@ -1,16 +1,27 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { getUserRole, getUserBranchId } from "@/lib/roles";
+import {
+  getUserRole,
+  getUserBranchIds,
+  mustClockIn,
+  type UserRole,
+} from "@/lib/roles";
 
 export type CollaboratorDTO = {
   id: string;
   email: string;
   name: string;
-  role: "admin" | "colaborador";
-  branchId: string | null;
+  role: UserRole;
+  branchIds: string[];
   createdAt: string;
   lastSignInAt: string | null;
 };
+
+function normalizeRole(raw?: string): UserRole {
+  if (raw === "admin") return "admin";
+  if (raw === "dev") return "dev";
+  return "colaborador";
+}
 
 export async function GET() {
   try {
@@ -25,7 +36,7 @@ export async function GET() {
       email: u.email ?? "",
       name: (u.user_metadata?.full_name as string) ?? "",
       role: getUserRole(u),
-      branchId: getUserBranchId(u),
+      branchIds: getUserBranchIds(u),
       createdAt: u.created_at,
       lastSignInAt: u.last_sign_in_at ?? null,
     }));
@@ -43,13 +54,15 @@ export async function POST(req: Request) {
       password?: string;
       name?: string;
       role?: string;
-      branchId?: string | null;
+      branchIds?: string[];
     };
     const email = body.email?.trim().toLowerCase();
     const password = body.password ?? "";
     const name = body.name?.trim() ?? "";
-    const role = body.role === "admin" ? "admin" : "colaborador";
-    const branchId = body.branchId || null;
+    const role = normalizeRole(body.role);
+    const branchIds = Array.isArray(body.branchIds)
+      ? body.branchIds.filter((x) => typeof x === "string")
+      : [];
 
     if (!email || !email.includes("@")) {
       return new NextResponse("Correo inválido", { status: 400 });
@@ -57,8 +70,9 @@ export async function POST(req: Request) {
     if (password.length < 8) {
       return new NextResponse("Contraseña mínimo 8 caracteres", { status: 400 });
     }
-    if (role === "colaborador" && !branchId) {
-      return new NextResponse("Asigná una sede al colaborador", { status: 400 });
+    // Quien marca (colaborador o dev) necesita al menos una sede.
+    if (mustClockIn(role) && branchIds.length === 0) {
+      return new NextResponse("Asigná al menos una sede", { status: 400 });
     }
 
     const sb = createAdminClient();
@@ -66,7 +80,7 @@ export async function POST(req: Request) {
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name: name, role, branch_id: branchId },
+      user_metadata: { full_name: name, role, branch_ids: branchIds },
     });
     if (error) return new NextResponse(error.message, { status: 400 });
     return NextResponse.json({

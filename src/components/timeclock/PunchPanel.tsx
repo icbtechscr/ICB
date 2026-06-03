@@ -14,6 +14,7 @@ import {
   Settings,
   X,
   KeyRound,
+  Home,
 } from "lucide-react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import {
@@ -28,7 +29,7 @@ import {
   type TimeEntry,
 } from "@/lib/timeclock";
 
-type BranchInfo = { id: string; name: string; address: string } | null;
+type WorkLocation = { id: string; name: string; remote: boolean };
 type Coords = { lat: number; lng: number; accuracy: number };
 type GeoStatus = "loading" | "ready" | "denied" | "unsupported";
 
@@ -55,11 +56,11 @@ const ACTION: Record<
 
 export function PunchPanel({
   employeeName,
-  branch,
+  branches,
   initialEntries,
 }: {
   employeeName: string;
-  branch: BranchInfo;
+  branches: WorkLocation[];
   initialEntries: TimeEntry[];
 }) {
   const router = useRouter();
@@ -152,7 +153,7 @@ export function PunchPanel({
         key: `today|${todayIso}`,
         userId: "",
         employeeName,
-        branchName: branch?.name ?? null,
+        branchName: branches[0]?.name ?? null,
         dayIso: todayIso,
         cells: {
           entrada: null,
@@ -163,7 +164,7 @@ export function PunchPanel({
       });
     }
     return built;
-  }, [entries, todayIso, employeeName, branch]);
+  }, [entries, todayIso, employeeName, branches]);
 
   const todayRow = rows.find((r) => r.dayIso === todayIso)!;
   const startedToday = !!todayRow.cells.entrada;
@@ -207,10 +208,17 @@ export function PunchPanel({
           <h1 className="text-2xl font-black tracking-tight text-ink-900 md:text-3xl">
             {employeeName || "Colaborador"}
           </h1>
-          {branch ? (
-            <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-600">
-              <MapPin className="size-4 text-accent-600" />
-              {branch.name}
+          {branches.length > 0 ? (
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-600">
+              <MapPin className="size-4 shrink-0 text-accent-600" />
+              {branches.map((b, i) => (
+                <span key={b.id}>
+                  {b.remote
+                    ? "Trabajo remoto"
+                    : b.name.replace(/^ICB Technologies /, "ICB ")}
+                  {i < branches.length - 1 ? " ·" : ""}
+                </span>
+              ))}
             </p>
           ) : (
             <p className="mt-1 flex items-center gap-1.5 text-sm text-amber-700">
@@ -544,24 +552,44 @@ function Cell({
   return <span className="text-ink-300">—</span>;
 }
 
+function shortBranch(name: string | null): string {
+  return (name ?? "").replace(/^ICB Technologies /, "").replace(/^ICB /, "");
+}
+
 function LocationBadge({ cell }: { cell: PunchCell }) {
-  if (cell.within === null || cell.distance === null) {
+  const isRemote = cell.branchId === "remoto";
+
+  // Trabajo remoto: verde "Casa".
+  if (isRemote && cell.within) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold text-ink-500">
-        Sin ubicación
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
+        <Home className="size-3" />
+        Casa
       </span>
     );
   }
+  // En una de sus sedes: verde con el nombre del lugar.
+  if (cell.within === true) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
+        <MapPin className="size-3" />
+        {shortBranch(cell.branchName) || "En sede"}
+      </span>
+    );
+  }
+  // Fuera de rango: ámbar con la distancia.
+  if (cell.within === false && cell.distance !== null) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200">
+        <MapPin className="size-3" />
+        A {cell.distance} m
+      </span>
+    );
+  }
+  // Sin ubicación.
   return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-        cell.within
-          ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-          : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
-      }`}
-    >
-      <MapPin className="size-3" />
-      {cell.within ? "En sede" : `A ${cell.distance} m`}
+    <span className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold text-ink-500">
+      Sin ubicación
     </span>
   );
 }

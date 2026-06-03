@@ -94,6 +94,7 @@ export function AdminShell({
   const router = useRouter();
   const [dark, setDark] = useState(initialDark);
   const [name, setName] = useState<string>("");
+  const [isDev, setIsDev] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -104,6 +105,7 @@ export function AdminShell({
         const u = data.user;
         const full = (u?.user_metadata?.full_name as string) ?? "";
         setName(full || u?.email?.split("@")[0] || "");
+        setIsDev((u?.user_metadata?.role as string) === "dev");
       });
     return () => {
       active = false;
@@ -166,6 +168,15 @@ export function AdminShell({
             >
               {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
             </button>
+            {isDev && (
+              <Link
+                href="/marcar"
+                className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-100"
+              >
+                <Clock className="size-3.5" />
+                Marcar hora
+              </Link>
+            )}
             <Link
               href="/"
               className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-ink-100"

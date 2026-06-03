@@ -66,6 +66,8 @@ export type PunchCell = {
   within: boolean | null;
   lat: number | null;
   lng: number | null;
+  branchId: string | null;
+  branchName: string | null;
 };
 
 export type DayRow = {
@@ -132,6 +134,8 @@ export function buildDayRows(entries: TimeEntry[]): DayRow[] {
         within: e.within_range,
         lat: e.latitude,
         lng: e.longitude,
+        branchId: e.branch_id,
+        branchName: e.branch_name,
       };
     }
     if (!row.employeeName && e.employee_name) row.employeeName = e.employee_name;
