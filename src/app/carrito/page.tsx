@@ -158,18 +158,18 @@ export default function CartPage() {
                     <ArrowRight className="size-4" />
                   </Link>
                 ) : (
-                  <>
-                    <button
-                      type="button"
-                      disabled
-                      className="mt-6 inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-full bg-ink-200 px-6 py-3.5 text-sm font-bold text-ink-500"
-                    >
+                  <button
+                    type="button"
+                    disabled
+                    className="mt-6 inline-flex w-full cursor-not-allowed flex-col items-center justify-center rounded-full bg-ink-200 px-6 py-3 text-ink-600"
+                  >
+                    <span className="text-sm font-bold">
+                      Te faltan {formatCRC(missing)}
+                    </span>
+                    <span className="text-[11px] font-medium">
                       Mínimo de compra {formatCRC(MIN_ORDER)}
-                    </button>
-                    <p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs font-semibold text-amber-700">
-                      Te faltan {formatCRC(missing)} para proceder al pago.
-                    </p>
-                  </>
+                    </span>
+                  </button>
                 )}
                 <Link
                   href="/productos"

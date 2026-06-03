@@ -1,17 +1,40 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, ShoppingCart } from "lucide-react";
+import { useState } from "react";
+import { Heart, ShoppingCart, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Product } from "@/lib/products";
+import { useCart } from "@/lib/cart";
 import { formatCRC } from "@/lib/utils";
 
 export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const img = product.images[0];
+  const { add } = useCart();
+  const [added, setAdded] = useState(false);
   const discountPct =
     product.salePriceCRC && product.priceCRC
       ? Math.round((1 - product.salePriceCRC / product.priceCRC) * 100)
       : null;
+
+  function addToCart(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!product.inStock) return;
+    add(
+      {
+        id: product.id,
+        slug: product.slug,
+        name: product.name,
+        image: img?.src ?? null,
+        brand: product.brand,
+        unitPrice: product.salePriceCRC ?? product.priceCRC,
+      },
+      1
+    );
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1400);
+  }
 
   return (
     <motion.article
@@ -97,14 +120,17 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
             <button
               type="button"
               aria-label="Agregar al carrito"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
+              onClick={addToCart}
               disabled={!product.inStock}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white shadow-sm transition-all duration-200 hover:bg-brand-700 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:bg-ink-200 disabled:text-ink-400"
+              className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-sm transition-all duration-200 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:bg-ink-200 disabled:text-ink-400 ${
+                added ? "bg-accent-600" : "bg-brand-600 hover:bg-brand-700"
+              }`}
             >
-              <ShoppingCart className="size-4" />
+              {added ? (
+                <Check className="size-4" />
+              ) : (
+                <ShoppingCart className="size-4" />
+              )}
             </button>
           </div>
         </div>
