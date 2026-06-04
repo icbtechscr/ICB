@@ -157,6 +157,67 @@ export type CategoryGroup = {
   count: number;
 };
 
+export type CategoryNode = {
+  id: string;
+  name: string;
+  slug: string;
+  count: number;
+  children: { id: string; name: string; slug: string; count: number }[];
+};
+
+// Árbol Categoría → Subcategoría desde la jerarquía `parent_id`.
+// Si la jerarquía no está cargada o falla la consulta, devuelve [] (el catálogo
+// cae al filtro plano de categorías).
+export async function getCategoryTree(): Promise<CategoryNode[]> {
+  try {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("id, name, slug, parent_id, product_categories(count)");
+    if (error || !data) return [];
+
+    type Row = {
+      id: string;
+      name: string;
+      slug: string;
+      parent_id: string | null;
+      product_categories: { count: number }[];
+    };
+    const rows = data as unknown as Row[];
+    const countOf = (r: Row) => r.product_categories?.[0]?.count ?? 0;
+
+    const childrenByParent = new Map<string, CategoryNode["children"]>();
+    for (const r of rows) {
+      if (!r.parent_id) continue;
+      const c = countOf(r);
+      if (c <= 0) continue;
+      if (!childrenByParent.has(r.parent_id)) childrenByParent.set(r.parent_id, []);
+      childrenByParent
+        .get(r.parent_id)!
+        .push({ id: r.id, name: r.name, slug: r.slug, count: c });
+    }
+
+    return rows
+      .filter(
+        (r) =>
+          !r.parent_id &&
+          r.name !== "Todas las Categorías" &&
+          (countOf(r) > 0 || (childrenByParent.get(r.id)?.length ?? 0) > 0)
+      )
+      .map((r) => ({
+        id: r.id,
+        name: r.name,
+        slug: r.slug,
+        count: countOf(r),
+        children: (childrenByParent.get(r.id) ?? []).sort(
+          (a, b) => b.count - a.count
+        ),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  } catch {
+    return [];
+  }
+}
+
 export async function getTopCategories(limit = 12): Promise<CategoryGroup[]> {
   const { data, error } = await supabase
     .from("categories")

@@ -4,6 +4,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { SlidersHorizontal, X, ChevronDown } from "lucide-react";
 
 type Option = { value: string; label: string };
+type CatNode = {
+  slug: string;
+  name: string;
+  children: { slug: string; name: string }[];
+};
 
 const SORTS: Option[] = [
   { value: "relevancia", label: "Relevancia" },
@@ -15,9 +20,11 @@ const SORTS: Option[] = [
 
 export function CatalogFilters({
   categories,
+  categoryTree = [],
   brands,
 }: {
   categories: { slug: string; name: string }[];
+  categoryTree?: CatNode[];
   brands: string[];
 }) {
   const router = useRouter();
@@ -30,6 +37,20 @@ export function CatalogFilters({
   const active =
     (cat ? 1 : 0) + (brand ? 1 : 0) + (sort !== "relevancia" ? 1 : 0);
 
+  const useTree = categoryTree.length > 0;
+
+  // Con árbol: resolver qué categoría/subcategoría está activa según `cat`.
+  const selectedParent =
+    categoryTree.find((n) => n.slug === cat) ??
+    categoryTree.find((n) => n.children.some((c) => c.slug === cat)) ??
+    null;
+  const parentSlug = selectedParent?.slug ?? "";
+  const childSlug =
+    selectedParent && selectedParent.children.some((c) => c.slug === cat)
+      ? cat
+      : "";
+  const subOptions = selectedParent?.children ?? [];
+
   function update(key: string, value: string) {
     const next = new URLSearchParams(params.toString());
     if (value) next.set(key, value);
@@ -38,8 +59,17 @@ export function CatalogFilters({
     router.push(`/productos?${next.toString()}`);
   }
 
+  function onParentChange(slug: string) {
+    // Al cambiar la categoría, el filtro pasa a esa categoría (sin subcategoría).
+    update("cat", slug);
+  }
+  function onChildChange(slug: string) {
+    // Si elige subcategoría, filtra por ella; si la limpia, vuelve al padre.
+    update("cat", slug || parentSlug);
+  }
+
   const selectCls =
-    "rounded-full border border-ink-200 bg-white px-4 py-2 text-sm text-ink-900 outline-none transition focus:border-brand-500 [&>option]:text-ink-900";
+    "rounded-full border border-ink-200 bg-white px-4 py-2 text-sm text-ink-900 outline-none transition focus:border-brand-500 disabled:cursor-not-allowed disabled:opacity-50 [&>option]:text-ink-900";
 
   return (
     <div className="mb-8">
@@ -62,19 +92,58 @@ export function CatalogFilters({
 
       {open && (
         <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl border border-ink-200 bg-ink-50 p-4">
-          <select
-            value={cat}
-            onChange={(e) => update("cat", e.target.value)}
-            className={selectCls}
-            aria-label="Categoría"
-          >
-            <option value="">Todas las categorías</option>
-            {categories.map((c) => (
-              <option key={c.slug} value={c.slug}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          {useTree ? (
+            <>
+              <select
+                value={parentSlug}
+                onChange={(e) => onParentChange(e.target.value)}
+                className={selectCls}
+                aria-label="Categoría"
+              >
+                <option value="">Todas las categorías</option>
+                {categoryTree.map((n) => (
+                  <option key={n.slug} value={n.slug}>
+                    {n.name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={childSlug}
+                onChange={(e) => onChildChange(e.target.value)}
+                className={selectCls}
+                aria-label="Subcategoría"
+                disabled={!selectedParent || subOptions.length === 0}
+              >
+                <option value="">
+                  {!selectedParent
+                    ? "Todas las subcategorías"
+                    : subOptions.length === 0
+                    ? "Sin subcategorías"
+                    : "Todas las subcategorías"}
+                </option>
+                {subOptions.map((c) => (
+                  <option key={c.slug} value={c.slug}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          ) : (
+            <select
+              value={cat}
+              onChange={(e) => update("cat", e.target.value)}
+              className={selectCls}
+              aria-label="Categoría"
+            >
+              <option value="">Todas las categorías</option>
+              {categories.map((c) => (
+                <option key={c.slug} value={c.slug}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          )}
 
           <select
             value={brand}

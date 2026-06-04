@@ -1,4 +1,5 @@
 import rawCategories from "../../data/categories.json";
+import { supabase } from "./supabase";
 
 type RawCategory = {
   id: number;
@@ -54,12 +55,71 @@ const CURATED: { label: string; href: string; parentWooId: number | null }[] = [
   { label: "Ofertas", href: "/ofertas", parentWooId: null },
 ];
 
-export function getNavMenu(): NavItem[] {
+// Menú desde el JSON legado de WooCommerce (fallback).
+function navMenuFromJson(): NavItem[] {
   return CURATED.map((item) => ({
     label: item.label,
     href: item.href,
     children: getChildren(item.parentWooId),
   }));
+}
+
+// Menú con subcategorías reales desde la base (jerarquía `parent_id`).
+// Mantiene las pestañas curadas pero las subcategorías salen de la base.
+// Si la jerarquía aún no está cargada (o falla la consulta), cae al JSON.
+export async function getNavMenu(): Promise<NavItem[]> {
+  try {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("id, name, slug, parent_id, woo_id, product_categories(count)");
+    if (error || !data) return navMenuFromJson();
+
+    type Row = {
+      id: string;
+      name: string;
+      slug: string;
+      parent_id: string | null;
+      woo_id: number | null;
+      product_categories: { count: number }[];
+    };
+    const rows = data as unknown as Row[];
+    const countOf = (r: Row) => r.product_categories?.[0]?.count ?? 0;
+
+    const byWooId = new Map<number, Row>();
+    for (const r of rows) if (r.woo_id != null) byWooId.set(r.woo_id, r);
+
+    const childrenByParentId = new Map<string, SubCategory[]>();
+    for (const r of rows) {
+      if (!r.parent_id) continue;
+      if (!childrenByParentId.has(r.parent_id)) {
+        childrenByParentId.set(r.parent_id, []);
+      }
+      childrenByParentId
+        .get(r.parent_id)!
+        .push({ name: r.name, slug: r.slug, count: countOf(r) });
+    }
+
+    return CURATED.map((item) => {
+      if (item.parentWooId == null) {
+        return { label: item.label, href: item.href, children: [] };
+      }
+      const parentRow = byWooId.get(item.parentWooId);
+      const dbChildren = parentRow
+        ? (childrenByParentId.get(parentRow.id) ?? [])
+            .filter((c) => c.count > 0)
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 10)
+        : [];
+      return {
+        label: item.label,
+        href: item.href,
+        // Si esta rama aún no tiene subcategorías en la base, usa el JSON.
+        children: dbChildren.length ? dbChildren : getChildren(item.parentWooId),
+      };
+    });
+  } catch {
+    return navMenuFromJson();
+  }
 }
 
 // Para slugs que son categorías "padre" sin página propia (ej. "redes"):

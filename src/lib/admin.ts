@@ -84,18 +84,98 @@ export async function adminGetProduct(id: string): Promise<AdminProduct | null> 
   return data ? rewriteProductImages(data as unknown as AdminProduct) : null;
 }
 
-export async function adminListBrands(): Promise<{ id: string; name: string; slug: string }[]> {
+export type AdminBrand = { id: string; name: string; slug: string };
+
+export async function adminListBrands(): Promise<AdminBrand[]> {
   const sb = createAdminClient();
   const { data, error } = await sb.from("brands").select("id, name, slug").order("name");
   if (error) throw error;
   return data ?? [];
 }
 
-export async function adminListCategories(): Promise<{ id: string; name: string; slug: string }[]> {
+export type AdminCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  parent_id: string | null;
+};
+
+export async function adminListCategories(): Promise<AdminCategory[]> {
   const sb = createAdminClient();
-  const { data, error } = await sb.from("categories").select("id, name, slug").order("name");
+  const { data, error } = await sb
+    .from("categories")
+    .select("id, name, slug, parent_id")
+    .order("name");
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []) as AdminCategory[];
+}
+
+// ---------------------------------------------------------------------------
+// Marcas (brands) — CRUD para el panel admin.
+// ---------------------------------------------------------------------------
+
+export function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export async function adminCreateBrand(input: {
+  name: string;
+  slug?: string | null;
+}): Promise<AdminBrand> {
+  const sb = createAdminClient();
+  const name = input.name.trim();
+  const slug = input.slug?.trim() ? slugify(input.slug) : slugify(name);
+  const { data, error } = await sb
+    .from("brands")
+    .insert({ name, slug })
+    .select("id, name, slug")
+    .single();
+  if (error) throw error;
+  return data as AdminBrand;
+}
+
+export async function adminUpdateBrand(
+  id: string,
+  input: { name?: string; slug?: string }
+): Promise<AdminBrand> {
+  const sb = createAdminClient();
+  const patch: { name?: string; slug?: string } = {};
+  if (typeof input.name === "string") patch.name = input.name.trim();
+  // El slug solo se actualiza si lo mandan explícitamente (estable para URLs).
+  if (typeof input.slug === "string" && input.slug.trim()) {
+    patch.slug = slugify(input.slug);
+  }
+  const { data, error } = await sb
+    .from("brands")
+    .update(patch)
+    .eq("id", id)
+    .select("id, name, slug")
+    .single();
+  if (error) throw error;
+  return data as AdminBrand;
+}
+
+export async function adminDeleteBrand(id: string): Promise<void> {
+  const sb = createAdminClient();
+  const { error } = await sb.from("brands").delete().eq("id", id);
+  if (error) throw error;
+}
+
+/** Cuenta de productos por marca (para mostrar en el panel). */
+export async function adminBrandProductCounts(): Promise<Map<string, number>> {
+  const sb = createAdminClient();
+  const { data, error } = await sb.from("products").select("brand_id");
+  if (error) throw error;
+  const counts = new Map<string, number>();
+  for (const r of (data ?? []) as { brand_id: string | null }[]) {
+    if (r.brand_id) counts.set(r.brand_id, (counts.get(r.brand_id) ?? 0) + 1);
+  }
+  return counts;
 }
 
 export async function adminStats(): Promise<{

@@ -4,10 +4,16 @@ import { adminListBrands, adminListCategories } from "@/lib/admin";
 export const dynamic = "force-dynamic";
 
 export default async function NewProductPage() {
-  const [brands, categories] = await Promise.all([
+  const [brands, categoriesRaw] = await Promise.all([
     adminListBrands(),
     adminListCategories(),
   ]);
+  const categories = categoriesRaw.map((c) => ({
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    parentId: c.parent_id,
+  }));
 
   return (
     <div>

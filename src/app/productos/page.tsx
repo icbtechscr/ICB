@@ -4,6 +4,7 @@ import { CatalogFilters } from "@/components/CatalogFilters";
 import {
   getCatalogProducts,
   getTopCategories,
+  getCategoryTree,
   getBrands,
   type CatalogSort,
 } from "@/lib/products";
@@ -39,11 +40,13 @@ export default async function ProductsPage({
     ? (params.sort as CatalogSort)
     : "relevancia";
 
-  const [{ products: slice, total }, categories, brands] = await Promise.all([
-    getCatalogProducts({ page, perPage, category: cat, brand, sort }),
-    getTopCategories(100),
-    getBrands(),
-  ]);
+  const [{ products: slice, total }, categories, categoryTree, brands] =
+    await Promise.all([
+      getCatalogProducts({ page, perPage, category: cat, brand, sort }),
+      getTopCategories(100),
+      getCategoryTree(),
+      getBrands(),
+    ]);
   const totalPages = Math.max(1, Math.ceil(total / perPage));
 
   // querystring para paginación, preservando filtros
@@ -75,6 +78,11 @@ export default async function ProductsPage({
             categories={categories.map((c) => ({
               slug: c.slug,
               name: c.name,
+            }))}
+            categoryTree={categoryTree.map((n) => ({
+              slug: n.slug,
+              name: n.name,
+              children: n.children.map((c) => ({ slug: c.slug, name: c.name })),
             }))}
             brands={brands}
           />

@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ArrowLeft, Loader2, Plus, Trash2, Upload } from "lucide-react";
 
 export type ProductFormInitial = {
@@ -22,6 +22,12 @@ export type ProductFormInitial = {
 };
 
 type Option = { id: string; name: string };
+type CategoryOption = {
+  id: string;
+  name: string;
+  slug: string;
+  parentId: string | null;
+};
 
 export function ProductForm({
   initial,
@@ -31,7 +37,7 @@ export function ProductForm({
 }: {
   initial: ProductFormInitial;
   brands: Option[];
-  categories: Option[];
+  categories: CategoryOption[];
   mode: "create" | "edit";
 }) {
   const router = useRouter();
@@ -41,6 +47,50 @@ export function ProductForm({
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const [uploadingNew, setUploadingNew] = useState(false);
   const newFileRef = useRef<HTMLInputElement | null>(null);
+
+  // --- Árbol de categorías: Categoría (padre) → Subcategoría (hijo) ---
+  const catById = useMemo(
+    () => new Map(categories.map((c) => [c.id, c])),
+    [categories]
+  );
+  const parentCategories = useMemo(
+    () =>
+      categories
+        .filter((c) => !c.parentId)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [categories]
+  );
+
+  // Estado inicial derivado de category_ids (puede traer padre y/o subcategoría).
+  function deriveInitialCats(): { categoryId: string; subcategoryId: string } {
+    const ids = initial.category_ids ?? [];
+    const sub = ids
+      .map((id) => catById.get(id))
+      .find((c) => c && c.parentId);
+    if (sub) return { categoryId: sub.parentId as string, subcategoryId: sub.id };
+    const top = ids.map((id) => catById.get(id)).find((c) => c && !c.parentId);
+    if (top) return { categoryId: top.id, subcategoryId: "" };
+    return { categoryId: "", subcategoryId: "" };
+  }
+  const [categoryId, setCategoryId] = useState<string>(
+    () => deriveInitialCats().categoryId
+  );
+  const [subcategoryId, setSubcategoryId] = useState<string>(
+    () => deriveInitialCats().subcategoryId
+  );
+
+  const subOptions = useMemo(
+    () =>
+      categories
+        .filter((c) => c.parentId === categoryId)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [categories, categoryId]
+  );
+
+  function onChangeCategory(id: string) {
+    setCategoryId(id);
+    setSubcategoryId(""); // al cambiar la categoría, se limpia la subcategoría
+  }
 
   async function uploadFile(file: File): Promise<string> {
     const fd = new FormData();
@@ -87,15 +137,6 @@ export function ProductForm({
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  function toggleCat(id: string) {
-    set(
-      "category_ids",
-      form.category_ids.includes(id)
-        ? form.category_ids.filter((c) => c !== id)
-        : [...form.category_ids, id]
-    );
-  }
-
   function addImage() {
     set("images", [
       ...form.images,
@@ -122,6 +163,12 @@ export function ProductForm({
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    // Categoría padre + subcategoría (ambas se ligan al producto).
+    const category_ids = Array.from(
+      new Set([categoryId, subcategoryId].filter(Boolean))
+    );
+
     setSubmitting(true);
 
     const payload = {
@@ -139,7 +186,7 @@ export function ProductForm({
           ? null
           : Number(form.stock_qty),
       brand_id: form.brand_id || null,
-      category_ids: form.category_ids,
+      category_ids,
       images: form.images
         .filter((img) => img.url.trim())
         .map((img, i) => ({ url: img.url.trim(), alt: img.alt || null, position: i })),
@@ -394,27 +441,48 @@ export function ProductForm({
             </div>
           </Section>
 
-          <Section title={`Categorías (${form.category_ids.length})`}>
-            <div className="max-h-72 space-y-1 overflow-y-auto rounded-lg border border-ink-200 bg-white p-2">
-              {categories.map((c) => {
-                const checked = form.category_ids.includes(c.id);
-                return (
-                  <label
-                    key={c.id}
-                    className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-ink-50 ${
-                      checked ? "bg-brand-50 font-semibold text-brand-700" : "text-ink-700"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleCat(c.id)}
-                      className="accent-brand-600"
-                    />
-                    {c.name}
-                  </label>
-                );
-              })}
+          <Section title="Organización">
+            <div className="grid gap-4">
+              <Select
+                label="Marca"
+                value={form.brand_id ?? ""}
+                onChange={(v) => set("brand_id", v || null)}
+                placeholder="— Sin marca —"
+                options={brands.map((b) => ({ value: b.id, label: b.name }))}
+                hint={
+                  brands.length === 0
+                    ? "No hay marcas. Creá marcas en Tienda → Marcas."
+                    : undefined
+                }
+              />
+              <Select
+                label="Categoría"
+                value={categoryId}
+                onChange={onChangeCategory}
+                placeholder="— Elegir categoría —"
+                options={parentCategories.map((c) => ({
+                  value: c.id,
+                  label: c.name,
+                }))}
+              />
+              <Select
+                label="Subcategoría"
+                value={subcategoryId}
+                onChange={setSubcategoryId}
+                placeholder={
+                  !categoryId
+                    ? "Elegí una categoría primero"
+                    : subOptions.length === 0
+                    ? "Esta categoría no tiene subcategorías"
+                    : "— Sin subcategoría —"
+                }
+                disabled={!categoryId || subOptions.length === 0}
+                options={subOptions.map((c) => ({
+                  value: c.id,
+                  label: c.name,
+                }))}
+                hint="El producto queda ligado a la categoría y a la subcategoría."
+              />
             </div>
           </Section>
         </div>
@@ -501,6 +569,46 @@ function TextArea({
         rows={rows}
         className="mt-1 w-full rounded-lg border border-ink-200 bg-white px-3 py-2.5 text-sm text-ink-900 outline-none focus:border-brand-500 focus:shadow-[var(--shadow-glow)]"
       />
+      {hint && <span className="mt-1 block text-[11px] text-ink-500">{hint}</span>}
+    </label>
+  );
+}
+
+function Select({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder,
+  hint,
+  disabled,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+  hint?: string;
+  disabled?: boolean;
+}) {
+  return (
+    <label className="block">
+      <span className="text-xs font-bold uppercase tracking-wider text-ink-600">
+        {label}
+      </span>
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-1 w-full rounded-lg border border-ink-200 bg-white px-3 py-2.5 text-sm text-ink-900 outline-none focus:border-brand-500 focus:shadow-[var(--shadow-glow)] disabled:cursor-not-allowed disabled:bg-ink-50 disabled:text-ink-400 [&>option]:text-ink-900"
+      >
+        <option value="">{placeholder ?? "— Ninguno —"}</option>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
       {hint && <span className="mt-1 block text-[11px] text-ink-500">{hint}</span>}
     </label>
   );

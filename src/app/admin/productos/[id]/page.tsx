@@ -14,12 +14,19 @@ export default async function EditProductPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [product, brands, categories] = await Promise.all([
+  const [product, brands, categoriesRaw] = await Promise.all([
     adminGetProduct(id),
     adminListBrands(),
     adminListCategories(),
   ]);
   if (!product) notFound();
+
+  const categories = categoriesRaw.map((c) => ({
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    parentId: c.parent_id,
+  }));
 
   const initial = {
     id: product.id,

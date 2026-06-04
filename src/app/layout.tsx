@@ -69,7 +69,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const menu = getNavMenu();
+  const menu = await getNavMenu();
   const dark = (await cookies()).get("site-theme")?.value === "dark";
   const user = await getCurrentUser();
   return (
