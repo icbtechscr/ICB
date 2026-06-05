@@ -205,20 +205,26 @@ export function UnifiedCheckout({
         </div>
       </div>
 
-      {/* Card del pago - fondo transparente */}
-      <div className="relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-6 shadow-sm">
-        <div className="absolute right-0 top-0 size-32 rounded-full bg-accent-300/10 blur-3xl" />
-        <div className="absolute -bottom-10 -left-10 size-40 rounded-full bg-brand-500/10 blur-3xl" />
+      {/* Card del pago */}
+      <div className="relative overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-sm">
+        {/* Franja superior con acento de marca */}
+        <div className="h-1 w-full bg-gradient-to-r from-accent-500 via-accent-400 to-brand-500" />
 
-        <div className="relative">
-          <h4 className="mb-1 text-base font-black text-ink-900">
-            Pagá de forma segura
-          </h4>
-          <p className="mb-5 text-sm text-ink-500">
-            Elegí el método de pago y completá los datos de tu tarjeta aquí
-            mismo. La pasarela protegida de BAC Costa Rica procesa el pago de
-            forma segura.
-          </p>
+        <div className="p-6">
+          <div className="mb-5 flex items-start gap-3">
+            <span className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent-50 text-accent-600">
+              <CreditCard className="size-4.5" />
+            </span>
+            <div>
+              <h4 className="text-base font-black text-ink-900">
+                Pagá de forma segura
+              </h4>
+              <p className="mt-0.5 text-sm text-ink-500">
+                Completá los datos de tu tarjeta aquí mismo. BAC Costa Rica
+                procesa el pago de forma cifrada.
+              </p>
+            </div>
+          </div>
 
           {status === "loading" && (
             <div className="flex items-center gap-3 rounded-xl border border-ink-200 bg-ink-50 px-4 py-3 text-sm text-ink-600">
@@ -233,8 +239,12 @@ export function UnifiedCheckout({
             style={{ minHeight: status === "loading" ? 0 : 60 }}
           />
 
-          {/* Embedded mode: pantalla de pago (formulario de tarjeta) inline. */}
-          <div id="payment-form" className="mt-4" />
+          {/* Embedded mode: pantalla de pago (formulario de tarjeta) inline,
+              enmarcada para que se vea integrada con la tienda. */}
+          <div
+            id="payment-form"
+            className="mt-4 overflow-hidden rounded-xl border border-ink-200 bg-ink-50/40 [&:empty]:hidden"
+          />
 
           <style jsx>{`
             :global(#payment-buttons button) {
@@ -258,6 +268,16 @@ export function UnifiedCheckout({
             }
             :global(#payment-buttons button:active) {
               transform: translateY(0) scale(0.98);
+            }
+            /* El formulario interno es un iframe de Cybersource (no se puede
+               estilizar por CSS), pero damos aire al contenedor. */
+            :global(#payment-form iframe) {
+              display: block !important;
+              width: 100% !important;
+              border: 0 !important;
+            }
+            :global(#payment-form > div) {
+              padding: 4px !important;
             }
           `}</style>
         </div>
