@@ -416,22 +416,6 @@ export default function PagoPage() {
               transition={{ duration: 0.25 }}
               className="rounded-3xl border border-ink-200 bg-white p-6 shadow-sm"
             >
-              {form.method === "tarjeta" && !showUcIframe && (
-                <div className="text-sm text-ink-600">
-                  <h3 className="mb-2 text-sm font-bold uppercase tracking-wider text-ink-900">
-                    Pago con tarjeta
-                  </h3>
-                  <p className="text-ink-600">
-                    Aceptamos Visa, Mastercard y American Express. El pago se procesa
-                    de forma segura en la pasarela de BAC con verificación 3-D Secure.
-                  </p>
-                  <p className="mt-3 text-xs text-ink-400">
-                    Al continuar se creará tu pedido y se abrirá la pasarela segura.
-                    Tus datos de tarjeta nunca pasan por nuestros servidores.
-                  </p>
-                </div>
-              )}
-
               {showUcIframe && captureContext && sdkUrl && (
                 <>
                   <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-ink-900">
