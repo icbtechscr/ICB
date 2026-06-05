@@ -9,7 +9,9 @@ import { formatCRC } from "@/lib/utils";
 export default function CartPage() {
   const { items, subtotal, count, setQty, remove } = useCart();
   const total = subtotal;
-  const MIN_ORDER = 10000;
+  // TEMPORAL: mínimo bajado a ₡100 para pruebas de la pasarela.
+  // TODO: volver a 10000 cuando terminen las pruebas.
+  const MIN_ORDER = 100;
   const missing = Math.max(0, MIN_ORDER - subtotal);
   const canCheckout = subtotal >= MIN_ORDER;
 
