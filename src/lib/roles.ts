@@ -31,6 +31,12 @@ export function mustClockIn(role: UserRole): boolean {
   return role === "colaborador" || role === "dev";
 }
 
+/** ¿Puede usar el panel de vendedor (publicar productos en Facebook)?
+ *  Por ahora: colaboradores, devs y admins. */
+export function canSell(role: UserRole): boolean {
+  return role === "colaborador" || role === "dev" || role === "admin";
+}
+
 /** Sedes asignadas. Soporta `branch_ids` (array) y `branch_id` (legacy). */
 export function getUserBranchIds(
   user: MetadataCarrier | null | undefined

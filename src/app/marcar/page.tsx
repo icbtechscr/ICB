@@ -7,6 +7,8 @@ import { crTodayIso } from "@/lib/timeclock";
 import { PunchPanel } from "@/components/timeclock/PunchPanel";
 import { InstallAppHint } from "@/components/timeclock/InstallAppHint";
 import { PushReminder } from "@/components/timeclock/PushReminder";
+import { AppTabs } from "@/components/app/AppTabs";
+import { canSell, getUserRole } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +31,7 @@ export default async function MarcarPage() {
   return (
     <div className="bg-white">
       <div className="mx-auto max-w-3xl px-4 pb-20 pt-10">
+        {canSell(getUserRole(user)) && <AppTabs />}
         <InstallAppHint />
         <PushReminder />
         <PunchPanel

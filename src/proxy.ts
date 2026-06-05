@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { getUserRole } from "@/lib/roles";
+import { getUserRole, canSell } from "@/lib/roles";
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -32,6 +32,8 @@ export async function proxy(request: NextRequest) {
   const isLogin = path === "/admin/login";
   const isApi = path.startsWith("/api/admin");
   const isMarcar = path.startsWith("/marcar");
+  const isVendor = path.startsWith("/vendedor");
+  const isVendorApi = path.startsWith("/api/vendor");
   const role = user ? getUserRole(user) : null;
 
   // Marcaje de horario: solo requiere sesión (admins o colaboradores).
@@ -39,6 +41,27 @@ export async function proxy(request: NextRequest) {
     if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = "/ingresar";
+      return NextResponse.redirect(url);
+    }
+    return response;
+  }
+
+  // Panel de vendedor: requiere sesión y permiso de venta.
+  if (isVendor || isVendorApi) {
+    if (!user) {
+      if (isVendorApi) {
+        return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+      }
+      const url = request.nextUrl.clone();
+      url.pathname = "/ingresar";
+      return NextResponse.redirect(url);
+    }
+    if (!canSell(role!)) {
+      if (isVendorApi) {
+        return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
+      }
+      const url = request.nextUrl.clone();
+      url.pathname = "/marcar";
       return NextResponse.redirect(url);
     }
     return response;
@@ -75,5 +98,11 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*", "/marcar/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/api/admin/:path*",
+    "/marcar/:path*",
+    "/vendedor/:path*",
+    "/api/vendor/:path*",
+  ],
 };
