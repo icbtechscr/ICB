@@ -139,15 +139,23 @@ export function UnifiedCheckout({
 
         await new Promise<void>((r) => requestAnimationFrame(() => r()));
 
-        const container = document.querySelector("#cybs-up-buttons");
-        if (!container) {
-          throw new Error("Contenedor #cybs-up-buttons no está en el DOM");
+        const buttons = document.querySelector("#payment-buttons");
+        const form = document.querySelector("#payment-form");
+        if (!buttons || !form) {
+          throw new Error(
+            "Contenedores embedded (#payment-buttons / #payment-form) no están en el DOM"
+          );
         }
 
-        // Sidebar mode: buttons inline, payment screen como sidebar.
-        // Por defecto este merchant solo soporta sidebar.
-        console.log("[UC] mount('#cybs-up-buttons')…");
-        const resultJwt = await checkout.mount("#cybs-up-buttons");
+        // Embedded mode (BAC lo habilitó): la lista de botones y la pantalla de
+        // pago se renderizan inline dentro de la página, sin sidebar.
+        // Con autoProcessing (completeMandate=CAPTURE), mount() resuelve con el
+        // JWT del pago ya completado.
+        console.log("[UC] mount({ paymentSelection, paymentScreen }) embedded…");
+        const resultJwt = await checkout.mount({
+          paymentSelection: "#payment-buttons",
+          paymentScreen: "#payment-form",
+        });
         console.log("[UC] mount() devolvió JWT (len):", resultJwt?.length);
 
         if (cancelled) return;
@@ -204,11 +212,12 @@ export function UnifiedCheckout({
 
         <div className="relative">
           <h4 className="mb-1 text-base font-black text-ink-900">
-            Listo para pagar de forma segura
+            Pagá de forma segura
           </h4>
           <p className="mb-5 text-sm text-ink-500">
-            Hacé clic en el botón abajo. Se abrirá la pasarela protegida de BAC
-            Costa Rica donde podés ingresar los datos de tu tarjeta.
+            Elegí el método de pago y completá los datos de tu tarjeta aquí
+            mismo. La pasarela protegida de BAC Costa Rica procesa el pago de
+            forma segura.
           </p>
 
           {status === "loading" && (
@@ -218,14 +227,17 @@ export function UnifiedCheckout({
             </div>
           )}
 
-          {/* Container donde UC monta el botón "Pay With Card" */}
+          {/* Embedded mode: lista de botones de método de pago. */}
           <div
-            id="cybs-up-buttons"
+            id="payment-buttons"
             style={{ minHeight: status === "loading" ? 0 : 60 }}
           />
 
+          {/* Embedded mode: pantalla de pago (formulario de tarjeta) inline. */}
+          <div id="payment-form" className="mt-4" />
+
           <style jsx>{`
-            :global(#cybs-up-buttons button) {
+            :global(#payment-buttons button) {
               width: 100% !important;
               background: linear-gradient(135deg, #00b87c 0%, #00d68f 100%) !important;
               color: #0a1f2c !important;
@@ -240,11 +252,11 @@ export function UnifiedCheckout({
               text-transform: none !important;
               letter-spacing: 0.02em !important;
             }
-            :global(#cybs-up-buttons button:hover) {
+            :global(#payment-buttons button:hover) {
               transform: translateY(-1px);
               box-shadow: 0 15px 30px -10px rgba(0, 184, 124, 0.8) !important;
             }
-            :global(#cybs-up-buttons button:active) {
+            :global(#payment-buttons button:active) {
               transform: translateY(0) scale(0.98);
             }
           `}</style>
