@@ -99,10 +99,8 @@ export async function POST(req: Request) {
     }
 
     const subtotal = lineItems.reduce((a, i) => a + i.line_total_crc, 0);
-    // TEMPORAL: mínimo bajado a ₡100 para pruebas de la pasarela.
-    // TODO: volver a 10000 cuando terminen las pruebas.
-    if (subtotal < 100) {
-      return new NextResponse("El mínimo de compra es ₡100", {
+    if (subtotal < 10000) {
+      return new NextResponse("El mínimo de compra es ₡10.000", {
         status: 400,
       });
     }
