@@ -104,6 +104,9 @@ async function signedRequest(
 export type CreateSessionInput = {
   amountCRC: number;
   orderNumber: string;
+  /** Origen real del navegador (https://www.… o https://…). Si es de confianza
+   *  se usa como targetOrigin; si no, cae al de NEXT_PUBLIC_SITE_ORIGIN. */
+  targetOrigin?: string;
   customer: {
     name: string;
     email: string;
@@ -116,16 +119,37 @@ export type CreateSessionInput = {
 };
 
 export async function createSession(input: CreateSessionInput): Promise<string> {
-  const rawOrigin = (process.env.NEXT_PUBLIC_SITE_ORIGIN ?? "").trim().replace(/\/$/, "");
-  if (!rawOrigin) {
+  const envOrigin = (process.env.NEXT_PUBLIC_SITE_ORIGIN ?? "").trim().replace(/\/$/, "");
+  if (!envOrigin) {
     throw new Error("NEXT_PUBLIC_SITE_ORIGIN no está definido");
   }
-  if (!rawOrigin.startsWith("https://")) {
+
+  // El targetOrigin debe coincidir EXACTO con el origen del navegador donde se
+  // monta UC (mismo esquema/host, con o sin www). Si el request trae un origen
+  // de confianza (mismo dominio registrable que el env), lo usamos; si no, el
+  // del env. Esto evita el error "one or more target origins are unused".
+  const hostOf = (u: string): string => {
+    try {
+      return new URL(u).host.toLowerCase();
+    } catch {
+      return "";
+    }
+  };
+  const baseHost = hostOf(envOrigin).replace(/^www\./, "");
+  const candidate = (input.targetOrigin ?? "").trim().replace(/\/$/, "");
+  const candHost = hostOf(candidate);
+  const candidateTrusted =
+    candidate.startsWith("https://") &&
+    baseHost.length > 0 &&
+    (candHost === baseHost || candHost.endsWith(`.${baseHost}`));
+
+  const origin = candidateTrusted ? candidate : envOrigin;
+
+  if (!origin.startsWith("https://")) {
     throw new Error(
-      `targetOrigin debe usar HTTPS. Recibido: "${rawOrigin}".`
+      `targetOrigin debe usar HTTPS. Recibido env="${envOrigin}", request="${candidate}".`
     );
   }
-  const origin = rawOrigin;
 
   const firstName = input.customer.name.split(" ")[0] || input.customer.name;
   const lastName = input.customer.name.split(" ").slice(1).join(" ") || input.customer.name;

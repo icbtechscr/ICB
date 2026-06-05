@@ -26,9 +26,17 @@ export async function POST(req: Request) {
       return new NextResponse("Orden no encontrada", { status: 404 });
     }
 
+    // Origen real desde donde se abrió el checkout (www o apex). Lo usamos como
+    // targetOrigin para que coincida exacto y Cybersource no devuelva
+    // "target origins are unused".
+    const requestOrigin =
+      req.headers.get("origin") ??
+      (req.headers.get("host") ? `https://${req.headers.get("host")}` : undefined);
+
     const sessionJwt = await createSession({
       amountCRC: Number(order.total_crc),
       orderNumber: order.order_number,
+      targetOrigin: requestOrigin ?? undefined,
       customer: {
         name: order.customer_name,
         email: order.customer_email,
