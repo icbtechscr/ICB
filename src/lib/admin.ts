@@ -178,6 +178,70 @@ export async function adminBrandProductCounts(): Promise<Map<string, number>> {
   return counts;
 }
 
+// ---------------------------------------------------------------------------
+// Categorías y subcategorías — CRUD para el panel admin.
+// Modelo: categoría principal = parent_id null; subcategoría = parent_id apunta
+// a una categoría principal. Solo 2 niveles.
+// ---------------------------------------------------------------------------
+
+export async function adminCreateCategory(input: {
+  name: string;
+  slug?: string | null;
+  parentId?: string | null;
+}): Promise<AdminCategory> {
+  const sb = createAdminClient();
+  const name = input.name.trim();
+  const slug = input.slug?.trim() ? slugify(input.slug) : slugify(name);
+  const { data, error } = await sb
+    .from("categories")
+    .insert({ name, slug, parent_id: input.parentId ?? null })
+    .select("id, name, slug, parent_id")
+    .single();
+  if (error) throw error;
+  return data as AdminCategory;
+}
+
+export async function adminUpdateCategory(
+  id: string,
+  input: { name?: string; parentId?: string | null }
+): Promise<AdminCategory> {
+  const sb = createAdminClient();
+  const patch: { name?: string; parent_id?: string | null } = {};
+  if (typeof input.name === "string") patch.name = input.name.trim();
+  if (input.parentId !== undefined) patch.parent_id = input.parentId;
+  const { data, error } = await sb
+    .from("categories")
+    .update(patch)
+    .eq("id", id)
+    .select("id, name, slug, parent_id")
+    .single();
+  if (error) throw error;
+  return data as AdminCategory;
+}
+
+export async function adminDeleteCategory(id: string): Promise<void> {
+  const sb = createAdminClient();
+  // Quitar primero los vínculos producto↔categoría (evita errores de FK).
+  await sb.from("product_categories").delete().eq("category_id", id);
+  // Las subcategorías quedan como principales (parent_id → null vía el FK).
+  const { error } = await sb.from("categories").delete().eq("id", id);
+  if (error) throw error;
+}
+
+/** Cuenta de productos por categoría (vía product_categories). */
+export async function adminCategoryProductCounts(): Promise<Map<string, number>> {
+  const sb = createAdminClient();
+  const { data, error } = await sb
+    .from("product_categories")
+    .select("category_id");
+  if (error) throw error;
+  const counts = new Map<string, number>();
+  for (const r of (data ?? []) as { category_id: string }[]) {
+    counts.set(r.category_id, (counts.get(r.category_id) ?? 0) + 1);
+  }
+  return counts;
+}
+
 export async function adminStats(): Promise<{
   productCount: number;
   onSaleCount: number;

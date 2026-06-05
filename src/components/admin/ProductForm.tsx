@@ -451,7 +451,7 @@ export function ProductForm({
                 options={brands.map((b) => ({ value: b.id, label: b.name }))}
                 hint={
                   brands.length === 0
-                    ? "No hay marcas. Creá marcas en Tienda → Marcas."
+                    ? "No hay marcas. Creá marcas en Configuración → Tienda y productos."
                     : undefined
                 }
               />

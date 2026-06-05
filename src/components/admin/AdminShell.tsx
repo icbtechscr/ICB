@@ -15,7 +15,6 @@ import {
   Moon,
   Sun,
   Lock,
-  Tag,
   type LucideIcon,
 } from "lucide-react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
@@ -37,15 +36,9 @@ const GROUPS: Group[] = [
     label: "Gestionar Tienda",
     Icon: Store,
     href: "/admin/productos",
-    prefixes: [
-      "/admin/productos",
-      "/admin/marcas",
-      "/admin/tienda",
-      "/admin/pedidos",
-    ],
+    prefixes: ["/admin/productos", "/admin/tienda", "/admin/pedidos"],
     sub: [
       { href: "/admin/productos", label: "Productos", Icon: Package },
-      { href: "/admin/marcas", label: "Marcas", Icon: Tag },
       { href: "/admin/tienda", label: "Tienda", Icon: Store },
       { href: "/admin/pedidos", label: "Pedidos online", Icon: ShoppingBag },
     ],
@@ -72,12 +65,11 @@ const GROUPS: Group[] = [
   },
   {
     id: "ajustes",
-    label: "Ajustes",
+    label: "Configuración",
     Icon: Settings,
-    href: "#",
+    href: "/admin/ajustes",
     prefixes: ["/admin/ajustes"],
     sub: [],
-    disabled: true,
   },
 ];
 

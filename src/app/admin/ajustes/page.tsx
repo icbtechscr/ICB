@@ -1,18 +1,83 @@
-import { Settings } from "lucide-react";
+import {
+  adminListCategories,
+  adminCategoryProductCounts,
+  adminListBrands,
+  adminBrandProductCounts,
+} from "@/lib/admin";
+import { ProductTabs } from "@/components/ProductTabs";
+import {
+  CategoriesManager,
+  type AdminCategoryRow,
+} from "@/components/admin/CategoriesManager";
+import {
+  BrandsManager,
+  type AdminBrandRow,
+} from "@/components/admin/BrandsManager";
 
 export const dynamic = "force-dynamic";
 
-export default function AjustesPage() {
+export default async function AjustesPage() {
+  const [categories, catCounts, brands, brandCounts] = await Promise.all([
+    adminListCategories(),
+    adminCategoryProductCounts(),
+    adminListBrands(),
+    adminBrandProductCounts(),
+  ]);
+
+  const categoryRows: AdminCategoryRow[] = categories.map((c) => ({
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    parentId: c.parent_id,
+    productCount: catCounts.get(c.id) ?? 0,
+  }));
+  const brandRows: AdminBrandRow[] = brands.map((b) => ({
+    ...b,
+    productCount: brandCounts.get(b.id) ?? 0,
+  }));
+
   return (
-    <div className="mx-auto max-w-md py-16 text-center">
-      <div className="mx-auto mb-4 inline-flex size-14 items-center justify-center rounded-2xl bg-ink-100 text-ink-400">
-        <Settings className="size-7" />
+    <div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-black tracking-tight">Configuración</h1>
+        <p className="mt-1 text-sm text-ink-500">
+          Ajustes generales del sistema, organizados por secciones.
+        </p>
       </div>
-      <h1 className="text-xl font-black text-ink-900">Ajustes</h1>
-      <p className="mt-2 text-sm text-ink-500">
-        Por ahora no hay configuraciones disponibles. Esta sección estará
-        habilitada próximamente.
-      </p>
+
+      <ProductTabs
+        tabs={[
+          {
+            id: "tienda",
+            label: "Tienda y productos",
+            content: (
+              <div className="space-y-10">
+                <section>
+                  <h2 className="mb-1 text-lg font-black text-ink-900">
+                    Categorías y subcategorías
+                  </h2>
+                  <p className="mb-4 text-sm text-ink-500">
+                    Creá, renombrá o eliminá categorías. Las subcategorías
+                    cuelgan de una categoría principal (ej: Redes → Routers).
+                  </p>
+                  <CategoriesManager initialCategories={categoryRows} />
+                </section>
+
+                <section>
+                  <h2 className="mb-1 text-lg font-black text-ink-900">
+                    Marcas
+                  </h2>
+                  <p className="mb-4 text-sm text-ink-500">
+                    Marcas del catálogo. Se usan al crear productos y como filtro
+                    en la tienda.
+                  </p>
+                  <BrandsManager initialBrands={brandRows} />
+                </section>
+              </div>
+            ),
+          },
+        ]}
+      />
     </div>
   );
 }
