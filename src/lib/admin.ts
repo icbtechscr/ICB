@@ -280,8 +280,11 @@ export type ProductWritePayload = {
 export async function adminCreateProduct(payload: ProductWritePayload): Promise<string> {
   const sb = createAdminClient();
   const { category_ids, images, ...row } = payload;
+  // El slug SIEMPRE se normaliza (sin mayúsculas, espacios ni caracteres raros)
+  // para que la URL /productos/<slug> nunca dé 404.
   const insertRow = {
     ...row,
+    slug: slugify(row.slug || "") || slugify(row.name) || `producto-${Date.now()}`,
     on_sale: row.on_sale ?? false,
     in_stock: row.in_stock ?? true,
     sale_price_crc: row.sale_price_crc || null,
@@ -317,6 +320,12 @@ export async function adminUpdateProduct(
   const updateRow: Record<string, unknown> = { ...row, updated_at: new Date().toISOString() };
   if ("sale_price_crc" in row) {
     updateRow.sale_price_crc = row.sale_price_crc || null;
+  }
+  // Normalizar el slug si viene en el payload (nunca guardar uno inválido).
+  if (typeof row.slug === "string") {
+    const cleaned = slugify(row.slug) || (row.name ? slugify(row.name) : "");
+    if (cleaned) updateRow.slug = cleaned;
+    else delete updateRow.slug; // si quedara vacío, no tocar el slug actual
   }
   const { error } = await sb.from("products").update(updateRow).eq("id", id);
   if (error) throw error;
