@@ -70,47 +70,52 @@ export function PunchPanel({
   const todayIso = crTodayIso();
 
   // --- Geolocalización: se precalienta al entrar y se mantiene fresca ---
+  // Regla: NO se puede marcar hasta tener coordenadas reales del GPS.
   const coordsRef = useRef<Coords | null>(null);
   const [geoStatus, setGeoStatus] = useState<GeoStatus>("loading");
   const [accuracy, setAccuracy] = useState<number | null>(null);
+  const [hasCoords, setHasCoords] = useState(false);
+  const [geoNonce, setGeoNonce] = useState(0); // para reintentar
 
   useEffect(() => {
     if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
       setGeoStatus("unsupported");
       return;
     }
-    let settled = false;
+    setGeoStatus((s) => (s === "ready" ? s : "loading"));
     const id = navigator.geolocation.watchPosition(
       (pos) => {
-        settled = true;
         coordsRef.current = {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
           accuracy: pos.coords.accuracy,
         };
         setAccuracy(pos.coords.accuracy);
+        setHasCoords(true);
         setGeoStatus("ready");
       },
       (err) => {
-        settled = true;
-        setGeoStatus(
-          err.code === err.PERMISSION_DENIED ? "denied" : "ready"
-        );
+        // Permiso denegado → bloqueado hasta que lo activen.
+        // Otros errores (timeout/señal) → seguimos intentando: NO marcamos
+        // como listo para no permitir marcas sin ubicación.
+        if (err.code === err.PERMISSION_DENIED) {
+          setHasCoords(false);
+          setGeoStatus("denied");
+        }
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 15000 }
     );
-    // Salvavidas: si el GPS no responde en 12s, no bloquear al colaborador.
-    const fallback = setTimeout(() => {
-      if (!settled) setGeoStatus("ready");
-    }, 12000);
-    return () => {
-      navigator.geolocation.clearWatch(id);
-      clearTimeout(fallback);
-    };
-  }, []);
+    return () => navigator.geolocation.clearWatch(id);
+  }, [geoNonce]);
 
-  const geoLoading = geoStatus === "loading";
-  const busy = geoLoading || loadingType !== null;
+  function retryGeo() {
+    setGeoStatus("loading");
+    setGeoNonce((n) => n + 1);
+  }
+
+  // Solo se puede marcar con coordenadas reales en mano.
+  const canPunch = hasCoords && loadingType === null;
+  const busy = !canPunch;
 
   // --- Configuración: cambiar contraseña ---
   const [showSettings, setShowSettings] = useState(false);
@@ -171,7 +176,11 @@ export function PunchPanel({
   const historyRows = rows.filter((r) => r.dayIso !== todayIso);
 
   async function punch(type: PunchType) {
-    if (geoLoading) return; // no debería pasar (botones deshabilitados)
+    // Bloqueo duro: sin coordenadas no se marca.
+    if (!coordsRef.current) {
+      setError("Esperá a que la ubicación esté lista para poder marcar.");
+      return;
+    }
     setLoadingType(type);
     setError(null);
     try {
@@ -324,7 +333,7 @@ export function PunchPanel({
         </div>
       )}
 
-      <GeoBanner status={geoStatus} accuracy={accuracy} />
+      <GeoBanner status={geoStatus} accuracy={accuracy} onRetry={retryGeo} />
 
       {error && (
         <p className="mt-4 rounded-xl border border-danger/30 bg-danger/10 px-4 py-2.5 text-sm text-danger">
@@ -346,15 +355,17 @@ export function PunchPanel({
             disabled={busy}
             className="mt-5 inline-flex w-full max-w-sm items-center justify-center gap-2.5 rounded-2xl bg-red-600 px-8 py-5 text-lg font-black text-white shadow-xl shadow-red-600/30 transition-all hover:bg-red-700 hover:shadow-red-600/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loadingType === "entrada" || geoLoading ? (
+            {loadingType === "entrada" || !hasCoords ? (
               <Loader2 className="size-6 animate-spin" />
             ) : (
               <Sun className="size-6" />
             )}
-            {geoLoading ? "Obteniendo ubicación…" : "Comenzar Día"}
+            {!hasCoords ? "Obteniendo ubicación…" : "Comenzar Día"}
           </button>
           <p className="mt-3 text-xs text-ink-400">
-            Se registrará tu hora y ubicación al tocar el botón.
+            {hasCoords
+              ? "Se registrará tu hora y ubicación al tocar el botón."
+              : "Necesitamos tu ubicación para poder marcar."}
           </p>
         </div>
       ) : (
@@ -391,9 +402,11 @@ export function PunchPanel({
 function GeoBanner({
   status,
   accuracy,
+  onRetry,
 }: {
   status: GeoStatus;
   accuracy: number | null;
+  onRetry: () => void;
 }) {
   if (status === "loading") {
     return (
@@ -411,12 +424,25 @@ function GeoBanner({
       </div>
     );
   }
-  // denied / unsupported
+  // denied / unsupported → BLOQUEANTE: no se puede marcar sin ubicación.
+  const msg =
+    status === "unsupported"
+      ? "Tu dispositivo no permite ubicación. No se puede marcar sin GPS."
+      : "Ubicación bloqueada. Activá el permiso de ubicación para poder marcar.";
   return (
-    <div className="mt-4 flex items-center gap-2 rounded-xl border border-ink-200 bg-ink-50 px-4 py-2.5 text-sm text-ink-600">
-      <MapPinOff className="size-4 shrink-0" />
-      Ubicación desactivada — podés marcar igual, pero quedará registrado sin
-      ubicación.
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-danger/30 bg-danger/10 px-4 py-2.5 text-sm text-danger">
+      <span className="flex items-center gap-2">
+        <MapPinOff className="size-4 shrink-0" />
+        {msg}
+      </span>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="inline-flex items-center gap-1.5 rounded-full border border-danger/40 bg-white px-3 py-1.5 text-xs font-bold text-danger transition hover:bg-danger/5"
+      >
+        <Loader2 className="size-3.5" />
+        Reintentar
+      </button>
     </div>
   );
 }

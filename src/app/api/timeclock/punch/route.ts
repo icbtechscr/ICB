@@ -33,6 +33,14 @@ export async function POST(req: Request) {
       return new NextResponse("Tipo de marcaje inválido", { status: 400 });
     }
 
+    // Ubicación obligatoria: no se permiten marcas sin GPS.
+    if (typeof body.latitude !== "number" || typeof body.longitude !== "number") {
+      return new NextResponse(
+        "Necesitamos tu ubicación para marcar. Activá el GPS e intentá de nuevo.",
+        { status: 400 }
+      );
+    }
+
     // 2. Ubicaciones asignadas al colaborador (puede tener varias + remoto).
     const locations = getUserBranchIds(user)
       .map(getLocation)
