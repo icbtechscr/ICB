@@ -410,6 +410,7 @@ export type CatalogParams = {
   category?: string; // slug
   brand?: string; // name
   sort?: CatalogSort;
+  q?: string; // texto de búsqueda (nombre, SKU, descripción corta)
 };
 
 export async function getCatalogProducts(params: CatalogParams): Promise<{
@@ -439,6 +440,14 @@ export async function getCatalogProducts(params: CatalogParams): Promise<{
   }
   if (params.brand) {
     query = query.eq("brand.name", params.brand);
+  }
+  const needle = params.q?.trim();
+  if (needle) {
+    // Escapa comas y paréntesis que romperían la sintaxis del filtro `or`.
+    const safe = needle.replace(/[,()]/g, " ");
+    query = query.or(
+      `name.ilike.%${safe}%,sku.ilike.%${safe}%,short_description.ilike.%${safe}%`
+    );
   }
 
   switch (params.sort) {

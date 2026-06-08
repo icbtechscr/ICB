@@ -175,7 +175,11 @@ export function CatalogFilters({
           {active > 0 && (
             <button
               type="button"
-              onClick={() => router.push("/productos")}
+              onClick={() => {
+                // Conserva la búsqueda (q) al limpiar categoría/marca/orden.
+                const q = params.get("q");
+                router.push(q ? `/productos?q=${encodeURIComponent(q)}` : "/productos");
+              }}
               className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 bg-white px-3 py-2 text-xs font-semibold text-ink-600 transition hover:bg-white"
             >
               <X className="size-3.5" />

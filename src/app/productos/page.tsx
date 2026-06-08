@@ -29,6 +29,7 @@ export default async function ProductsPage({
     cat?: string;
     brand?: string;
     sort?: string;
+    q?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -36,22 +37,24 @@ export default async function ProductsPage({
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
   const cat = params.cat || undefined;
   const brand = params.brand || undefined;
+  const q = params.q?.trim() || undefined;
   const sort: CatalogSort = SORTS.includes(params.sort as CatalogSort)
     ? (params.sort as CatalogSort)
     : "relevancia";
 
   const [{ products: slice, total }, categories, categoryTree, brands] =
     await Promise.all([
-      getCatalogProducts({ page, perPage, category: cat, brand, sort }),
+      getCatalogProducts({ page, perPage, category: cat, brand, sort, q }),
       getTopCategories(100),
       getCategoryTree(),
       getBrands(),
     ]);
   const totalPages = Math.max(1, Math.ceil(total / perPage));
 
-  // querystring para paginación, preservando filtros
+  // querystring para paginación, preservando filtros y búsqueda
   function pageHref(p: number) {
     const qs = new URLSearchParams();
+    if (q) qs.set("q", q);
     if (cat) qs.set("cat", cat);
     if (brand) qs.set("brand", brand);
     if (sort !== "relevancia") qs.set("sort", sort);
@@ -65,11 +68,18 @@ export default async function ProductsPage({
       <div className="mx-auto max-w-7xl px-4 pb-20 pt-8">
         <div className="mb-8">
           <h1 className="text-4xl font-black tracking-tight text-ink-900 md:text-5xl">
-            Catálogo
+            {q ? (
+              <>
+                Resultados para{" "}
+                <span className="text-brand-600">&ldquo;{q}&rdquo;</span>
+              </>
+            ) : (
+              "Catálogo"
+            )}
           </h1>
           <p className="mt-1 text-sm text-ink-500">
             {total} producto{total !== 1 ? "s" : ""}
-            {cat || brand ? " (filtrado)" : " disponibles"}
+            {q || cat || brand ? " (filtrado)" : " disponibles"}
           </p>
         </div>
 
@@ -96,7 +106,9 @@ export default async function ProductsPage({
           </div>
         ) : (
           <p className="mt-8 text-ink-500">
-            No se encontraron productos con esos filtros.
+            {q
+              ? `No se encontraron productos para "${q}".`
+              : "No se encontraron productos con esos filtros."}
           </p>
         )}
 

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight, Check, ShieldCheck, Truck, Headphones, Heart } from "lucide-react";
 import { AddToCartButton } from "@/components/AddToCartButton";
-import { getProductBySlug, getProductSlugs } from "@/lib/products";
+import { getProductBySlug } from "@/lib/products";
 import { formatCRC, decodeHtml, stripHtml } from "@/lib/utils";
 import { parseKitDescription } from "@/lib/parseKit";
 import { ProductTabs } from "@/components/ProductTabs";
@@ -12,9 +12,12 @@ import { SITE_NAME, absoluteUrl } from "@/lib/site";
 
 export const revalidate = 60;
 
+// Renderizamos todas las páginas de producto en runtime (ISR) la primera vez que
+// se visitan. Devolver un array vacío es necesario para que productos nuevos
+// —creados después del build— se generen en runtime en vez de dar 404.
+// (Una lista parcial NO genera las rutas no incluidas cuando hay `revalidate`.)
 export async function generateStaticParams() {
-  const slugs = await getProductSlugs(50);
-  return slugs.map((slug) => ({ slug }));
+  return [];
 }
 
 export async function generateMetadata({

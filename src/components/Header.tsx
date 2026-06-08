@@ -37,7 +37,7 @@ export function Header({
           />
         </Link>
 
-        <form action="/buscar" className="hidden flex-1 md:block">
+        <form action="/productos" className="hidden flex-1 md:block">
           <label className="relative block">
             <span className="sr-only">Buscar productos</span>
             <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-ink-400" aria-hidden />
@@ -88,7 +88,7 @@ export function Header({
 
       {mobileOpen && (
         <div className="border-t border-ink-200 bg-white md:hidden">
-          <form action="/buscar" className="px-4 py-3">
+          <form action="/productos" className="px-4 py-3">
             <label className="relative block">
               <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-ink-400" aria-hidden />
               <input

@@ -46,6 +46,8 @@ export function ProductForm({
   const [error, setError] = useState<string | null>(null);
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const [uploadingNew, setUploadingNew] = useState(false);
+  // En modo crear, el slug sigue al nombre hasta que el usuario lo edita a mano.
+  const [slugTouched, setSlugTouched] = useState(false);
   const newFileRef = useRef<HTMLInputElement | null>(null);
 
   // --- Árbol de categorías: Categoría (padre) → Subcategoría (hijo) ---
@@ -269,7 +271,7 @@ export function ProductForm({
                 value={form.name}
                 onChange={(v) => {
                   set("name", v);
-                  if (mode === "create" && !form.slug) set("slug", slugify(v));
+                  if (mode === "create" && !slugTouched) set("slug", slugify(v));
                 }}
               />
               <div className="grid gap-4 sm:grid-cols-2">
@@ -277,7 +279,10 @@ export function ProductForm({
                   label="Slug"
                   required
                   value={form.slug}
-                  onChange={(v) => set("slug", v)}
+                  onChange={(v) => {
+                    setSlugTouched(true);
+                    set("slug", v);
+                  }}
                   hint="URL: /productos/<slug>"
                   mono
                 />
