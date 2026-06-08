@@ -10,15 +10,12 @@ import { parseKitDescription } from "@/lib/parseKit";
 import { ProductTabs } from "@/components/ProductTabs";
 import { SITE_NAME, absoluteUrl } from "@/lib/site";
 
-export const revalidate = 60;
-
-// Renderizamos todas las páginas de producto en runtime (ISR) la primera vez que
-// se visitan. Devolver un array vacío es necesario para que productos nuevos
-// —creados después del build— se generen en runtime en vez de dar 404.
-// (Una lista parcial NO genera las rutas no incluidas cuando hay `revalidate`.)
-export async function generateStaticParams() {
-  return [];
-}
+// El layout raíz lee cookies() (modo noche + sesión), lo que vuelve dinámica
+// toda la app. Por eso esta página NO puede prerenderizarse de forma estática.
+// Tener `generateStaticParams` + `revalidate` aquí hacía que Next intentara
+// generarla estática y chocara con cookies() → DYNAMIC_SERVER_USAGE (500) en
+// producción. Se renderiza en runtime (dinámica), como el resto del sitio.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
