@@ -5,16 +5,20 @@ import {
   PUNCH_COL,
   type DayRow,
   type PunchCell,
+  type PunchType,
 } from "@/lib/timeclock";
+import { EditableCell } from "./EditableCell";
 
 export function HorarioTable({
   rows,
   emptyText = "No hay marcajes.",
   showDay = true,
+  editable = false,
 }: {
   rows: DayRow[];
   emptyText?: string;
   showDay?: boolean;
+  editable?: boolean;
 }) {
   if (rows.length === 0) {
     return (
@@ -64,7 +68,18 @@ export function HorarioTable({
                   key={t}
                   className="border-r border-t border-ink-100 px-4 py-3 last:border-r-0"
                 >
-                  <Cell cell={row.cells[t]} />
+                  {editable ? (
+                    <EditableCell
+                      cell={row.cells[t]}
+                      punchType={t as PunchType}
+                      userId={row.userId}
+                      employeeName={row.employeeName}
+                      branchName={row.branchName}
+                      dayIso={row.dayIso}
+                    />
+                  ) : (
+                    <Cell cell={row.cells[t]} />
+                  )}
                 </td>
               ))}
             </tr>

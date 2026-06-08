@@ -2,6 +2,7 @@ import { CalendarDays } from "lucide-react";
 import { crTodayIso, buildDayRows, fmtDayLabel } from "@/lib/timeclock";
 import { adminListEntries } from "@/lib/timeclock-server";
 import { createAdminClient } from "@/lib/supabase";
+import { getCurrentUser } from "@/lib/supabase-server";
 import { getUserRole, mustClockIn } from "@/lib/roles";
 import { BRANCHES } from "@/lib/branches";
 import { HorarioFilters } from "@/components/admin/HorarioFilters";
@@ -27,6 +28,9 @@ export default async function ControlHorarioPage({
     userId: userId || undefined,
   });
   const rows = buildDayRows(entries);
+
+  const currentUser = await getCurrentUser();
+  const isDev = getUserRole(currentUser) === "dev";
 
   let employees: { id: string; name: string }[] = [];
   try {
@@ -74,9 +78,15 @@ export default async function ControlHorarioPage({
             {rows.length === 1 ? "" : "es"}
           </h2>
         </div>
+        {isDev && (
+          <p className="border-b border-amber-100 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-700">
+            Modo Dev: podés editar la hora (lápiz), borrar o agregar marcas.
+          </p>
+        )}
         <HorarioTable
           rows={rows}
           showDay={false}
+          editable={isDev}
           emptyText="Nadie ha marcado hoy todavía."
         />
       </div>

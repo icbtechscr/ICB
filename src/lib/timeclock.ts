@@ -60,6 +60,7 @@ export type TimeEntry = {
 // --- Pivote por día: una fila = un día de un colaborador ---
 
 export type PunchCell = {
+  id: string; // id del time_entry (para editar/borrar)
   time: string; // HH:MM (hora CR)
   iso: string;
   distance: number | null;
@@ -128,6 +129,7 @@ export function buildDayRows(entries: TimeEntry[]): DayRow[] {
     }
     if (!row.cells[e.punch_type]) {
       row.cells[e.punch_type] = {
+        id: e.id,
         time: fmtTimeCR(e.punched_at),
         iso: e.punched_at,
         distance: e.distance_m,

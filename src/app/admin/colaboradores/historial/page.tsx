@@ -2,6 +2,7 @@ import { History } from "lucide-react";
 import { crTodayIso, buildDayRows, fmtDayLabel } from "@/lib/timeclock";
 import { adminListEntries } from "@/lib/timeclock-server";
 import { createAdminClient } from "@/lib/supabase";
+import { getCurrentUser } from "@/lib/supabase-server";
 import { getUserRole, mustClockIn } from "@/lib/roles";
 import { BRANCHES } from "@/lib/branches";
 import { HorarioFilters } from "@/components/admin/HorarioFilters";
@@ -37,6 +38,9 @@ export default async function HistorialPage({
   });
   // El historial son días pasados: excluimos el día de hoy.
   const rows = buildDayRows(entries).filter((r) => r.dayIso !== today);
+
+  const currentUser = await getCurrentUser();
+  const isDev = getUserRole(currentUser) === "dev";
 
   let employees: { id: string; name: string }[] = [];
   try {
@@ -82,7 +86,16 @@ export default async function HistorialPage({
             {rows.length} día{rows.length === 1 ? "" : "s"} con marcajes
           </h2>
         </div>
-        <HorarioTable rows={rows} emptyText="No hay marcajes en este rango." />
+        {isDev && (
+          <p className="border-b border-amber-100 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-700">
+            Modo Dev: podés editar la hora (lápiz), borrar o agregar marcas.
+          </p>
+        )}
+        <HorarioTable
+          rows={rows}
+          editable={isDev}
+          emptyText="No hay marcajes en este rango."
+        />
       </div>
     </div>
   );
