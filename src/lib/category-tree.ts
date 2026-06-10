@@ -10,7 +10,12 @@ type RawCategory = {
 };
 
 export type SubCategory = { name: string; slug: string; count: number };
-export type NavItem = { label: string; href: string; children: SubCategory[] };
+export type NavItem = {
+  label: string;
+  href: string;
+  children: SubCategory[];
+  brands: string[];
+};
 
 const CATEGORIES = rawCategories as RawCategory[];
 
@@ -61,6 +66,7 @@ function navMenuFromJson(): NavItem[] {
     label: item.label,
     href: item.href,
     children: getChildren(item.parentWooId),
+    brands: [],
   }));
 }
 
@@ -91,15 +97,11 @@ export async function getNavMenu(): Promise<NavItem[]> {
     const bySlug = new Map<string, Row>();
     for (const r of rows) bySlug.set(r.slug, r);
 
-    const childrenByParentId = new Map<string, SubCategory[]>();
+    const childRowsByParent = new Map<string, Row[]>();
     for (const r of rows) {
       if (!r.parent_id) continue;
-      if (!childrenByParentId.has(r.parent_id)) {
-        childrenByParentId.set(r.parent_id, []);
-      }
-      childrenByParentId
-        .get(r.parent_id)!
-        .push({ name: r.name, slug: r.slug, count: countOf(r) });
+      if (!childRowsByParent.has(r.parent_id)) childRowsByParent.set(r.parent_id, []);
+      childRowsByParent.get(r.parent_id)!.push(r);
     }
 
     const slugFromHref = (href: string): string | null => {
@@ -107,21 +109,59 @@ export async function getNavMenu(): Promise<NavItem[]> {
       return m ? m[1] : null;
     };
 
+    // Mapear cada categoría relevante (pestañas curadas + sus hijas) a su pestaña,
+    // para juntar las marcas de los productos de cada rama.
+    const catToTab = new Map<string, string>();
+    for (const item of CURATED) {
+      const slug = slugFromHref(item.href);
+      const row = slug ? bySlug.get(slug) : undefined;
+      if (!row) continue;
+      catToTab.set(row.id, row.id);
+      for (const ch of childRowsByParent.get(row.id) ?? []) catToTab.set(ch.id, row.id);
+    }
+
+    // Marcas por pestaña (de los productos de la categoría + subcategorías).
+    const brandsByTab = new Map<string, Set<string>>();
+    try {
+      const ids = [...catToTab.keys()];
+      if (ids.length) {
+        const { data: pcb } = await supabase
+          .from("product_categories")
+          .select("category_id, product:products(brand:brands(name))")
+          .in("category_id", ids);
+        const brandRows =
+          (pcb ?? []) as unknown as {
+            category_id: string;
+            product: { brand: { name: string } | null } | null;
+          }[];
+        for (const r of brandRows) {
+          const tab = catToTab.get(r.category_id);
+          const name = r.product?.brand?.name;
+          if (!tab || !name) continue;
+          if (!brandsByTab.has(tab)) brandsByTab.set(tab, new Set());
+          brandsByTab.get(tab)!.add(name);
+        }
+      }
+    } catch {
+      // si falla, el menú igual sale sin marcas
+    }
+
     return CURATED.map((item) => {
       const slug = slugFromHref(item.href);
-      const parentRow = slug ? bySlug.get(slug) : undefined;
-      const dbChildren = parentRow
-        ? (childrenByParentId.get(parentRow.id) ?? [])
-            .filter((c) => c.count > 0)
-            .sort((a, b) => b.count - a.count)
-            .slice(0, 10)
+      const row = slug ? bySlug.get(slug) : undefined;
+      // TODAS las subcategorías (incluso vacías), ordenadas por nombre.
+      const dbChildren = row
+        ? (childRowsByParent.get(row.id) ?? [])
+            .map((c) => ({ name: c.name, slug: c.slug, count: countOf(c) }))
+            .sort((a, b) => a.name.localeCompare(b.name))
         : [];
-      return {
-        label: item.label,
-        href: item.href,
-        // Si esa rama aún no tiene subcategorías en la base, cae al JSON legado.
-        children: dbChildren.length ? dbChildren : getChildren(item.parentWooId),
-      };
+      const children = dbChildren.length
+        ? dbChildren
+        : getChildren(item.parentWooId);
+      const brands = row
+        ? [...(brandsByTab.get(row.id) ?? [])].sort((a, b) => a.localeCompare(b))
+        : [];
+      return { label: item.label, href: item.href, children, brands };
     });
   } catch {
     return navMenuFromJson();
