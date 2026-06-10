@@ -85,8 +85,11 @@ export async function getNavMenu(): Promise<NavItem[]> {
     const rows = data as unknown as Row[];
     const countOf = (r: Row) => r.product_categories?.[0]?.count ?? 0;
 
-    const byWooId = new Map<number, Row>();
-    for (const r of rows) if (r.woo_id != null) byWooId.set(r.woo_id, r);
+    // El submenú se arma con la jerarquía REAL de la base (parent_id),
+    // emparejando cada pestaña curada por su SLUG (no por woo_id, que quedó
+    // desfasado al administrar categorías desde el panel).
+    const bySlug = new Map<string, Row>();
+    for (const r of rows) bySlug.set(r.slug, r);
 
     const childrenByParentId = new Map<string, SubCategory[]>();
     for (const r of rows) {
@@ -99,11 +102,14 @@ export async function getNavMenu(): Promise<NavItem[]> {
         .push({ name: r.name, slug: r.slug, count: countOf(r) });
     }
 
+    const slugFromHref = (href: string): string | null => {
+      const m = href.match(/^\/categoria\/(.+)$/);
+      return m ? m[1] : null;
+    };
+
     return CURATED.map((item) => {
-      if (item.parentWooId == null) {
-        return { label: item.label, href: item.href, children: [] };
-      }
-      const parentRow = byWooId.get(item.parentWooId);
+      const slug = slugFromHref(item.href);
+      const parentRow = slug ? bySlug.get(slug) : undefined;
       const dbChildren = parentRow
         ? (childrenByParentId.get(parentRow.id) ?? [])
             .filter((c) => c.count > 0)
@@ -113,7 +119,7 @@ export async function getNavMenu(): Promise<NavItem[]> {
       return {
         label: item.label,
         href: item.href,
-        // Si esta rama aún no tiene subcategorías en la base, usa el JSON.
+        // Si esa rama aún no tiene subcategorías en la base, cae al JSON legado.
         children: dbChildren.length ? dbChildren : getChildren(item.parentWooId),
       };
     });

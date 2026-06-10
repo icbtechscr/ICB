@@ -311,6 +311,38 @@ export async function getProductsByCategory(slug: string): Promise<Product[]> {
     .map(rowToProduct);
 }
 
+// Productos de una categoría INCLUYENDO sus subcategorías (jerarquía parent_id).
+// Así, al entrar a un padre (ej. Redes) se ven también los de Routers, Switches…
+export async function getProductsByCategoryDeep(slug: string): Promise<Product[]> {
+  const { data: cat, error: e1 } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (e1) throw e1;
+  if (!cat) return [];
+
+  const { data: kids } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("parent_id", cat.id);
+  const ids = [cat.id, ...((kids ?? []).map((k) => k.id))];
+
+  const { data: pcs, error } = await supabase
+    .from("product_categories")
+    .select("product:products(" + SELECT + ")")
+    .in("category_id", ids);
+  if (error) throw error;
+
+  const map = new Map<string, Product>();
+  for (const r of (pcs ?? []) as unknown as { product: Row | null }[]) {
+    if (r.product && !map.has(r.product.id)) {
+      map.set(r.product.id, rowToProduct(r.product));
+    }
+  }
+  return [...map.values()];
+}
+
 // Junta productos de varias subcategorías (para categorías "padre" sin página).
 export async function getProductsByCategorySlugs(
   slugs: string[]

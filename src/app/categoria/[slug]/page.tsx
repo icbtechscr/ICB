@@ -5,7 +5,7 @@ import { ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/ProductCard";
 import { CategorySort } from "@/components/CategorySort";
 import {
-  getProductsByCategory,
+  getProductsByCategoryDeep,
   getProductsByCategorySlugs,
   getCategoryBySlug,
   type Product,
@@ -38,7 +38,8 @@ async function resolveCategory(
 ): Promise<{ name: string; products: Product[] } | null> {
   const real = await getCategoryBySlug(slug);
   if (real) {
-    return { name: real.name, products: await getProductsByCategory(slug) };
+    // Incluye el padre + sus subcategorías (ej. Redes muestra Routers, Switches…).
+    return { name: real.name, products: await getProductsByCategoryDeep(slug) };
   }
   // Categoría "padre" sin página propia (ej. redes): juntar subcategorías.
   const group = getCategoryGroup(slug);
