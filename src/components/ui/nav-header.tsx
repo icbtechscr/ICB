@@ -55,16 +55,36 @@ export function NavHeader({ items }: { items: NavItem[] }) {
                 <div className="mb-3 text-[11px] font-bold uppercase tracking-wider text-ink-400">
                   Subcategorías
                 </div>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 md:grid-cols-3 lg:grid-cols-4">
-                  {active.children.map((c) => (
-                    <Link
-                      key={c.slug}
-                      href={`/categoria/${c.slug}`}
-                      className="flex items-center justify-between gap-2 rounded px-2 py-1.5 text-sm text-ink-700 transition-colors hover:bg-ink-50 hover:text-brand-600"
-                    >
-                      <span className="truncate">{c.name}</span>
-                      <span className="shrink-0 text-[11px] text-ink-400">{c.count}</span>
-                    </Link>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3 lg:grid-cols-4">
+                  {active.children.map((sub) => (
+                    <div key={sub.slug} className="min-w-0">
+                      <Link
+                        href={`/categoria/${sub.slug}`}
+                        className="flex items-center justify-between gap-2 rounded px-2 py-1 text-sm font-bold text-ink-900 transition-colors hover:text-brand-600"
+                      >
+                        <span className="truncate">{sub.name}</span>
+                        <span className="shrink-0 text-[11px] font-normal text-ink-400">
+                          {sub.count}
+                        </span>
+                      </Link>
+                      {sub.children.length > 0 && (
+                        <ul className="mt-0.5 space-y-0.5 border-l border-ink-100 pl-2">
+                          {sub.children.map((s2) => (
+                            <li key={s2.slug}>
+                              <Link
+                                href={`/categoria/${s2.slug}`}
+                                className="flex items-center justify-between gap-2 rounded px-2 py-1 text-sm text-ink-600 transition-colors hover:bg-ink-50 hover:text-brand-600"
+                              >
+                                <span className="truncate">{s2.name}</span>
+                                <span className="shrink-0 text-[11px] text-ink-400">
+                                  {s2.count}
+                                </span>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   ))}
                 </div>
               </>

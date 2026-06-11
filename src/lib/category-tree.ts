@@ -10,10 +10,12 @@ type RawCategory = {
 };
 
 export type SubCategory = { name: string; slug: string; count: number };
+// Nodo del árbol de navegación: una subcategoría que puede tener sub-subcategorías.
+export type NavSubNode = SubCategory & { children: NavSubNode[] };
 export type NavItem = {
   label: string;
   href: string;
-  children: SubCategory[];
+  children: NavSubNode[];
   brands: string[];
 };
 
@@ -65,7 +67,7 @@ function navMenuFromJson(): NavItem[] {
   return CURATED.map((item) => ({
     label: item.label,
     href: item.href,
-    children: getChildren(item.parentWooId),
+    children: getChildren(item.parentWooId).map((c) => ({ ...c, children: [] })),
     brands: [],
   }));
 }
@@ -151,18 +153,24 @@ export async function getNavMenu(): Promise<NavItem[]> {
       // si falla, el menú igual sale sin marcas
     }
 
+    // Árbol anidado de subcategorías (N niveles), todas (incluso vacías).
+    const buildTree = (pid: string): NavSubNode[] =>
+      (childRowsByParent.get(pid) ?? [])
+        .map((r) => ({
+          name: r.name,
+          slug: r.slug,
+          count: countOf(r),
+          children: buildTree(r.id),
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
     return CURATED.map((item) => {
       const slug = slugFromHref(item.href);
       const row = slug ? bySlug.get(slug) : undefined;
-      // TODAS las subcategorías (incluso vacías), ordenadas por nombre.
-      const dbChildren = row
-        ? (childRowsByParent.get(row.id) ?? [])
-            .map((c) => ({ name: c.name, slug: c.slug, count: countOf(c) }))
-            .sort((a, b) => a.name.localeCompare(b.name))
-        : [];
+      const dbChildren = row ? buildTree(row.id) : [];
       const children = dbChildren.length
         ? dbChildren
-        : getChildren(item.parentWooId);
+        : getChildren(item.parentWooId).map((c) => ({ ...c, children: [] }));
       const brands = row
         ? [...(brandsByTab.get(row.id) ?? [])].sort((a, b) => a.localeCompare(b))
         : [];
