@@ -63,13 +63,35 @@ export function ProductForm({
     [categories]
   );
 
-  // Estado inicial derivado de category_ids (puede traer padre y/o subcategoría).
+  // Helpers de jerarquía (soporta N niveles).
+  function topAncestor(id: string): string {
+    let c = catById.get(id);
+    while (c && c.parentId) c = catById.get(c.parentId);
+    return c?.id ?? id;
+  }
+  function catDepth(id: string): number {
+    let d = 0;
+    let c = catById.get(id);
+    while (c && c.parentId) {
+      d++;
+      c = catById.get(c.parentId);
+    }
+    return d;
+  }
+
+  // Estado inicial derivado de category_ids: toma la categoría más profunda
+  // (sub o sub-sub) como "subcategoría" y su raíz como "categoría".
   function deriveInitialCats(): { categoryId: string; subcategoryId: string } {
     const ids = initial.category_ids ?? [];
-    const sub = ids
+    const nonTops = ids
       .map((id) => catById.get(id))
-      .find((c) => c && c.parentId);
-    if (sub) return { categoryId: sub.parentId as string, subcategoryId: sub.id };
+      .filter((c): c is CategoryOption => !!c && !!c.parentId);
+    if (nonTops.length) {
+      const deepest = nonTops.reduce((a, b) =>
+        catDepth(b.id) >= catDepth(a.id) ? b : a
+      );
+      return { categoryId: topAncestor(deepest.id), subcategoryId: deepest.id };
+    }
     const top = ids.map((id) => catById.get(id)).find((c) => c && !c.parentId);
     if (top) return { categoryId: top.id, subcategoryId: "" };
     return { categoryId: "", subcategoryId: "" };
@@ -81,13 +103,23 @@ export function ProductForm({
     () => deriveInitialCats().subcategoryId
   );
 
-  const subOptions = useMemo(
-    () =>
+  // Todas las subcategorías (y sub-subcategorías) que cuelgan de la categoría
+  // elegida, indentadas por nivel.
+  const subOptions = useMemo(() => {
+    if (!categoryId) return [] as { id: string; label: string }[];
+    const out: { id: string; label: string }[] = [];
+    const walk = (pid: string, depth: number) => {
       categories
-        .filter((c) => c.parentId === categoryId)
-        .sort((a, b) => a.name.localeCompare(b.name)),
-    [categories, categoryId]
-  );
+        .filter((c) => c.parentId === pid)
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach((c) => {
+          out.push({ id: c.id, label: `${"— ".repeat(depth - 1)}${c.name}` });
+          walk(c.id, depth + 1);
+        });
+    };
+    walk(categoryId, 1);
+    return out;
+  }, [categories, categoryId]);
 
   function onChangeCategory(id: string) {
     setCategoryId(id);
@@ -484,9 +516,9 @@ export function ProductForm({
                 disabled={!categoryId || subOptions.length === 0}
                 options={subOptions.map((c) => ({
                   value: c.id,
-                  label: c.name,
+                  label: c.label,
                 }))}
-                hint="El producto queda ligado a la categoría y a la subcategoría."
+                hint="Podés elegir una subcategoría o una sub-subcategoría (anidada)."
               />
             </div>
           </Section>

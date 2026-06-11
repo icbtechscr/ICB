@@ -112,12 +112,17 @@ export async function getNavMenu(): Promise<NavItem[]> {
     // Mapear cada categoría relevante (pestañas curadas + sus hijas) a su pestaña,
     // para juntar las marcas de los productos de cada rama.
     const catToTab = new Map<string, string>();
+    const addDescendants = (rootId: string, tabId: string) => {
+      catToTab.set(rootId, tabId);
+      for (const ch of childRowsByParent.get(rootId) ?? []) {
+        addDescendants(ch.id, tabId);
+      }
+    };
     for (const item of CURATED) {
       const slug = slugFromHref(item.href);
       const row = slug ? bySlug.get(slug) : undefined;
       if (!row) continue;
-      catToTab.set(row.id, row.id);
-      for (const ch of childRowsByParent.get(row.id) ?? []) catToTab.set(ch.id, row.id);
+      addDescendants(row.id, row.id);
     }
 
     // Marcas por pestaña (de los productos de la categoría + subcategorías).

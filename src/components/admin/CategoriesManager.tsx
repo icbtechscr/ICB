@@ -44,10 +44,27 @@ export function CategoriesManager({
         .sort((a, b) => a.name.localeCompare(b.name)),
     [cats]
   );
-  const childrenOf = (id: string) =>
+  const childrenOf = (id: string | null) =>
     cats
       .filter((c) => c.parentId === id)
       .sort((a, b) => a.name.localeCompare(b.name));
+
+  // Opciones de "padre": principales + subcategorías (hasta 2 niveles), para
+  // poder crear hasta 3 niveles (ej: Seguridad → Cámaras Analógicas → ...).
+  const parentOptions = useMemo(() => {
+    const out: { id: string; label: string }[] = [];
+    const walk = (pid: string | null, depth: number) => {
+      cats
+        .filter((c) => c.parentId === pid)
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach((c) => {
+          out.push({ id: c.id, label: `${"— ".repeat(depth)}${c.name}` });
+          if (depth < 1) walk(c.id, depth + 1);
+        });
+    };
+    walk(null, 0);
+    return out;
+  }, [cats]);
 
   async function createCategory(e: React.FormEvent) {
     e.preventDefault();
@@ -167,17 +184,17 @@ export function CategoriesManager({
 
   function Row({
     c,
-    child,
+    depth = 0,
   }: {
     c: AdminCategoryRow;
-    child?: boolean;
+    depth?: number;
   }) {
     const editing = editId === c.id;
+    const child = depth > 0;
     return (
       <div
-        className={`flex items-center justify-between gap-3 rounded-lg px-2 py-2 hover:bg-ink-50 ${
-          child ? "ml-6" : ""
-        }`}
+        className="flex items-center justify-between gap-3 rounded-lg px-2 py-2 hover:bg-ink-50"
+        style={{ marginLeft: depth * 22 }}
       >
         <div className="flex min-w-0 items-center gap-2">
           {child ? (
@@ -258,6 +275,25 @@ export function CategoriesManager({
     );
   }
 
+  function Tree({
+    parentId,
+    depth,
+  }: {
+    parentId: string | null;
+    depth: number;
+  }) {
+    return (
+      <>
+        {childrenOf(parentId).map((c) => (
+          <div key={c.id}>
+            <Row c={c} depth={depth} />
+            <Tree parentId={c.id} depth={depth + 1} />
+          </div>
+        ))}
+      </>
+    );
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_1.6fr]">
       {/* Crear */}
@@ -304,9 +340,9 @@ export function CategoriesManager({
               className="w-full rounded-xl border border-ink-200 bg-transparent px-3 py-2.5 text-sm text-ink-900 outline-none focus:border-brand-500 [&>option]:text-ink-900"
             >
               <option value="">— Categoría principal —</option>
-              {parents.map((p) => (
+              {parentOptions.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name}
+                  {p.label}
                 </option>
               ))}
             </select>
@@ -332,14 +368,7 @@ export function CategoriesManager({
           Categorías ({parents.length} principales)
         </h3>
         <div className="max-h-[32rem] space-y-0.5 overflow-y-auto pr-1">
-          {parents.map((p) => (
-            <div key={p.id}>
-              <Row c={p} />
-              {childrenOf(p.id).map((ch) => (
-                <Row key={ch.id} c={ch} child />
-              ))}
-            </div>
-          ))}
+          <Tree parentId={null} depth={0} />
           {parents.length === 0 && (
             <p className="py-6 text-center text-sm text-ink-400">
               Aún no hay categorías.

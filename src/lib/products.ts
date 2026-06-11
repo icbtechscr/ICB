@@ -311,8 +311,9 @@ export async function getProductsByCategory(slug: string): Promise<Product[]> {
     .map(rowToProduct);
 }
 
-// Productos de una categoría INCLUYENDO sus subcategorías (jerarquía parent_id).
-// Así, al entrar a un padre (ej. Redes) se ven también los de Routers, Switches…
+// Productos de una categoría INCLUYENDO toda su descendencia (recursivo, N
+// niveles). Así un padre (ej. Seguridad) muestra los de Cámaras Analógicas y
+// los de las sub-subcategorías que cuelguen de ahí.
 export async function getProductsByCategoryDeep(slug: string): Promise<Product[]> {
   const { data: cat, error: e1 } = await supabase
     .from("categories")
@@ -322,11 +323,23 @@ export async function getProductsByCategoryDeep(slug: string): Promise<Product[]
   if (e1) throw e1;
   if (!cat) return [];
 
-  const { data: kids } = await supabase
+  // Árbol completo (tabla chica) para juntar todos los descendientes.
+  const { data: all } = await supabase
     .from("categories")
-    .select("id")
-    .eq("parent_id", cat.id);
-  const ids = [cat.id, ...((kids ?? []).map((k) => k.id))];
+    .select("id, parent_id");
+  const childrenMap = new Map<string, string[]>();
+  for (const c of (all ?? []) as { id: string; parent_id: string | null }[]) {
+    if (!c.parent_id) continue;
+    if (!childrenMap.has(c.parent_id)) childrenMap.set(c.parent_id, []);
+    childrenMap.get(c.parent_id)!.push(c.id);
+  }
+  const ids: string[] = [];
+  const stack = [cat.id];
+  while (stack.length) {
+    const id = stack.pop()!;
+    ids.push(id);
+    for (const ch of childrenMap.get(id) ?? []) stack.push(ch);
+  }
 
   const { data: pcs, error } = await supabase
     .from("product_categories")
@@ -341,6 +354,34 @@ export async function getProductsByCategoryDeep(slug: string): Promise<Product[]
     }
   }
   return [...map.values()];
+}
+
+// Subcategorías hijas directas de una categoría (para navegar niveles más
+// profundos desde la página de la categoría).
+export async function getChildCategories(
+  slug: string
+): Promise<{ name: string; slug: string; count: number }[]> {
+  const { data: cat } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!cat) return [];
+  const { data } = await supabase
+    .from("categories")
+    .select("name, slug, product_categories(count)")
+    .eq("parent_id", cat.id);
+  return ((data ?? []) as unknown as {
+    name: string;
+    slug: string;
+    product_categories: { count: number }[];
+  }[])
+    .map((c) => ({
+      name: c.name,
+      slug: c.slug,
+      count: c.product_categories?.[0]?.count ?? 0,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 // Junta productos de varias subcategorías (para categorías "padre" sin página).

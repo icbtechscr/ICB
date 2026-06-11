@@ -7,6 +7,7 @@ import { CategorySort } from "@/components/CategorySort";
 import {
   getProductsByCategoryDeep,
   getProductsByCategorySlugs,
+  getChildCategories,
   getCategoryBySlug,
   type Product,
 } from "@/lib/products";
@@ -82,6 +83,8 @@ export default async function CategoryPage({
   const view = await resolveCategory(slug);
   if (!view) notFound();
 
+  const childCats = await getChildCategories(slug);
+
   const sort = sp.sort ?? "relevancia";
   const brand = sp.brand ?? "";
 
@@ -114,6 +117,21 @@ export default async function CategoryPage({
             {view.name}
           </h1>
           <p className="mt-1 text-sm text-ink-500">{products.length} productos</p>
+
+          {childCats.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {childCats.map((c) => (
+                <Link
+                  key={c.slug}
+                  href={`/categoria/${c.slug}`}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 bg-white px-3.5 py-1.5 text-sm font-semibold text-ink-700 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600"
+                >
+                  {c.name}
+                  <span className="text-[11px] text-ink-400">{c.count}</span>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
         <CategorySort
