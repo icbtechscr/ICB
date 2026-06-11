@@ -9,7 +9,7 @@ export function NavHeader({ items }: { items: NavItem[] }) {
   // Cadena de subcategorías "abiertas" (una por columna en cascada).
   const [path, setPath] = useState<NavSubNode[]>([]);
   const active = items.find(
-    (i) => i.href === open && (i.children.length > 0 || i.brands.length > 0)
+    (i) => i.href === open && i.children.length > 0
   );
 
   // Al cambiar de categoría abierta, reiniciar la cascada.
@@ -44,7 +44,7 @@ export function NavHeader({ items }: { items: NavItem[] }) {
       </li>
 
       {items.map((it) => {
-        const hasMenu = it.children.length > 0 || it.brands.length > 0;
+        const hasMenu = it.children.length > 0;
         const isOpen = open === it.href;
         return (
           <li
@@ -112,25 +112,6 @@ export function NavHeader({ items }: { items: NavItem[] }) {
                   </ul>
                 ))}
               </div>
-            )}
-
-            {active.brands.length > 0 && (
-              <>
-                <div className="mb-2 mt-4 border-t border-ink-100 pt-3 text-[11px] font-bold uppercase tracking-wider text-ink-400">
-                  Marcas
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {active.brands.map((b) => (
-                    <Link
-                      key={b}
-                      href={`${active.href}?brand=${encodeURIComponent(b)}`}
-                      className="rounded-full border border-ink-200 bg-ink-50 px-2.5 py-1 text-xs font-semibold text-ink-700 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600"
-                    >
-                      {b}
-                    </Link>
-                  ))}
-                </div>
-              </>
             )}
 
             <Link

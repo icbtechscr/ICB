@@ -17,7 +17,6 @@ export type NavItem = {
   label: string;
   href: string;
   children: NavSubNode[];
-  brands: string[];
 };
 
 const CATEGORIES = rawCategories as RawCategory[];
@@ -69,7 +68,6 @@ function navMenuFromJson(): NavItem[] {
     label: item.label,
     href: item.href,
     children: getChildren(item.parentWooId).map((c) => ({ ...c, children: [] })),
-    brands: [],
   }));
 }
 
@@ -121,47 +119,6 @@ export async function getNavMenu(): Promise<NavItem[]> {
       childRowsByParent.get(r.parent_id)!.push(r);
     }
 
-    // Mapear cada categoría de la navbar (+ su descendencia) a su botón, para
-    // juntar las marcas de los productos de cada rama.
-    const catToTab = new Map<string, string>();
-    const addDescendants = (rootId: string, tabId: string) => {
-      catToTab.set(rootId, tabId);
-      for (const ch of childRowsByParent.get(rootId) ?? []) {
-        addDescendants(ch.id, tabId);
-      }
-    };
-    for (const it of cfgItems) {
-      if (!it.categorySlug) continue;
-      const row = bySlug.get(it.categorySlug);
-      if (row) addDescendants(row.id, row.id);
-    }
-
-    // Marcas por pestaña (de los productos de la categoría + subcategorías).
-    const brandsByTab = new Map<string, Set<string>>();
-    try {
-      const ids = [...catToTab.keys()];
-      if (ids.length) {
-        const { data: pcb } = await supabase
-          .from("product_categories")
-          .select("category_id, product:products(brand:brands(name))")
-          .in("category_id", ids);
-        const brandRows =
-          (pcb ?? []) as unknown as {
-            category_id: string;
-            product: { brand: { name: string } | null } | null;
-          }[];
-        for (const r of brandRows) {
-          const tab = catToTab.get(r.category_id);
-          const name = r.product?.brand?.name;
-          if (!tab || !name) continue;
-          if (!brandsByTab.has(tab)) brandsByTab.set(tab, new Set());
-          brandsByTab.get(tab)!.add(name);
-        }
-      }
-    } catch {
-      // si falla, el menú igual sale sin marcas
-    }
-
     // Árbol anidado de subcategorías (N niveles), todas (incluso vacías).
     const buildTree = (pid: string): NavSubNode[] =>
       (childRowsByParent.get(pid) ?? [])
@@ -179,10 +136,7 @@ export async function getNavMenu(): Promise<NavItem[]> {
         ? `/categoria/${it.categorySlug}`
         : it.href ?? "#";
       const children = row ? buildTree(row.id) : [];
-      const brands = row
-        ? [...(brandsByTab.get(row.id) ?? [])].sort((a, b) => a.localeCompare(b))
-        : [];
-      return { label: it.label, href, children, brands };
+      return { label: it.label, href, children };
     });
   } catch {
     return navMenuFromJson();
