@@ -36,6 +36,7 @@ export function CategoriesManager({
 
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [editParentId, setEditParentId] = useState<string>("");
 
   const parents = useMemo(
     () =>
@@ -49,8 +50,8 @@ export function CategoriesManager({
       .filter((c) => c.parentId === id)
       .sort((a, b) => a.name.localeCompare(b.name));
 
-  // Opciones de "padre": principales + subcategorías (hasta 2 niveles), para
-  // poder crear hasta 3 niveles (ej: Seguridad → Cámaras Analógicas → ...).
+  // Opciones de "padre" para CREAR: cualquier categoría, a cualquier nivel
+  // (anidado ilimitado). Indentadas según su profundidad.
   const parentOptions = useMemo(() => {
     const out: { id: string; label: string }[] = [];
     const walk = (pid: string | null, depth: number) => {
@@ -59,12 +60,37 @@ export function CategoriesManager({
         .sort((a, b) => a.name.localeCompare(b.name))
         .forEach((c) => {
           out.push({ id: c.id, label: `${"— ".repeat(depth)}${c.name}` });
-          if (depth < 1) walk(c.id, depth + 1);
+          walk(c.id, depth + 1);
         });
     };
     walk(null, 0);
     return out;
   }, [cats]);
+
+  // Opciones de "padre" para EDITAR/MOVER: excluye la categoría y su
+  // descendencia (no puede colgar de sí misma → evita ciclos).
+  function parentOptionsForEdit(excludeId: string) {
+    const banned = new Set<string>([excludeId]);
+    const collect = (id: string) => {
+      for (const c of cats.filter((x) => x.parentId === id)) {
+        banned.add(c.id);
+        collect(c.id);
+      }
+    };
+    collect(excludeId);
+    const out: { id: string; label: string }[] = [];
+    const walk = (pid: string | null, depth: number) => {
+      cats
+        .filter((c) => c.parentId === pid && !banned.has(c.id))
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach((c) => {
+          out.push({ id: c.id, label: `${"— ".repeat(depth)}${c.name}` });
+          walk(c.id, depth + 1);
+        });
+    };
+    walk(null, 0);
+    return out;
+  }
 
   async function createCategory(e: React.FormEvent) {
     e.preventDefault();
@@ -112,6 +138,7 @@ export function CategoriesManager({
   function startEdit(c: AdminCategoryRow) {
     setEditId(c.id);
     setEditName(c.name);
+    setEditParentId(c.parentId ?? "");
     setError(null);
     setOk(null);
   }
@@ -121,17 +148,22 @@ export function CategoriesManager({
     setBusyId(c.id);
     setError(null);
     try {
+      const newParent = editParentId || null;
       const res = await fetch(`/api/admin/categories/${c.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editName }),
+        body: JSON.stringify({ name: editName, parentId: newParent }),
       });
       if (!res.ok) {
         setError(await res.text());
         return;
       }
       setCats((prev) =>
-        prev.map((x) => (x.id === c.id ? { ...x, name: editName.trim() } : x))
+        prev.map((x) =>
+          x.id === c.id
+            ? { ...x, name: editName.trim(), parentId: newParent }
+            : x
+        )
       );
       setEditId(null);
       router.refresh();
@@ -203,12 +235,27 @@ export function CategoriesManager({
             <FolderTree className="size-4 shrink-0 text-brand-600" />
           )}
           {editing ? (
-            <input
-              autoFocus
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              className="w-48 rounded-lg border border-ink-200 bg-transparent px-2 py-1 text-sm text-ink-900 outline-none focus:border-brand-500"
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                autoFocus
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-44 rounded-lg border border-ink-200 bg-transparent px-2 py-1 text-sm text-ink-900 outline-none focus:border-brand-500"
+              />
+              <select
+                value={editParentId}
+                onChange={(e) => setEditParentId(e.target.value)}
+                title="Mover a otro padre"
+                className="max-w-[12rem] rounded-lg border border-ink-200 bg-white px-2 py-1 text-sm text-ink-900 outline-none focus:border-brand-500 [&>option]:text-ink-900"
+              >
+                <option value="">— Principal —</option>
+                {parentOptionsForEdit(c.id).map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           ) : (
             <span
               className={`truncate text-sm ${
