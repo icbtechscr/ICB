@@ -1,14 +1,32 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
-import { Menu, ChevronDown } from "lucide-react";
-import type { NavItem } from "@/lib/category-tree";
+import { useEffect, useState } from "react";
+import { Menu, ChevronDown, ChevronRight } from "lucide-react";
+import type { NavItem, NavSubNode } from "@/lib/category-tree";
 
 export function NavHeader({ items }: { items: NavItem[] }) {
   const [open, setOpen] = useState<string | null>(null);
+  // Cadena de subcategorías "abiertas" (una por columna en cascada).
+  const [path, setPath] = useState<NavSubNode[]>([]);
   const active = items.find(
     (i) => i.href === open && (i.children.length > 0 || i.brands.length > 0)
   );
+
+  // Al cambiar de categoría abierta, reiniciar la cascada.
+  useEffect(() => {
+    setPath([]);
+  }, [open]);
+
+  // Columnas: la 1ª son las subcategorías; cada nivel siguiente son los hijos
+  // del item "hovereado" en la columna anterior.
+  const columns: NavSubNode[][] = [];
+  if (active && active.children.length > 0) {
+    columns.push(active.children);
+    for (const node of path) {
+      if (node.children.length > 0) columns.push(node.children);
+      else break;
+    }
+  }
 
   return (
     <ul
@@ -26,7 +44,7 @@ export function NavHeader({ items }: { items: NavItem[] }) {
       </li>
 
       {items.map((it) => {
-        const hasChildren = it.children.length > 0 || it.brands.length > 0;
+        const hasMenu = it.children.length > 0 || it.brands.length > 0;
         const isOpen = open === it.href;
         return (
           <li
@@ -37,11 +55,11 @@ export function NavHeader({ items }: { items: NavItem[] }) {
             <Link
               href={it.href}
               className={`inline-flex items-center gap-1 rounded-sm px-3 py-2.5 text-xs font-semibold uppercase tracking-wide transition-colors md:px-4 ${
-                isOpen && hasChildren ? "text-accent-300" : "text-white hover:text-accent-300"
+                isOpen && hasMenu ? "text-accent-300" : "text-white hover:text-accent-300"
               }`}
             >
               {it.label}
-              {hasChildren && <ChevronDown className="size-3 opacity-70" aria-hidden />}
+              {hasMenu && <ChevronDown className="size-3 opacity-70" aria-hidden />}
             </Link>
           </li>
         );
@@ -50,44 +68,50 @@ export function NavHeader({ items }: { items: NavItem[] }) {
       {active && (
         <div className="absolute inset-x-0 top-full z-50 pt-px">
           <div className="rounded-b-md border border-t-0 border-ink-200 bg-white p-5 shadow-xl">
-            {active.children.length > 0 && (
-              <>
-                <div className="mb-3 text-[11px] font-bold uppercase tracking-wider text-ink-400">
-                  Subcategorías
-                </div>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3 lg:grid-cols-4">
-                  {active.children.map((sub) => (
-                    <div key={sub.slug} className="min-w-0">
-                      <Link
-                        href={`/categoria/${sub.slug}`}
-                        className="flex items-center justify-between gap-2 rounded px-2 py-1 text-sm font-bold text-ink-900 transition-colors hover:text-brand-600"
-                      >
-                        <span className="truncate">{sub.name}</span>
-                        <span className="shrink-0 text-[11px] font-normal text-ink-400">
-                          {sub.count}
-                        </span>
-                      </Link>
-                      {sub.children.length > 0 && (
-                        <ul className="mt-0.5 space-y-0.5 border-l border-ink-100 pl-2">
-                          {sub.children.map((s2) => (
-                            <li key={s2.slug}>
-                              <Link
-                                href={`/categoria/${s2.slug}`}
-                                className="flex items-center justify-between gap-2 rounded px-2 py-1 text-sm text-ink-600 transition-colors hover:bg-ink-50 hover:text-brand-600"
-                              >
-                                <span className="truncate">{s2.name}</span>
-                                <span className="shrink-0 text-[11px] text-ink-400">
-                                  {s2.count}
-                                </span>
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </>
+            {columns.length > 0 && (
+              <div className="flex items-start gap-2 overflow-x-auto">
+                {columns.map((col, ci) => (
+                  <ul
+                    key={ci}
+                    className={`min-w-[210px] shrink-0 ${
+                      ci > 0 ? "border-l border-ink-100 pl-3" : ""
+                    }`}
+                  >
+                    {ci === 0 && (
+                      <li className="mb-1 px-2 text-[11px] font-bold uppercase tracking-wider text-ink-400">
+                        Subcategorías
+                      </li>
+                    )}
+                    {col.map((node) => {
+                      const isActive = path[ci]?.slug === node.slug;
+                      const hasKids = node.children.length > 0;
+                      return (
+                        <li
+                          key={node.slug}
+                          onMouseEnter={() =>
+                            setPath((p) => [...p.slice(0, ci), node])
+                          }
+                        >
+                          <Link
+                            href={`/categoria/${node.slug}`}
+                            className={`flex items-center justify-between gap-3 rounded px-2 py-1.5 text-sm transition-colors ${
+                              isActive
+                                ? "bg-brand-50 font-semibold text-brand-600"
+                                : "text-ink-700 hover:bg-ink-50 hover:text-brand-600"
+                            }`}
+                          >
+                            <span className="truncate">{node.name}</span>
+                            <span className="flex shrink-0 items-center gap-1 text-[11px] text-ink-400">
+                              {node.count}
+                              {hasKids && <ChevronRight className="size-3.5" />}
+                            </span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ))}
+              </div>
             )}
 
             {active.brands.length > 0 && (
