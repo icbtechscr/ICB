@@ -62,6 +62,27 @@ export type FooterContent = {
   columns: FooterColumn[];
 };
 
+// Botón de la barra de navegación. Si `categorySlug` está seteado, el botón es
+// una categoría (su megamenú muestra subcategorías + marcas). Si no, es un
+// enlace simple a `href` (ej. Inicio, Ofertas).
+export type NavbarItem = {
+  id: string;
+  label: string;
+  categorySlug: string | null;
+  href: string | null;
+};
+export type NavbarContent = { items: NavbarItem[] };
+
+export const DEFAULT_NAVBAR_ITEMS: NavbarItem[] = [
+  { id: "inicio", label: "Inicio", categorySlug: null, href: "/" },
+  { id: "computadoras", label: "Computadoras", categorySlug: "computadoras", href: null },
+  { id: "seguridad", label: "Seguridad", categorySlug: "camaras-de-vigilancia", href: null },
+  { id: "redes", label: "Redes", categorySlug: "redes", href: null },
+  { id: "pos", label: "POS", categorySlug: "punto-de-venta-pos", href: null },
+  { id: "accesorios", label: "Accesorios", categorySlug: null, href: "/productos" },
+  { id: "ofertas", label: "Ofertas", categorySlug: null, href: "/ofertas" },
+];
+
 export type SiteContent = {
   hero: HeroContent;
   categories: CategoriesContent;
@@ -69,6 +90,7 @@ export type SiteContent = {
   destacados: ProductSectionContent;
   cta: CtaContent;
   footer: FooterContent;
+  navbar: NavbarContent;
 };
 
 export const DEFAULT_CONTENT: SiteContent = {
@@ -154,6 +176,7 @@ export const DEFAULT_CONTENT: SiteContent = {
       },
     ],
   },
+  navbar: { items: DEFAULT_NAVBAR_ITEMS },
 };
 
 export const SECTION_KEYS = [
@@ -163,6 +186,7 @@ export const SECTION_KEYS = [
   "destacados",
   "cta",
   "footer",
+  "navbar",
 ] as const;
 export type SectionKey = (typeof SECTION_KEYS)[number];
 
@@ -196,6 +220,7 @@ export async function getSiteContent(): Promise<SiteContent> {
       destacados: mergeSection("destacados", map.get("destacados")),
       cta: mergeSection("cta", map.get("cta")),
       footer: mergeSection("footer", map.get("footer")),
+      navbar: mergeSection("navbar", map.get("navbar")),
     };
   } catch {
     return DEFAULT_CONTENT;

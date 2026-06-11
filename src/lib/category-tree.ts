@@ -1,5 +1,6 @@
 import rawCategories from "../../data/categories.json";
 import { supabase } from "./supabase";
+import { DEFAULT_NAVBAR_ITEMS, type NavbarItem } from "./site-content";
 
 type RawCategory = {
   id: number;
@@ -77,10 +78,24 @@ function navMenuFromJson(): NavItem[] {
 // Si la jerarquía aún no está cargada (o falla la consulta), cae al JSON.
 export async function getNavMenu(): Promise<NavItem[]> {
   try {
-    const { data, error } = await supabase
-      .from("categories")
-      .select("id, name, slug, parent_id, woo_id, product_categories(count)");
+    const [{ data, error }, navSetting] = await Promise.all([
+      supabase
+        .from("categories")
+        .select("id, name, slug, parent_id, woo_id, product_categories(count)"),
+      supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", "navbar")
+        .maybeSingle(),
+    ]);
     if (error || !data) return navMenuFromJson();
+
+    // Config de la navbar (desde el panel) o el default.
+    const stored = navSetting.data?.value as { items?: NavbarItem[] } | undefined;
+    const cfgItems: NavbarItem[] =
+      stored?.items && Array.isArray(stored.items) && stored.items.length > 0
+        ? stored.items
+        : DEFAULT_NAVBAR_ITEMS;
 
     type Row = {
       id: string;
@@ -106,13 +121,8 @@ export async function getNavMenu(): Promise<NavItem[]> {
       childRowsByParent.get(r.parent_id)!.push(r);
     }
 
-    const slugFromHref = (href: string): string | null => {
-      const m = href.match(/^\/categoria\/(.+)$/);
-      return m ? m[1] : null;
-    };
-
-    // Mapear cada categoría relevante (pestañas curadas + sus hijas) a su pestaña,
-    // para juntar las marcas de los productos de cada rama.
+    // Mapear cada categoría de la navbar (+ su descendencia) a su botón, para
+    // juntar las marcas de los productos de cada rama.
     const catToTab = new Map<string, string>();
     const addDescendants = (rootId: string, tabId: string) => {
       catToTab.set(rootId, tabId);
@@ -120,11 +130,10 @@ export async function getNavMenu(): Promise<NavItem[]> {
         addDescendants(ch.id, tabId);
       }
     };
-    for (const item of CURATED) {
-      const slug = slugFromHref(item.href);
-      const row = slug ? bySlug.get(slug) : undefined;
-      if (!row) continue;
-      addDescendants(row.id, row.id);
+    for (const it of cfgItems) {
+      if (!it.categorySlug) continue;
+      const row = bySlug.get(it.categorySlug);
+      if (row) addDescendants(row.id, row.id);
     }
 
     // Marcas por pestaña (de los productos de la categoría + subcategorías).
@@ -164,17 +173,16 @@ export async function getNavMenu(): Promise<NavItem[]> {
         }))
         .sort((a, b) => a.name.localeCompare(b.name));
 
-    return CURATED.map((item) => {
-      const slug = slugFromHref(item.href);
-      const row = slug ? bySlug.get(slug) : undefined;
-      const dbChildren = row ? buildTree(row.id) : [];
-      const children = dbChildren.length
-        ? dbChildren
-        : getChildren(item.parentWooId).map((c) => ({ ...c, children: [] }));
+    return cfgItems.map((it) => {
+      const row = it.categorySlug ? bySlug.get(it.categorySlug) : undefined;
+      const href = it.categorySlug
+        ? `/categoria/${it.categorySlug}`
+        : it.href ?? "#";
+      const children = row ? buildTree(row.id) : [];
       const brands = row
         ? [...(brandsByTab.get(row.id) ?? [])].sort((a, b) => a.localeCompare(b))
         : [];
-      return { label: item.label, href: item.href, children, brands };
+      return { label: it.label, href, children, brands };
     });
   } catch {
     return navMenuFromJson();

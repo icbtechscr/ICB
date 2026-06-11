@@ -13,15 +13,18 @@ import {
   BrandsManager,
   type AdminBrandRow,
 } from "@/components/admin/BrandsManager";
+import { NavbarManager } from "@/components/admin/NavbarManager";
+import { getSiteContent } from "@/lib/site-content";
 
 export const dynamic = "force-dynamic";
 
 export default async function AjustesPage() {
-  const [categories, catCounts, brands, brandCounts] = await Promise.all([
+  const [categories, catCounts, brands, brandCounts, site] = await Promise.all([
     adminListCategories(),
     adminCategoryProductCounts(),
     adminListBrands(),
     adminBrandProductCounts(),
+    getSiteContent(),
   ]);
 
   const categoryRows: AdminCategoryRow[] = categories.map((c) => ({
@@ -74,6 +77,21 @@ export default async function AjustesPage() {
                   <BrandsManager initialBrands={brandRows} />
                 </section>
               </div>
+            ),
+          },
+          {
+            id: "navbar",
+            label: "Barra de navegación",
+            content: (
+              <NavbarManager
+                initialItems={site.navbar.items}
+                categories={categories.map((c) => ({
+                  id: c.id,
+                  name: c.name,
+                  slug: c.slug,
+                  parentId: c.parent_id,
+                }))}
+              />
             ),
           },
         ]}
