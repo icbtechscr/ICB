@@ -1,6 +1,10 @@
 import rawCategories from "../../data/categories.json";
 import { supabase } from "./supabase";
-import { DEFAULT_NAVBAR_ITEMS, type NavbarItem } from "./site-content";
+import {
+  DEFAULT_NAVBAR_ITEMS,
+  normalizeNavbarItems,
+  type NavbarItem,
+} from "./site-content";
 
 type RawCategory = {
   id: number;
@@ -88,11 +92,11 @@ export async function getNavMenu(): Promise<NavItem[]> {
     ]);
     if (error || !data) return navMenuFromJson();
 
-    // Config de la navbar (desde el panel) o el default.
-    const stored = navSetting.data?.value as { items?: NavbarItem[] } | undefined;
+    // Config de la navbar (desde el panel) o el default. Normaliza + migra.
+    const stored = navSetting.data?.value as { items?: unknown } | undefined;
     const cfgItems: NavbarItem[] =
-      stored?.items && Array.isArray(stored.items) && stored.items.length > 0
-        ? stored.items
+      Array.isArray(stored?.items) && stored.items.length > 0
+        ? normalizeNavbarItems(stored.items)
         : DEFAULT_NAVBAR_ITEMS;
 
     type Row = {
@@ -131,11 +135,25 @@ export async function getNavMenu(): Promise<NavItem[]> {
         .sort((a, b) => a.name.localeCompare(b.name));
 
     return cfgItems.map((it) => {
-      const row = it.categorySlug ? bySlug.get(it.categorySlug) : undefined;
-      const href = it.categorySlug
-        ? `/categoria/${it.categorySlug}`
-        : it.href ?? "#";
-      const children = row ? buildTree(row.id) : [];
+      // Cada categoría elegida en el botón = una rama del megamenú (con su árbol).
+      const children: NavSubNode[] = (it.categorySlugs ?? [])
+        .map((slug) => {
+          const row = bySlug.get(slug);
+          return row
+            ? {
+                name: row.name,
+                slug: row.slug,
+                count: countOf(row),
+                children: buildTree(row.id),
+              }
+            : null;
+        })
+        .filter((n): n is NavSubNode => n !== null);
+      const href = it.href
+        ? it.href
+        : it.categorySlugs[0]
+        ? `/categoria/${it.categorySlugs[0]}`
+        : "#";
       return { label: it.label, href, children };
     });
   } catch {

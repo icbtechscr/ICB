@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Save,
   Menu,
+  X,
 } from "lucide-react";
 import type { NavbarItem } from "@/lib/site-content";
 
@@ -25,6 +26,11 @@ export function NavbarManager({
   const [items, setItems] = useState<NavbarItem[]>(initialItems);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const nameBySlug = useMemo(
+    () => new Map(categories.map((c) => [c.slug, c.name])),
+    [categories]
+  );
 
   // Opciones de categoría indentadas (todos los niveles) para el selector.
   const catOptions = useMemo(() => {
@@ -63,24 +69,40 @@ export function NavbarManager({
       {
         id: crypto.randomUUID(),
         label: "Nuevo botón",
-        categorySlug: null,
-        href: "/",
+        href: null,
+        categorySlugs: [],
       },
     ]);
+  }
+  function addSlug(i: number, slug: string) {
+    if (!slug) return;
+    setItems((prev) =>
+      prev.map((it, j) =>
+        j === i && !it.categorySlugs.includes(slug)
+          ? { ...it, categorySlugs: [...it.categorySlugs, slug] }
+          : it
+      )
+    );
+  }
+  function removeSlug(i: number, slug: string) {
+    setItems((prev) =>
+      prev.map((it, j) =>
+        j === i
+          ? { ...it, categorySlugs: it.categorySlugs.filter((s) => s !== slug) }
+          : it
+      )
+    );
   }
 
   async function save() {
     setSaving(true);
     setMsg(null);
-    // Limpieza: cada botón es categoría O enlace.
-    const clean = items
-      .map((it) => ({
-        id: it.id,
-        label: it.label.trim() || "Sin nombre",
-        categorySlug: it.categorySlug || null,
-        href: it.categorySlug ? null : it.href || "/",
-      }))
-      .filter((it) => it.categorySlug || it.href);
+    const clean = items.map((it) => ({
+      id: it.id,
+      label: it.label.trim() || "Sin nombre",
+      href: it.href?.trim() || null,
+      categorySlugs: it.categorySlugs,
+    }));
     try {
       const res = await fetch("/api/admin/site", {
         method: "PATCH",
@@ -104,9 +126,9 @@ export function NavbarManager({
         <h3 className="text-base font-bold text-ink-900">Botones de la barra</h3>
       </div>
       <p className="mb-4 text-sm text-ink-500">
-        Elegí qué categorías y enlaces aparecen en la barra de navegación, en qué
-        orden. Si un botón es una categoría, su megamenú muestra las
-        subcategorías y marcas automáticamente.
+        Cada botón puede mostrar <b>varias categorías</b> en su menú (las que
+        agregues abajo, cada una con su árbol). Si no agregás ninguna, es un
+        enlace simple (ej. Inicio, Ofertas).
       </p>
 
       {msg && (
@@ -121,14 +143,14 @@ export function NavbarManager({
         </div>
       )}
 
-      <div className="space-y-2">
-        {items.map((it, i) => {
-          const isCategory = !!it.categorySlug;
-          return (
-            <div
-              key={it.id}
-              className="flex flex-wrap items-center gap-2 rounded-xl border border-ink-200 bg-ink-50/40 p-2.5"
-            >
+      <div className="space-y-3">
+        {items.map((it, i) => (
+          <div
+            key={it.id}
+            className="rounded-xl border border-ink-200 bg-ink-50/40 p-3"
+          >
+            {/* Fila principal del botón */}
+            <div className="flex flex-wrap items-center gap-2">
               <div className="flex flex-col">
                 <button
                   type="button"
@@ -151,55 +173,69 @@ export function NavbarManager({
               <input
                 value={it.label}
                 onChange={(e) => update(i, { label: e.target.value })}
-                placeholder="Etiqueta"
-                className="w-32 rounded-lg border border-ink-200 bg-white px-2.5 py-2 text-sm outline-none focus:border-brand-500"
+                placeholder="Etiqueta del botón"
+                className="w-40 rounded-lg border border-ink-200 bg-white px-2.5 py-2 text-sm font-semibold outline-none focus:border-brand-500"
               />
 
-              <select
-                value={isCategory ? "category" : "link"}
-                onChange={(e) =>
-                  e.target.value === "category"
-                    ? update(i, { categorySlug: catOptions[0]?.slug ?? "", href: null })
-                    : update(i, { categorySlug: null, href: it.href || "/" })
-                }
-                className="rounded-lg border border-ink-200 bg-white px-2.5 py-2 text-sm outline-none focus:border-brand-500 [&>option]:text-ink-900"
-              >
-                <option value="category">Categoría</option>
-                <option value="link">Enlace</option>
-              </select>
+              <input
+                value={it.href ?? ""}
+                onChange={(e) => update(i, { href: e.target.value })}
+                placeholder="Link al tocar (opcional, ej. /ofertas)"
+                className="min-w-0 flex-1 rounded-lg border border-ink-200 bg-white px-2.5 py-2 font-mono text-xs outline-none focus:border-brand-500"
+              />
 
-              {isCategory ? (
+              <button
+                type="button"
+                onClick={() => remove(i)}
+                title="Quitar botón"
+                className="inline-flex size-9 items-center justify-center rounded-lg text-ink-500 hover:bg-red-50 hover:text-red-600"
+              >
+                <Trash2 className="size-4" />
+              </button>
+            </div>
+
+            {/* Categorías del menú */}
+            <div className="mt-2.5 border-t border-ink-200/70 pt-2.5">
+              <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-ink-400">
+                Categorías en el menú de este botón
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {it.categorySlugs.map((slug) => (
+                  <span
+                    key={slug}
+                    className="inline-flex items-center gap-1 rounded-full border border-brand-200 bg-brand-50 py-1 pl-2.5 pr-1 text-xs font-semibold text-brand-700"
+                  >
+                    {nameBySlug.get(slug) ?? slug}
+                    <button
+                      type="button"
+                      onClick={() => removeSlug(i, slug)}
+                      className="inline-flex size-4 items-center justify-center rounded-full hover:bg-brand-200"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  </span>
+                ))}
+                {it.categorySlugs.length === 0 && (
+                  <span className="text-xs italic text-ink-400">
+                    Sin categorías (enlace simple)
+                  </span>
+                )}
                 <select
-                  value={it.categorySlug ?? ""}
-                  onChange={(e) => update(i, { categorySlug: e.target.value })}
-                  className="min-w-0 flex-1 rounded-lg border border-ink-200 bg-white px-2.5 py-2 text-sm outline-none focus:border-brand-500 [&>option]:text-ink-900"
+                  value=""
+                  onChange={(e) => addSlug(i, e.target.value)}
+                  className="rounded-full border border-dashed border-ink-300 bg-white px-2.5 py-1 text-xs text-ink-600 outline-none focus:border-brand-500 [&>option]:text-ink-900"
                 >
+                  <option value="">+ Agregar categoría…</option>
                   {catOptions.map((c) => (
                     <option key={c.slug} value={c.slug}>
                       {c.label}
                     </option>
                   ))}
                 </select>
-              ) : (
-                <input
-                  value={it.href ?? ""}
-                  onChange={(e) => update(i, { href: e.target.value })}
-                  placeholder="/ofertas"
-                  className="min-w-0 flex-1 rounded-lg border border-ink-200 bg-white px-2.5 py-2 font-mono text-sm outline-none focus:border-brand-500"
-                />
-              )}
-
-              <button
-                type="button"
-                onClick={() => remove(i)}
-                title="Quitar"
-                className="inline-flex size-9 items-center justify-center rounded-lg text-ink-500 hover:bg-red-50 hover:text-red-600"
-              >
-                <Trash2 className="size-4" />
-              </button>
+              </div>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3">
