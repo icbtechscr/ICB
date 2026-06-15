@@ -62,28 +62,31 @@ export type FooterContent = {
   columns: FooterColumn[];
 };
 
-// Botón de la barra de navegación. `categorySlugs` son las categorías/subcategorías
-// elegidas a mano que se muestran en su megamenú (cada una con su árbol en
-// cascada). Si está vacío, el botón es un enlace simple a `href` (ej. Inicio).
+// Botón de la barra de navegación.
+// - `categorySlug`: categoría asignada al botón. Si se pone, el menú muestra
+//   SUS SUBCATEGORÍAS automáticamente (cada una con su árbol).
+// - `categorySlugs`: categorías sueltas extra que también se muestran como ramas.
+// - Si no hay categorías, es un enlace simple a `href` (ej. Inicio, Ofertas).
 export type NavbarItem = {
   id: string;
   label: string;
   href: string | null;
+  categorySlug: string | null;
   categorySlugs: string[];
 };
 export type NavbarContent = { items: NavbarItem[] };
 
 export const DEFAULT_NAVBAR_ITEMS: NavbarItem[] = [
-  { id: "inicio", label: "Inicio", href: "/", categorySlugs: [] },
-  { id: "computadoras", label: "Computadoras", href: null, categorySlugs: ["computadoras"] },
-  { id: "seguridad", label: "Seguridad", href: null, categorySlugs: ["camaras-de-vigilancia"] },
-  { id: "redes", label: "Redes", href: null, categorySlugs: ["redes"] },
-  { id: "pos", label: "POS", href: null, categorySlugs: ["punto-de-venta-pos"] },
-  { id: "accesorios", label: "Accesorios", href: "/productos", categorySlugs: [] },
-  { id: "ofertas", label: "Ofertas", href: "/ofertas", categorySlugs: [] },
+  { id: "inicio", label: "Inicio", href: "/", categorySlug: null, categorySlugs: [] },
+  { id: "computadoras", label: "Computadoras", href: null, categorySlug: "computadoras", categorySlugs: [] },
+  { id: "seguridad", label: "Seguridad", href: null, categorySlug: "camaras-de-vigilancia", categorySlugs: [] },
+  { id: "redes", label: "Redes", href: null, categorySlug: "redes", categorySlugs: [] },
+  { id: "pos", label: "POS", href: null, categorySlug: "punto-de-venta-pos", categorySlugs: [] },
+  { id: "accesorios", label: "Accesorios", href: "/productos", categorySlug: null, categorySlugs: [] },
+  { id: "ofertas", label: "Ofertas", href: "/ofertas", categorySlug: null, categorySlugs: [] },
 ];
 
-// Normaliza items guardados (incluye migración del formato viejo `categorySlug`).
+// Normaliza items guardados (incluye migración de formatos anteriores).
 export function normalizeNavbarItems(items: unknown): NavbarItem[] {
   if (!Array.isArray(items)) return DEFAULT_NAVBAR_ITEMS;
   return items.map((raw) => {
@@ -92,13 +95,15 @@ export function normalizeNavbarItems(items: unknown): NavbarItem[] {
       ? (it.categorySlugs as unknown[]).filter(
           (s): s is string => typeof s === "string" && s.length > 0
         )
-      : typeof it.categorySlug === "string" && it.categorySlug
-      ? [it.categorySlug]
       : [];
     return {
       id: typeof it.id === "string" ? it.id : Math.random().toString(36).slice(2),
       label: typeof it.label === "string" ? it.label : "Botón",
       href: typeof it.href === "string" ? it.href : null,
+      categorySlug:
+        typeof it.categorySlug === "string" && it.categorySlug
+          ? it.categorySlug
+          : null,
       categorySlugs: slugs,
     };
   });

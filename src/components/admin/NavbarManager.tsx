@@ -70,6 +70,7 @@ export function NavbarManager({
         id: crypto.randomUUID(),
         label: "Nuevo botón",
         href: null,
+        categorySlug: null,
         categorySlugs: [],
       },
     ]);
@@ -101,6 +102,7 @@ export function NavbarManager({
       id: it.id,
       label: it.label.trim() || "Sin nombre",
       href: it.href?.trim() || null,
+      categorySlug: it.categorySlug || null,
       categorySlugs: it.categorySlugs,
     }));
     try {
@@ -126,9 +128,10 @@ export function NavbarManager({
         <h3 className="text-base font-bold text-ink-900">Botones de la barra</h3>
       </div>
       <p className="mb-4 text-sm text-ink-500">
-        Cada botón puede mostrar <b>varias categorías</b> en su menú (las que
-        agregues abajo, cada una con su árbol). Si no agregás ninguna, es un
-        enlace simple (ej. Inicio, Ofertas).
+        Asigná una <b>categoría</b> al botón y su menú mostrará{" "}
+        <b>las subcategorías</b> automáticamente. Opcional: agregá categorías
+        sueltas extra abajo. Si el botón no tiene categoría, es un enlace simple
+        (ej. Inicio, Ofertas).
       </p>
 
       {msg && (
@@ -174,13 +177,38 @@ export function NavbarManager({
                 value={it.label}
                 onChange={(e) => update(i, { label: e.target.value })}
                 placeholder="Etiqueta del botón"
-                className="w-40 rounded-lg border border-ink-200 bg-white px-2.5 py-2 text-sm font-semibold outline-none focus:border-brand-500"
+                className="w-36 rounded-lg border border-ink-200 bg-white px-2.5 py-2 text-sm font-semibold outline-none focus:border-brand-500"
               />
+
+              <select
+                value={it.categorySlug ?? ""}
+                onChange={(e) => {
+                  const slug = e.target.value || null;
+                  const patch: Partial<NavbarItem> = { categorySlug: slug };
+                  const isDefaultLabel =
+                    !it.label.trim() ||
+                    it.label === "Nuevo botón" ||
+                    it.label === "Botón";
+                  if (slug && isDefaultLabel) {
+                    patch.label = nameBySlug.get(slug) ?? it.label;
+                  }
+                  update(i, patch);
+                }}
+                title="Categoría del botón (muestra sus subcategorías en el menú)"
+                className="w-48 rounded-lg border border-ink-200 bg-white px-2.5 py-2 text-sm outline-none focus:border-brand-500 [&>option]:text-ink-900"
+              >
+                <option value="">— Sin categoría (enlace) —</option>
+                {catOptions.map((c) => (
+                  <option key={c.slug} value={c.slug}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
 
               <input
                 value={it.href ?? ""}
                 onChange={(e) => update(i, { href: e.target.value })}
-                placeholder="Link al tocar (opcional, ej. /ofertas)"
+                placeholder="Link (opcional)"
                 className="min-w-0 flex-1 rounded-lg border border-ink-200 bg-white px-2.5 py-2 font-mono text-xs outline-none focus:border-brand-500"
               />
 
@@ -197,7 +225,7 @@ export function NavbarManager({
             {/* Categorías del menú */}
             <div className="mt-2.5 border-t border-ink-200/70 pt-2.5">
               <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-ink-400">
-                Categorías en el menú de este botón
+                Categorías sueltas extra (opcional)
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
                 {it.categorySlugs.map((slug) => (

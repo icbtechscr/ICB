@@ -135,22 +135,30 @@ export async function getNavMenu(): Promise<NavItem[]> {
         .sort((a, b) => a.name.localeCompare(b.name));
 
     return cfgItems.map((it) => {
-      // Cada categoría elegida en el botón = una rama del megamenú (con su árbol).
-      const children: NavSubNode[] = (it.categorySlugs ?? [])
-        .map((slug) => {
-          const row = bySlug.get(slug);
-          return row
-            ? {
-                name: row.name,
-                slug: row.slug,
-                count: countOf(row),
-                children: buildTree(row.id),
-              }
-            : null;
-        })
-        .filter((n): n is NavSubNode => n !== null);
+      const children: NavSubNode[] = [];
+      const seen = new Set<string>();
+      const pushRow = (row: Row | undefined) => {
+        if (!row || seen.has(row.slug)) return;
+        seen.add(row.slug);
+        children.push({
+          name: row.name,
+          slug: row.slug,
+          count: countOf(row),
+          children: buildTree(row.id),
+        });
+      };
+      // Categoría del botón → sus SUBCATEGORÍAS directas (cada una con su árbol).
+      if (it.categorySlug) {
+        const row = bySlug.get(it.categorySlug);
+        if (row) for (const ch of childRowsByParent.get(row.id) ?? []) pushRow(ch);
+      }
+      // Categorías sueltas extra → cada una como rama.
+      for (const slug of it.categorySlugs ?? []) pushRow(bySlug.get(slug));
+
       const href = it.href
         ? it.href
+        : it.categorySlug
+        ? `/categoria/${it.categorySlug}`
         : it.categorySlugs[0]
         ? `/categoria/${it.categorySlugs[0]}`
         : "#";
