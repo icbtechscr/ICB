@@ -19,7 +19,7 @@ export default async function VendedorPage() {
   if (!canSell(getUserRole(user))) redirect("/marcar");
 
   const [{ products }, connection, posts] = await Promise.all([
-    getAllProducts({ perPage: 120 }),
+    getAllProducts({ perPage: 1000 }), // todo el catálogo
     getConnection(user.id),
     listPosts(user.id, 15),
   ]);
