@@ -11,7 +11,8 @@ export type HeroContent = {
   secondaryCtaLabel: string;
   secondaryCtaHref: string;
   bullets: string[];
-  featuredProductId: string | null;
+  featuredProductId: string | null; // legacy (1 producto) — se migra a featuredProductIds
+  featuredProductIds: string[]; // hasta 5 productos para el carrusel del hero
 };
 
 export type CategoryItem = {
@@ -132,6 +133,7 @@ export const DEFAULT_CONTENT: SiteContent = {
     secondaryCtaHref: "/ofertas",
     bullets: ["Garantía oficial", "Envío rápido CR", "Soporte técnico"],
     featuredProductId: null,
+    featuredProductIds: [],
   },
   categories: {
     eyebrow: "Catálogo",
@@ -233,6 +235,15 @@ export async function getSiteContent(): Promise<SiteContent> {
     const map = new Map(
       (data ?? []).map((r) => [r.key as string, r.value as Record<string, unknown>])
     );
+    const hero = mergeSection("hero", map.get("hero"));
+    // Migración: si hay 1 producto legacy y no hay lista, usar la lista de 1.
+    if (
+      (!hero.featuredProductIds || hero.featuredProductIds.length === 0) &&
+      hero.featuredProductId
+    ) {
+      hero.featuredProductIds = [hero.featuredProductId];
+    }
+
     const categories = mergeSection("categories", map.get("categories"));
     // Reescribe las imágenes de categorías (legacy WordPress) al subdominio CDN.
     categories.items = (categories.items ?? []).map((it) => ({
@@ -240,7 +251,7 @@ export async function getSiteContent(): Promise<SiteContent> {
       imageUrl: rewriteMediaUrl(it.imageUrl),
     }));
     return {
-      hero: mergeSection("hero", map.get("hero")),
+      hero,
       categories,
       ofertas: mergeSection("ofertas", map.get("ofertas")),
       destacados: mergeSection("destacados", map.get("destacados")),

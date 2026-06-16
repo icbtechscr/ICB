@@ -1,8 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowRight, Sparkles, Zap, ShieldCheck } from "lucide-react";
 import type { Product } from "@/lib/products";
 import type { HeroContent } from "@/lib/site-content";
+import { HeroCarousel } from "./HeroCarousel";
 
 const BULLET_ICONS = [ShieldCheck, Zap, Sparkles];
 
@@ -11,9 +11,17 @@ export function HeroBanner({
   featured,
   hero,
 }: {
-  featured: Product | null;
+  featured: Product[];
   hero: HeroContent;
 }) {
+  const slides = featured
+    .filter((p) => p.images[0])
+    .map((p) => ({
+      slug: p.slug,
+      name: p.name,
+      brand: p.brand,
+      image: p.images[0]!.src,
+    }));
   return (
     <section className="relative isolate overflow-hidden border-b border-ink-200 bg-white text-ink-900">
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-14 md:grid-cols-2 md:py-16 lg:py-20">
@@ -63,38 +71,7 @@ export function HeroBanner({
           </ul>
         </div>
 
-        {featured && featured.images[0] && (
-          <div className="relative mx-auto w-full max-w-xl">
-            <Link
-              href={`/productos/${featured.slug}`}
-              className="group relative block overflow-hidden rounded-xl border border-ink-200 bg-white p-4 transition-all hover:border-brand-200"
-            >
-              <div className="relative aspect-[16/10] w-full">
-                <Image
-                  src={featured.images[0].src}
-                  alt={featured.name}
-                  fill
-                  sizes="(max-width: 768px) 90vw, 640px"
-                  className="object-contain transition-transform duration-500 group-hover:scale-105"
-                  priority
-                />
-              </div>
-              <div className="mt-3 border-t border-ink-100 pt-3">
-                {featured.brand && (
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-brand-700">
-                    {featured.brand}
-                  </span>
-                )}
-                <h3 className="line-clamp-2 text-sm font-semibold text-ink-900">
-                  {featured.name}
-                </h3>
-                <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-brand-700 transition-transform group-hover:translate-x-1">
-                  Ver producto <ArrowRight className="size-3" />
-                </span>
-              </div>
-            </Link>
-          </div>
-        )}
+        {slides.length > 0 && <HeroCarousel slides={slides} />}
       </div>
     </section>
   );

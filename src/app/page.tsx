@@ -9,7 +9,6 @@ import {
   getFeaturedProducts,
   getOnSaleProducts,
   getTopCategoriesWithImage,
-  getProductById,
   getProductsByIds,
   getCategoryCountsMap,
   type Product,
@@ -26,12 +25,13 @@ export default async function HomePage() {
     getTopCategoriesWithImage(14),
   ]);
 
-  // Hero product
-  let heroFeatured: Product | null = null;
-  if (content.hero.featuredProductId) {
-    heroFeatured = await getProductById(content.hero.featuredProductId);
-  }
-  if (!heroFeatured) heroFeatured = autoFeatured[0] ?? null;
+  // Hero: hasta 5 productos para el carrusel.
+  let heroFeatured: Product[] = content.hero.featuredProductIds.length
+    ? await getProductsByIds(content.hero.featuredProductIds)
+    : [];
+  if (!heroFeatured.length) heroFeatured = autoFeatured.slice(0, 5);
+  heroFeatured = heroFeatured.slice(0, 5);
+  const heroIds = new Set(heroFeatured.map((p) => p.id));
 
   // Ofertas
   const onSale = content.ofertas.productIds.length
@@ -41,7 +41,7 @@ export default async function HomePage() {
   // Destacados
   const destacados = content.destacados.productIds.length
     ? await getProductsByIds(content.destacados.productIds)
-    : autoFeatured.filter((p) => p.id !== heroFeatured?.id).slice(0, 10);
+    : autoFeatured.filter((p) => !heroIds.has(p.id)).slice(0, 10);
 
   // Categorías
   let cats = autoCats;

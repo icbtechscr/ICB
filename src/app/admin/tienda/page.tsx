@@ -34,6 +34,7 @@ export default async function AdminTiendaPage() {
 
   // Productos ya referenciados manualmente
   const ids = [
+    ...content.hero.featuredProductIds,
     ...(content.hero.featuredProductId ? [content.hero.featuredProductId] : []),
     ...content.ofertas.productIds,
     ...content.destacados.productIds,

@@ -470,16 +470,39 @@ function HeroEditor({
 }) {
   const [form, setForm] = useState<HeroContent>({
     ...data,
-    featuredProductId: data.featuredProductId ?? autoProduct?.id ?? null,
+    featuredProductIds: data.featuredProductIds?.length
+      ? data.featuredProductIds
+      : data.featuredProductId
+      ? [data.featuredProductId]
+      : autoProduct
+      ? [autoProduct.id]
+      : [],
   });
   const [, forceRender] = useState(0);
   const { save, saving, status, error } = useSave("hero");
   const set = <K extends keyof HeroContent>(k: K, v: HeroContent[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  const featured = form.featuredProductId
-    ? cache.current.get(form.featuredProductId)
-    : null;
+  const featuredList = form.featuredProductIds
+    .map((id) => cache.current.get(id))
+    .filter((p): p is ProductLite => !!p);
+
+  function addFeatured(p: ProductLite) {
+    cache.current.set(p.id, p);
+    if (
+      !form.featuredProductIds.includes(p.id) &&
+      form.featuredProductIds.length < 5
+    ) {
+      set("featuredProductIds", [...form.featuredProductIds, p.id]);
+    }
+    forceRender((n) => n + 1);
+  }
+  function removeFeatured(id: string) {
+    set(
+      "featuredProductIds",
+      form.featuredProductIds.filter((x) => x !== id)
+    );
+  }
 
   return (
     <Card
@@ -553,26 +576,26 @@ function HeroEditor({
         </div>
       </div>
       <div>
-        <Label>Producto destacado del hero</Label>
-        {featured ? (
-          <ProductChip
-            p={featured}
-            onRemove={() => set("featuredProductId", null)}
-          />
-        ) : (
+        <Label>Productos destacados del hero (hasta 5 · carrusel)</Label>
+        {featuredList.length === 0 && (
           <p className="mb-2 text-xs text-ink-500">
-            Sin selección se muestra automáticamente un producto reciente.
+            Sin selección se muestran automáticamente productos recientes.
           </p>
         )}
-        <div className="mt-2">
-          <ProductSearch
-            onPick={(p) => {
-              cache.current.set(p.id, p);
-              set("featuredProductId", p.id);
-              forceRender((n) => n + 1);
-            }}
-          />
+        <div className="space-y-2">
+          {featuredList.map((p) => (
+            <ProductChip key={p.id} p={p} onRemove={() => removeFeatured(p.id)} />
+          ))}
         </div>
+        {form.featuredProductIds.length < 5 ? (
+          <div className="mt-2">
+            <ProductSearch onPick={addFeatured} />
+          </div>
+        ) : (
+          <p className="mt-2 text-xs text-ink-500">
+            Máximo 5 productos en el carrusel.
+          </p>
+        )}
       </div>
     </Card>
   );
