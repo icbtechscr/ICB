@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight, Check, ShieldCheck, Truck, Headphones, Heart } from "lucide-react";
 import { AddToCartButton } from "@/components/AddToCartButton";
+import { ProductGallery } from "@/components/ProductGallery";
 import { getProductBySlug } from "@/lib/products";
 import { formatCRC, decodeHtml, stripHtml } from "@/lib/utils";
 import { parseKitDescription } from "@/lib/parseKit";
@@ -123,48 +123,13 @@ export default async function ProductPage({
         </nav>
 
         <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
-          <div className="relative overflow-hidden rounded-3xl border border-ink-200 bg-white p-4 shadow-sm md:p-8">
-            <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-white">
-              {product.images[0] ? (
-                <Image
-                  src={product.images[0].src}
-                  alt={product.images[0].alt || product.name}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="object-contain p-6"
-                  priority
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-ink-500">
-                  Sin imagen
-                </div>
-              )}
-              {product.onSale && product.salePriceCRC && (
-                <div className="absolute left-4 top-4 rounded-full bg-danger px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-lg">
-                  -{Math.round((1 - product.salePriceCRC / product.priceCRC) * 100)}%
-                </div>
-              )}
-            </div>
-
-            {product.images.length > 1 && (
-              <div className="mt-4 grid grid-cols-5 gap-2">
-                {product.images.slice(0, 5).map((img, i) => (
-                  <div
-                    key={i}
-                    className="relative aspect-square overflow-hidden rounded-xl border border-ink-200 bg-white"
-                  >
-                    <Image
-                      src={img.src}
-                      alt={img.alt || product.name}
-                      fill
-                      sizes="120px"
-                      className="object-contain p-2"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <ProductGallery
+            images={product.images.map((i) => ({ src: i.src, alt: i.alt }))}
+            name={product.name}
+            onSale={product.onSale}
+            priceCRC={product.priceCRC}
+            salePriceCRC={product.salePriceCRC}
+          />
 
           <div className="rounded-3xl border border-ink-200 bg-white p-6 shadow-sm md:p-8">
             {product.brand && (
