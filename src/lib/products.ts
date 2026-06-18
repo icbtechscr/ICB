@@ -424,11 +424,18 @@ export async function getCategoryBySlug(
 export async function searchProducts(q: string, limit = 50): Promise<Product[]> {
   const needle = q.trim();
   if (!needle) return [];
-  const { data, error } = await supabase
-    .from("products")
-    .select(SELECT)
-    .or(`name.ilike.%${needle}%,sku.ilike.%${needle}%,short_description.ilike.%${needle}%`)
-    .limit(limit);
+  const words = needle
+    .split(/\s+/)
+    .map((w) => w.split('"').join("").trim())
+    .filter(Boolean)
+    .slice(0, 6);
+  let query = supabase.from("products").select(SELECT).limit(limit);
+  for (const w of words) {
+    query = query.or(
+      `name.ilike."%${w}%",sku.ilike."%${w}%",short_description.ilike."%${w}%"`
+    );
+  }
+  const { data, error } = await query;
   if (error) throw error;
   return (data as unknown as Row[]).map(rowToProduct);
 }
@@ -516,11 +523,20 @@ export async function getCatalogProducts(params: CatalogParams): Promise<{
   }
   const needle = params.q?.trim();
   if (needle) {
-    // Escapa comas y paréntesis que romperían la sintaxis del filtro `or`.
-    const safe = needle.replace(/[,()]/g, " ");
-    query = query.or(
-      `name.ilike.%${safe}%,sku.ilike.%${safe}%,short_description.ilike.%${safe}%`
-    );
+    // Búsqueda por palabras clave: cada palabra debe aparecer en el nombre, el
+    // SKU o la descripción. Se encierra cada valor en comillas dobles para que
+    // los caracteres especiales (paréntesis, comas, etc.) sean LITERALES y no
+    // rompan la sintaxis del filtro `or` de PostgREST.
+    const words = needle
+      .split(/\s+/)
+      .map((w) => w.split('"').join("").trim())
+      .filter(Boolean)
+      .slice(0, 6);
+    for (const w of words) {
+      query = query.or(
+        `name.ilike."%${w}%",sku.ilike."%${w}%",short_description.ilike."%${w}%"`
+      );
+    }
   }
 
   switch (params.sort) {

@@ -18,7 +18,15 @@ export async function GET(req: Request) {
     if (ids) {
       query = query.in("id", ids.split(",").filter(Boolean));
     } else if (q) {
-      query = query.or(`name.ilike.%${q}%,sku.ilike.%${q}%`);
+      // Comillas dobles → caracteres especiales (paréntesis, comas) literales.
+      const words = q
+        .split(/\s+/)
+        .map((w) => w.split('"').join("").trim())
+        .filter(Boolean)
+        .slice(0, 6);
+      for (const w of words) {
+        query = query.or(`name.ilike."%${w}%",sku.ilike."%${w}%"`);
+      }
     } else {
       return NextResponse.json({ products: [] });
     }
