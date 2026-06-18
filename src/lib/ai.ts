@@ -35,6 +35,32 @@ function getGroq(): Groq {
   return groq;
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Llama a Groq con un reintento ante errores transitorios (límite de tasa o
+// errores 5xx). Evita que el chat muestre "no disponible" por un hipo puntual.
+async function createCompletion(
+  params: Groq.Chat.ChatCompletionCreateParamsNonStreaming
+): Promise<Groq.Chat.ChatCompletion> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      return await getGroq().chat.completions.create(params);
+    } catch (e: unknown) {
+      lastErr = e;
+      const status = (e as { status?: number })?.status;
+      const transient = status === 429 || (typeof status === "number" && status >= 500);
+      if (attempt === 0 && transient) {
+        console.warn(`[ai] reintentando tras error transitorio (status ${status})`);
+        await sleep(800);
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw lastErr;
+}
+
 function buildSystemPrompt(): string {
   return `Eres el asistente virtual de atención al cliente de "${SITE_NAME}" y respondes en el chat de la tienda en línea.
 Tu trabajo es contestar preguntas de clientes de forma amable, clara y breve, como lo haría un asesor competente que conoce bien el negocio.
@@ -48,6 +74,7 @@ La búsqueda ya ignora mayúsculas y tildes, pero igual debes ser flexible:
 - Prueba quitando palabras poco específicas y dejando solo lo esencial (marca o tipo de producto).
 - Interpreta el lenguaje coloquial y mapéalo al catálogo: "para la casa"/"para el hogar" → productos de hogar, kits de vigilancia, cámaras; "para trabajar"/"oficina" → computadoras/PC; "para vigilar"/"seguridad" → cámaras, DVR/NVR, kits de vigilancia; "internet"/"wifi"/"red" → routers, switches, access points.
 - Solo después de probar 2 o 3 variantes razonables y no encontrar nada, dile al cliente con honestidad que no lo ves en el catálogo en línea y ofrécele contactar a una sucursal o que un asesor le ayude.
+- Presupuesto: si el cliente menciona un límite de precio ("menos de 20 mil", "hasta ₡50.000"), pásalo en el parámetro precio_max de la herramienta. Los resultados vienen ordenados de más barato a más caro, así que revisa SIEMPRE los precios devueltos antes de afirmar que algo está fuera de presupuesto. Nunca digas que no hay nada bajo cierto precio si en los resultados hay productos que sí cumplen.
 
 == Estilo ==
 Responde siempre en español de Costa Rica, con un tono cercano, servicial y profesional, como un buen vendedor que quiere ayudar (no como un buscador rígido).
@@ -84,7 +111,7 @@ export async function generarRespuesta(
   if (tools && tools.length && handlers) {
     let totalTokens = 0;
     for (let step = 0; step < 5; step++) {
-      const completion = await getGroq().chat.completions.create({
+      const completion = await createCompletion({
         model: GROQ_MODEL,
         messages,
         temperature: 0.4,
@@ -121,7 +148,7 @@ export async function generarRespuesta(
   }
 
   // ---- Sin herramientas: Q&A simple ----
-  const completion = await getGroq().chat.completions.create({
+  const completion = await createCompletion({
     model: GROQ_MODEL,
     messages,
     temperature: 0.4,

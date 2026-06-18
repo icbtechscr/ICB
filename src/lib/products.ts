@@ -477,29 +477,70 @@ function toAccentInsensitivePattern(word: string): string {
  * Si la base no lo soporta, cae de vuelta a la búsqueda normal (searchProducts)
  * para no dejar al bot sin resultados.
  */
-export async function searchProductsLoose(q: string, limit = 12): Promise<Product[]> {
-  const needle = q.trim();
-  if (!needle) return [];
-  const words = needle
-    .split(/\s+/)
-    .map((w) => toAccentInsensitivePattern(w))
-    .filter(Boolean)
-    .slice(0, 6);
-  if (!words.length) return [];
+export type LooseSearchOpts = {
+  limit?: number;
+  /** Precio máximo en colones (filtra por el precio efectivo: oferta si la hay). */
+  maxPrice?: number | null;
+  /** Precio mínimo en colones. */
+  minPrice?: number | null;
+  /** Solo productos disponibles (en stock). */
+  inStockOnly?: boolean;
+};
 
-  let query = supabase.from("products").select(SELECT).limit(limit);
-  for (const pat of words) {
-    query = query.or(
-      `name.imatch.${pat},sku.imatch.${pat},short_description.imatch.${pat}`
+/** Precio efectivo de un producto: el de oferta si existe, si no el normal. */
+function effectivePrice(p: Product): number {
+  return p.salePriceCRC ?? p.priceCRC;
+}
+
+export async function searchProductsLoose(
+  q: string,
+  opts: LooseSearchOpts = {}
+): Promise<Product[]> {
+  const { limit = 12, maxPrice = null, minPrice = null, inStockOnly = false } = opts;
+  const needle = q.trim();
+
+  // Pedimos un colchón mayor a la base para poder filtrar por precio/stock
+  // en memoria y aun así devolver suficientes resultados.
+  const fetchLimit = Math.max(limit * 4, 40);
+
+  async function fetchBy(useLoose: boolean): Promise<Product[]> {
+    let query = supabase.from("products").select(SELECT).limit(fetchLimit);
+    if (needle) {
+      const words = needle
+        .split(/\s+/)
+        .map((w) => (useLoose ? toAccentInsensitivePattern(w) : w.split('"').join("").trim()))
+        .filter(Boolean)
+        .slice(0, 6);
+      for (const w of words) {
+        query = useLoose
+          ? query.or(`name.imatch.${w},sku.imatch.${w},short_description.imatch.${w}`)
+          : query.or(`name.ilike."%${w}%",sku.ilike."%${w}%",short_description.ilike."%${w}%"`);
+      }
+    }
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data as unknown as Row[]).map(rowToProduct);
+  }
+
+  let products: Product[];
+  try {
+    products = await fetchBy(true);
+  } catch (e) {
+    // Fallback: si `imatch` no está disponible, usa el ilike clásico.
+    console.warn(
+      "[searchProductsLoose] fallback a ilike:",
+      e instanceof Error ? e.message : String(e)
     );
+    products = await fetchBy(false);
   }
-  const { data, error } = await query;
-  if (error) {
-    // Fallback: si `imatch` no está disponible, usa la búsqueda clásica.
-    console.warn("[searchProductsLoose] fallback a searchProducts:", error.message);
-    return searchProducts(needle, limit);
-  }
-  return (data as unknown as Row[]).map(rowToProduct);
+
+  // Filtros y orden por precio (en memoria, para no depender de la BD).
+  if (inStockOnly) products = products.filter((p) => p.inStock);
+  if (minPrice != null) products = products.filter((p) => effectivePrice(p) >= minPrice);
+  if (maxPrice != null) products = products.filter((p) => effectivePrice(p) <= maxPrice);
+  products.sort((a, b) => effectivePrice(a) - effectivePrice(b));
+
+  return products.slice(0, limit);
 }
 
 export async function getProductSlugs(limit = 100): Promise<string[]> {

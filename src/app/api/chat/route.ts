@@ -16,6 +16,8 @@ const tools = [
       description:
         "Busca productos en el catálogo de ICB Tech por nombre, marca o SKU. " +
         "Úsala cuando el cliente pregunte por un producto, precio, marca o disponibilidad concretos. " +
+        "Ignora mayúsculas y tildes. Los resultados vienen ordenados del más barato al más caro. " +
+        "Si el cliente da un presupuesto (ej. 'menos de 20 mil', 'hasta 50000'), pásalo en precio_max. " +
         "Devuelve nombre, precio en colones (CRC), si está en oferta, disponibilidad y el enlace.",
       parameters: {
         type: "object",
@@ -23,7 +25,21 @@ const tools = [
           consulta: {
             type: "string",
             description:
-              "Términos de búsqueda, ej. 'cámara dahua', 'laptop', 'switch de red'.",
+              "Términos de búsqueda, ej. 'cámara dahua', 'laptop', 'switch de red'. Usa palabras clave del tipo de producto o marca.",
+          },
+          precio_max: {
+            type: "number",
+            description:
+              "Opcional. Precio máximo en colones. Ej.: si el cliente dice 'menos de 20 mil', usa 20000.",
+          },
+          precio_min: {
+            type: "number",
+            description: "Opcional. Precio mínimo en colones.",
+          },
+          solo_disponibles: {
+            type: "boolean",
+            description:
+              "Opcional. true para devolver únicamente productos en stock.",
           },
         },
         required: ["consulta"],
@@ -32,12 +48,23 @@ const tools = [
   },
 ];
 
+function toNum(v: unknown): number | null {
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
 const handlers = {
   buscar_productos: async (args: Record<string, unknown>) => {
     const q = String(args.consulta ?? "").trim();
     if (!q) return { productos: [] };
-    const found = await searchProductsLoose(q, 8);
+    const found = await searchProductsLoose(q, {
+      limit: 8,
+      maxPrice: toNum(args.precio_max),
+      minPrice: toNum(args.precio_min),
+      inStockOnly: args.solo_disponibles === true,
+    });
     return {
+      total: found.length,
       productos: found.map((p) => ({
         nombre: p.name,
         precioCRC: p.salePriceCRC ?? p.priceCRC,
