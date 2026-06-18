@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { generarRespuesta, type ChatMessage } from "@/lib/ai";
-import { searchProducts } from "@/lib/products";
+import { searchProductsLoose } from "@/lib/products";
 import { SITE_URL } from "@/lib/site";
 
 export const runtime = "nodejs";
@@ -36,7 +36,7 @@ const handlers = {
   buscar_productos: async (args: Record<string, unknown>) => {
     const q = String(args.consulta ?? "").trim();
     if (!q) return { productos: [] };
-    const found = await searchProducts(q, 8);
+    const found = await searchProductsLoose(q, 8);
     return {
       productos: found.map((p) => ({
         nombre: p.name,

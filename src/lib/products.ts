@@ -440,6 +440,68 @@ export async function searchProducts(q: string, limit = 50): Promise<Product[]> 
   return (data as unknown as Row[]).map(rowToProduct);
 }
 
+// Quita acentos/diacríticos de un texto: "Cámaras" -> "camaras".
+function stripAccents(s: string): string {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
+// Convierte una palabra en un patrón regex (POSIX) insensible a tildes:
+// "camaras" -> "c[aá]m[aá]r[aá]s", de modo que calce con o sin acento,
+// sin importar cómo esté guardado el producto en la base.
+const VOWEL_CLASS: Record<string, string> = {
+  a: "[aá]",
+  e: "[eé]",
+  i: "[ií]",
+  o: "[oó]",
+  u: "[uúü]",
+  n: "[nñ]",
+};
+function toAccentInsensitivePattern(word: string): string {
+  const base = stripAccents(word.toLowerCase());
+  let out = "";
+  for (const ch of base) {
+    if (VOWEL_CLASS[ch]) {
+      out += VOWEL_CLASS[ch];
+    } else if (/[a-z0-9]/.test(ch)) {
+      out += ch;
+    }
+    // Cualquier otro carácter (regex-especial, comas, paréntesis) se descarta
+    // para no romper el patrón ni el parser de PostgREST.
+  }
+  return out;
+}
+
+/**
+ * Búsqueda "tolerante" pensada para el chatbot: ignora mayúsculas Y tildes,
+ * así "camaras ip" encuentra "Cámaras IP". Usa el operador regex `imatch` (~*).
+ * Si la base no lo soporta, cae de vuelta a la búsqueda normal (searchProducts)
+ * para no dejar al bot sin resultados.
+ */
+export async function searchProductsLoose(q: string, limit = 12): Promise<Product[]> {
+  const needle = q.trim();
+  if (!needle) return [];
+  const words = needle
+    .split(/\s+/)
+    .map((w) => toAccentInsensitivePattern(w))
+    .filter(Boolean)
+    .slice(0, 6);
+  if (!words.length) return [];
+
+  let query = supabase.from("products").select(SELECT).limit(limit);
+  for (const pat of words) {
+    query = query.or(
+      `name.imatch.${pat},sku.imatch.${pat},short_description.imatch.${pat}`
+    );
+  }
+  const { data, error } = await query;
+  if (error) {
+    // Fallback: si `imatch` no está disponible, usa la búsqueda clásica.
+    console.warn("[searchProductsLoose] fallback a searchProducts:", error.message);
+    return searchProducts(needle, limit);
+  }
+  return (data as unknown as Row[]).map(rowToProduct);
+}
+
 export async function getProductSlugs(limit = 100): Promise<string[]> {
   const { data, error } = await supabase.from("products").select("slug").limit(limit);
   if (error) throw error;
