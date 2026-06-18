@@ -5,6 +5,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SiteChromeGate } from "@/components/SiteChromeGate";
+import { ChatWidget } from "@/components/ChatWidget";
 import { CartProvider } from "@/lib/cart";
 import { getNavMenu } from "@/lib/category-tree";
 import { getCurrentUser } from "@/lib/supabase-server";
@@ -83,9 +84,13 @@ export default async function RootLayout({
           <SiteChromeGate>
             <Footer />
           </SiteChromeGate>
+          <SiteChromeGate>
+            <ChatWidget />
+          </SiteChromeGate>
         </CartProvider>
         <Analytics />
       </body>
     </html>
   );
 }
+// Asistente virtual (ChatWidget) montado arriba vía SiteChromeGate.
