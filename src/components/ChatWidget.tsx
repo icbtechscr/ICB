@@ -92,7 +92,7 @@ export function ChatWidget() {
               <Bot className="size-5" />
             </div>
             <div className="leading-tight">
-              <p className="text-sm font-semibold">Asistente ICB Tech</p>
+              <p className="text-sm font-semibold">Asistente ICB Technologies</p>
               <p className="flex items-center gap-1 text-[11px] text-white/80">
                 <span className="size-1.5 rounded-full bg-accent-400" />
                 En línea
