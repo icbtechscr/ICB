@@ -82,24 +82,33 @@ export function Header({
         </div>
       </div>
 
+      <form action="/productos" className="mx-auto max-w-7xl px-3 pb-3 sm:px-4 md:hidden">
+        <label className="relative block">
+          <span className="sr-only">Buscar productos</span>
+          <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-ink-400" aria-hidden />
+          <input
+            type="search"
+            name="q"
+            placeholder="Buscar productos..."
+            className="h-11 w-full rounded-md border border-ink-200 bg-ink-50 pl-11 pr-12 text-sm font-medium text-ink-900 outline-none transition-all placeholder:text-ink-400 focus:border-brand-500 focus:bg-white focus:shadow-[var(--shadow-glow)]"
+          />
+          <button
+            type="submit"
+            aria-label="Buscar"
+            className="absolute right-1.5 top-1/2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-md bg-accent-600 text-ink-900 transition-colors hover:bg-accent-500"
+          >
+            <Search className="size-4" aria-hidden />
+          </button>
+        </label>
+      </form>
+
       <div className="hidden border-t border-brand-700 bg-brand-900 md:block">
         <NavHeader items={menu} />
       </div>
 
       {mobileOpen && (
         <div className="border-t border-ink-200 bg-white md:hidden">
-          <form action="/productos" className="px-4 py-3">
-            <label className="relative block">
-              <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-ink-400" aria-hidden />
-              <input
-                type="search"
-                name="q"
-                placeholder="Buscar..."
-                className="w-full rounded-full border border-ink-200 bg-ink-50 py-2.5 pl-11 pr-4 text-sm text-ink-900"
-              />
-            </label>
-          </form>
-          <ul className="border-t border-ink-100">
+          <ul>
             {menu.map((n) => (
               <li key={n.href}>
                 <Link
