@@ -134,34 +134,62 @@ const norm = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().rep
 function parse(html) {
   const out = [];
   const seen = new Set();
-  // Cada factura es un <tr>...</tr> con fecha y monto. Estado por palabra o color.
+  const TIPOS = /(Factura exportacion|Nota Debito|Nota Credito|Tiquete|Apartado|Factura)/i;
+  const decodeEnt = (x) => (x || "").replace(/&#162;/g, "").replace(/&#36;/g, "").replace(/&amp;/g, "&");
+  const afterInput = (row, name) => {
+    const m = row.match(new RegExp(name + '"[^>]*>\\s*([^<]+)', "i"));
+    return m ? m[1].replace(/\s+/g, " ").trim() : "";
+  };
   const chunks = html.split(/<tr[\s>]/i).slice(1);
   for (const raw of chunks) {
     const row = raw.split(/<\/tr>/i)[0];
+    if (!/(ACEPTADA|RECHAZADA|PROCESAN|PENDIENTE)/i.test(row)) continue;
     const fecha = row.match(/(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})/);
-    const monto = row.match(/([¢$₡])\s?([\d][\d.,]*)/);
-    if (!fecha || !monto) continue;
-    const cells = (row.match(/<td[\s\S]*?<\/td>/gi) || []).map(strip);
-    const clave = row.match(/\b(\d{40,60})\b/);
-    let estado = "";
-    if (/ACEPTAD/i.test(row)) estado = "ACEPTADA";
-    else if (/RECHAZAD/i.test(row)) estado = "RECHAZADA";
-    else if (/verde|green/i.test(row)) estado = "ACEPTADA";
-    else if (/rojo|red/i.test(row)) estado = "RECHAZADA";
-    const moneda = monto[1] === "$" ? "USD" : "CRC";
-    const key = clave ? clave[1] : [cells[0] || "", cells[6] || "", fecha[0], monto[0]].join("|");
-    if (seen.has(key)) continue;
+    if (!fecha) continue;
+
+    const byName = {}; const values = [];
+    for (const inp of row.match(/<input[^>]*>/gi) || []) {
+      const nm = (inp.match(/name="([^"]*)"/i) || [])[1];
+      const vl = (inp.match(/value="([^"]*)"/i) || [])[1];
+      if (vl != null) values.push(vl);
+      if (nm && byName[nm] === undefined) byName[nm] = vl;
+    }
+
+    // El monto puede venir como texto (completadas) o en un input (prefacturas).
+    let mM = row.match(/(&#162;|&#36;|₡|¢)\s?([\d][\d.,]*)/);
+    if (!mM) { const d = row.match(/\$\s?([\d][\d.,]*)/); if (d) mM = ["$", "$", d[1]]; }
+    const sym = mM ? mM[1] : "";
+    const montoNum = mM ? mM[2] : "0";
+    const monedaVal = values.find((v) => /^(Colones|Dolares|Dólares|Euros)$/i.test(v || "")) || "";
+    const moneda = /(&#36;|\$)/.test(sym) || /Dolar|Dólar/i.test(monedaVal) ? "USD"
+      : /Euro/i.test(monedaVal) ? "EUR" : "CRC";
+    const estado = /ACEPTADA/i.test(row) ? "ACEPTADA"
+      : /RECHAZADA/i.test(row) ? "RECHAZADA"
+      : /PROCESAN/i.test(row) ? "PROCESANDO" : "PENDIENTE";
+    const tipoM = row.match(TIPOS);
+    const factura = byName["numeroclickctrlfacturacion"] || "";
+    const clave = byName["clavenumelineafacturacion"] || (row.match(/\b(\d{40,60})\b/) || [])[1] || "";
+    const vendedor = afterInput(row, "codidvendedorfacturacion");
+    const origen = afterInput(row, "sucursalsearchfacturacion");
+    const sucursal = afterInput(row, "puntoventasearchfacturacion");
+    let cliente = "";
+    for (const inp of row.match(/<input[^>]*numeroclickctrlconsgprove[^>]*>/gi) || []) {
+      const vl = (inp.match(/value="([^"]*)"/i) || [])[1] || "";
+      if (vl && !/^\d+$/.test(vl)) { cliente = vl; break; }
+    }
+
+    const key = clave || [factura, fecha[0]].join("|");
+    if (!key || seen.has(key)) continue;
     seen.add(key);
     out.push({
-      cpi_key: key, tipo: cells[0] || "Factura", factura: "",
+      cpi_key: key, tipo: tipoM ? tipoM[1] : "Factura", factura,
       fecha: `${fecha[1]}T${fecha[2]}`,
-      origen: cells[4] || "", sucursal: cells[5] || "", vendedor: cells[6] || "", cliente: cells[7] || "",
-      moneda, subtotal: amount(monto[2]), estado,
+      origen, sucursal, vendedor, cliente, moneda,
+      subtotal: amount(montoNum), estado,
     });
   }
   return out;
-}
-async function main() {
+}async function main() {
   console.log("Ingresando a CPI…");
   const cookie = await login();
   console.log("Sesión OK. Descargando facturas…");
