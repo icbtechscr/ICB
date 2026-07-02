@@ -60,3 +60,28 @@ export function getUserFullName(
   const full = user?.user_metadata?.full_name as string | undefined;
   return full || user?.email?.split("@")[0] || "";
 }
+
+/** URL de la foto de perfil del colaborador (si subió una). */
+export function getUserAvatar(
+  user: MetadataCarrier | null | undefined
+): string | null {
+  const url =
+    (user?.user_metadata?.avatar_url as string | undefined) ??
+    (user?.user_metadata?.avatar as string | undefined);
+  return typeof url === "string" && url.length > 0 ? url : null;
+}
+
+/** Etiqueta legible del rol para mostrar en la interfaz. */
+export const ROLE_LABEL: Record<UserRole, string> = {
+  admin: "Administrador",
+  colaborador: "Colaborador",
+  dev: "Desarrollador",
+};
+
+/** Iniciales para el avatar cuando no hay foto. */
+export function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}

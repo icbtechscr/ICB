@@ -7,6 +7,7 @@ import {
   Megaphone,
   Palmtree,
   TrendingUp,
+  User,
   type LucideIcon,
 } from "lucide-react";
 import { canSell, type UserRole } from "@/lib/roles";
@@ -26,6 +27,8 @@ export type PortalModule = {
   requires?: "sell";
   /** Ocultarlo de las tarjetas del inicio (p. ej. el propio inicio). */
   hideOnHome?: boolean;
+  /** Ocultarlo de la barra de navegación (p. ej. módulos secundarios). */
+  hideInNav?: boolean;
 };
 
 export const PORTAL_MODULES: PortalModule[] = [
@@ -64,6 +67,14 @@ export const PORTAL_MODULES: PortalModule[] = [
     Icon: Palmtree,
   },
   {
+    id: "perfil",
+    href: "/portal/perfil",
+    label: "Mi perfil",
+    navLabel: "Perfil",
+    description: "Tu foto, tus datos y tu información laboral.",
+    Icon: User,
+  },
+  {
     id: "rendimiento",
     href: "/portal/rendimiento",
     label: "Rendimiento",
@@ -71,6 +82,7 @@ export const PORTAL_MODULES: PortalModule[] = [
     description: "Tus marcas, ventas y métricas del mes.",
     Icon: TrendingUp,
     comingSoon: true,
+    hideInNav: true,
   },
 ];
 
@@ -79,4 +91,9 @@ export function modulesForRole(role: UserRole): PortalModule[] {
   return PORTAL_MODULES.filter(
     (m) => !m.requires || (m.requires === "sell" && canSell(role))
   );
+}
+
+/** Módulos que aparecen en la barra de navegación de un rol. */
+export function navModulesForRole(role: UserRole): PortalModule[] {
+  return modulesForRole(role).filter((m) => !m.hideInNav);
 }
