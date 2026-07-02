@@ -16,6 +16,7 @@ import {
   Moon,
   Sun,
   Lock,
+  UserCog,
   type LucideIcon,
 } from "lucide-react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
@@ -49,13 +50,18 @@ const GROUPS: Group[] = [
     label: "Recursos Humanos",
     Icon: Users,
     href: "/admin/equipo",
-    prefixes: ["/admin/equipo", "/admin/solicitudes", "/admin/ventas-sucursales"],
+    prefixes: ["/admin/equipo", "/admin/solicitudes", "/admin/ventas-sucursales", "/admin/ventas-vendedores"],
     sub: [
       { href: "/admin/equipo", label: "Colaboradores", Icon: Users },
       {
         href: "/admin/ventas-sucursales",
         label: "Ventas en sucursales",
         Icon: Store,
+      },
+      {
+        href: "/admin/ventas-vendedores",
+        label: "Asignar vendedores",
+        Icon: UserCog,
       },
       {
         href: "/admin/solicitudes",

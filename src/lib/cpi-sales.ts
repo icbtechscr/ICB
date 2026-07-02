@@ -156,3 +156,52 @@ export async function listSalesForUser(
     .limit(opts.limit ?? 200);
   return (data ?? []) as SaleRow[];
 }
+
+// --- Mapeo de vendedores (admin) ---
+
+export type VendorStat = {
+  cpi_vendor: string;
+  user_id: string | null;
+  count: number;
+  crc: number;
+  usd: number;
+};
+
+/** Lista los vendedores de CPI con su usuario asignado y sus totales. */
+export async function listVendorsWithStats(): Promise<VendorStat[]> {
+  const sb = createAdminClient();
+  const [{ data: mapRows }, { data: sales }] = await Promise.all([
+    sb.from("cpi_vendor_map").select("cpi_vendor, user_id"),
+    sb.from("cpi_sales").select("vendedor, moneda, subtotal").limit(50000),
+  ]);
+
+  const stats = new Map<string, VendorStat>();
+  const ensure = (v: string) => {
+    const k = v || "—";
+    if (!stats.has(k)) stats.set(k, { cpi_vendor: k, user_id: null, count: 0, crc: 0, usd: 0 });
+    return stats.get(k)!;
+  };
+  for (const r of (mapRows ?? []) as { cpi_vendor: string; user_id: string | null }[]) {
+    ensure(r.cpi_vendor).user_id = r.user_id;
+  }
+  for (const s of (sales ?? []) as { vendedor: string; moneda: string; subtotal: number }[]) {
+    const st = ensure(s.vendedor);
+    st.count += 1;
+    if (s.moneda === "USD") st.usd += Number(s.subtotal) || 0;
+    else st.crc += Number(s.subtotal) || 0;
+  }
+  return [...stats.values()].sort((a, b) => b.count - a.count || a.cpi_vendor.localeCompare(b.cpi_vendor));
+}
+
+/** Asigna (o desasigna) un vendedor de CPI a un usuario del portal, y
+ *  re-aplica el enlace a las facturas ya guardadas de ese vendedor. */
+export async function setVendorUser(
+  cpiVendor: string,
+  userId: string | null
+): Promise<void> {
+  const sb = createAdminClient();
+  await sb
+    .from("cpi_vendor_map")
+    .upsert({ cpi_vendor: cpiVendor, user_id: userId }, { onConflict: "cpi_vendor" });
+  await sb.from("cpi_sales").update({ user_id: userId }).eq("vendedor", cpiVendor);
+}
