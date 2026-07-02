@@ -41,31 +41,55 @@ export type CpiInvoice = {
   estado: string;
 };
 
-// --- Login: devuelve el header Cookie para reusar en las siguientes llamadas ---
+// --- Cookies helpers ---
+function readSetCookies(res: Response): string[] {
+  const h = res.headers as Headers & { getSetCookie?: () => string[] };
+  const raw =
+    typeof h.getSetCookie === "function"
+      ? h.getSetCookie()
+      : [res.headers.get("set-cookie") || ""].filter(Boolean);
+  return raw.map((c) => c.split(";")[0]).filter(Boolean);
+}
+
+function mergeCookies(...groups: string[][]): string {
+  const jar = new Map<string, string>();
+  for (const g of groups)
+    for (const kv of g) {
+      const i = kv.indexOf("=");
+      if (i > 0) jar.set(kv.slice(0, i), kv.slice(i + 1));
+    }
+  return [...jar].map(([k, v]) => `${k}=${v}`).join("; ");
+}
+
+// --- Login: PHP crea la sesion en el primer GET; el POST del formulario la
+// autentica. Devolvemos el header Cookie para reusar en las llamadas siguientes.
 async function cpiLogin(): Promise<string> {
   if (!cpiConfigured()) {
     throw new Error("CPI sin configurar (CPI_USER/CPI_PASS/CPI_ID)");
   }
-  const body = new URLSearchParams({
-    Usuphp: USER,
-    Passphp: PASS,
-    SocaaID: ID,
-  });
+  // 1. Preflight GET: obtiene la cookie de sesion (PHPSESSID).
+  const pre = await fetch(`${BASE}Enter.php`, { method: "GET" });
+  const c1 = readSetCookies(pre);
+  const jar1 = mergeCookies(c1);
+
+  // 2. POST del formulario de login sobre esa misma sesion.
+  const body = new URLSearchParams({ Usuphp: USER, Passphp: PASS, SocaaID: ID });
   const res = await fetch(`${BASE}Page Main 4.php`, {
     method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      ...(jar1 ? { cookie: jar1 } : {}),
+    },
     body: body.toString(),
     redirect: "manual",
   });
-  const setCookies =
-    typeof res.headers.getSetCookie === "function"
-      ? res.headers.getSetCookie()
-      : [res.headers.get("set-cookie") || ""].filter(Boolean);
-  const cookie = setCookies
-    .map((c) => c.split(";")[0])
-    .filter(Boolean)
-    .join("; ");
-  if (!cookie) throw new Error("CPI: login no devolvio cookie de sesion");
+  const c2 = readSetCookies(res);
+  const cookie = mergeCookies(c1, c2);
+  if (!cookie) {
+    throw new Error(
+      `CPI: login sin cookie de sesion (GET ${pre.status}, POST ${res.status})`
+    );
+  }
   return cookie;
 }
 
