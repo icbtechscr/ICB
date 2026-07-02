@@ -27,6 +27,28 @@ const BROWSER_HEADERS: Record<string, string> = {
   "accept-language": "es-CR,es;q=0.9,en;q=0.8",
 };
 
+// Proxy opcional (IP de Costa Rica) para saltar el bloqueo de CPI a IPs de
+// datacenter. Formato: http://usuario:clave@host:puerto  (o sin credenciales).
+const PROXY = process.env.CPI_PROXY || "";
+
+let dispatcherPromise: Promise<unknown> | null = null;
+async function getDispatcher(): Promise<unknown> {
+  if (!PROXY) return undefined;
+  if (!dispatcherPromise) {
+    dispatcherPromise = import("undici")
+      .then((u) => new u.ProxyAgent(PROXY))
+      .catch(() => undefined);
+  }
+  return dispatcherPromise;
+}
+
+// fetch que enruta por el proxy si esta configurado.
+async function cpiFetch(url: string, init: RequestInit): Promise<Response> {
+  const dispatcher = await getDispatcher();
+  const opts = dispatcher ? { ...init, dispatcher } : init;
+  return fetch(url, opts as RequestInit);
+}
+
 export function cpiConfigured(): boolean {
   return Boolean(USER && PASS && ID);
 }
@@ -71,7 +93,7 @@ async function cpiLogin(): Promise<string> {
   if (!cpiConfigured()) {
     throw new Error("CPI sin configurar (CPI_USER/CPI_PASS/CPI_ID)");
   }
-  const pre = await fetch(`${BASE}Enter.php`, {
+  const pre = await cpiFetch(`${BASE}Enter.php`, {
     method: "GET",
     headers: { ...BROWSER_HEADERS, referer: BASE },
   });
@@ -79,7 +101,7 @@ async function cpiLogin(): Promise<string> {
   const jar1 = mergeCookies(c1);
 
   const body = new URLSearchParams({ Usuphp: USER, Passphp: PASS, SocaaID: ID });
-  const res = await fetch(`${BASE}Page Main 4.php`, {
+  const res = await cpiFetch(`${BASE}Page Main 4.php`, {
     method: "POST",
     headers: {
       ...BROWSER_HEADERS,
@@ -118,7 +140,7 @@ export async function cpiFetchCompletadasHtml(cookie?: string): Promise<string> 
     SocaaID: ID,
     idiomasistema: "Español",
   });
-  const res = await fetch(`${BASE}ControlFacturacion - Consultas.php`, {
+  const res = await cpiFetch(`${BASE}ControlFacturacion - Consultas.php`, {
     method: "POST",
     headers: {
       ...BROWSER_HEADERS,
