@@ -6,6 +6,7 @@ import {
   mustClockIn,
   type UserRole,
 } from "@/lib/roles";
+import { getEmployeeHrProfile } from "@/lib/vacations";
 
 export type CollaboratorDTO = {
   id: string;
@@ -15,6 +16,10 @@ export type CollaboratorDTO = {
   branchIds: string[];
   createdAt: string;
   lastSignInAt: string | null;
+  cedula: string;
+  hireDate: string | null;
+  vacationRate: number;
+  vacationAdjust: number;
 };
 
 function normalizeRole(raw?: string): UserRole {
@@ -39,6 +44,7 @@ export async function GET() {
       branchIds: getUserBranchIds(u),
       createdAt: u.created_at,
       lastSignInAt: u.last_sign_in_at ?? null,
+      ...getEmployeeHrProfile(u),
     }));
     return NextResponse.json({ users });
   } catch (e) {
@@ -55,6 +61,10 @@ export async function POST(req: Request) {
       name?: string;
       role?: string;
       branchIds?: string[];
+      cedula?: string;
+      hireDate?: string;
+      vacationRate?: number;
+      vacationAdjust?: number;
     };
     const email = body.email?.trim().toLowerCase();
     const password = body.password ?? "";
@@ -63,6 +73,18 @@ export async function POST(req: Request) {
     const branchIds = Array.isArray(body.branchIds)
       ? body.branchIds.filter((x) => typeof x === "string")
       : [];
+    const cedula = typeof body.cedula === "string" ? body.cedula.trim() : "";
+    const hireDate =
+      typeof body.hireDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.hireDate)
+        ? body.hireDate
+        : null;
+    const vacationRate =
+      Number.isFinite(body.vacationRate) && Number(body.vacationRate) >= 0
+        ? Number(body.vacationRate)
+        : 1;
+    const vacationAdjust = Number.isFinite(body.vacationAdjust)
+      ? Number(body.vacationAdjust)
+      : 0;
 
     if (!email || !email.includes("@")) {
       return new NextResponse("Correo inválido", { status: 400 });
@@ -80,7 +102,15 @@ export async function POST(req: Request) {
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name: name, role, branch_ids: branchIds },
+      user_metadata: {
+        full_name: name,
+        role,
+        branch_ids: branchIds,
+        cedula,
+        hire_date: hireDate,
+        vacation_rate: vacationRate,
+        vacation_adjust: vacationAdjust,
+      },
     });
     if (error) return new NextResponse(error.message, { status: 400 });
     return NextResponse.json({

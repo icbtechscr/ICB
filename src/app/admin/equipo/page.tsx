@@ -1,6 +1,8 @@
 import { createAdminClient } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/supabase-server";
 import { getUserRole, getUserBranchIds } from "@/lib/roles";
+import { getEmployeeHrProfile } from "@/lib/vacations";
+import { vacationDaysByUser } from "@/lib/vacations-server";
 import {
   CollaboratorsManager,
   type Collaborator,
@@ -13,16 +15,27 @@ export default async function EquipoPage() {
   let users: Collaborator[] = [];
   try {
     const sb = createAdminClient();
-    const { data } = await sb.auth.admin.listUsers({ page: 1, perPage: 500 });
-    users = data.users.map((u) => ({
-      id: u.id,
-      email: u.email ?? "",
-      name: (u.user_metadata?.full_name as string) ?? "",
-      role: getUserRole(u),
-      branchIds: getUserBranchIds(u),
-      createdAt: u.created_at,
-      lastSignInAt: u.last_sign_in_at ?? null,
-    }));
+    const [{ data }, vacationDays] = await Promise.all([
+      sb.auth.admin.listUsers({ page: 1, perPage: 500 }),
+      vacationDaysByUser().catch(
+        () => new Map<string, { used: number; pending: number }>()
+      ),
+    ]);
+    users = data.users.map((u) => {
+      const days = vacationDays.get(u.id) ?? { used: 0, pending: 0 };
+      return {
+        id: u.id,
+        email: u.email ?? "",
+        name: (u.user_metadata?.full_name as string) ?? "",
+        role: getUserRole(u),
+        branchIds: getUserBranchIds(u),
+        createdAt: u.created_at,
+        lastSignInAt: u.last_sign_in_at ?? null,
+        ...getEmployeeHrProfile(u),
+        vacationUsed: days.used,
+        vacationPending: days.pending,
+      };
+    });
   } catch {
     users = [];
   }
@@ -34,8 +47,8 @@ export default async function EquipoPage() {
           Colaboradores
         </h1>
         <p className="mt-1 text-sm text-ink-600">
-          Altas, roles y sedes. Los administradores entran al panel; los
-          colaboradores solo marcan horario.
+          Altas, roles, sedes y datos de RRHH: cédula, fecha de ingreso y
+          vacaciones. El saldo se sincroniza con el portal del colaborador.
         </p>
       </div>
       <CollaboratorsManager

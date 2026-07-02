@@ -14,6 +14,10 @@ export async function PATCH(
       password?: string;
       role?: string;
       branchIds?: string[];
+      cedula?: string;
+      hireDate?: string | null;
+      vacationRate?: number;
+      vacationAdjust?: number;
     };
 
     const admin = createAdminClient();
@@ -38,6 +42,20 @@ export async function PATCH(
     if (Array.isArray(body.branchIds)) {
       meta.branch_ids = body.branchIds.filter((x) => typeof x === "string");
       delete meta.branch_id; // limpiar el campo legacy
+    }
+    if (typeof body.cedula === "string") meta.cedula = body.cedula.trim();
+    if (body.hireDate === null) meta.hire_date = null;
+    else if (
+      typeof body.hireDate === "string" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(body.hireDate)
+    ) {
+      meta.hire_date = body.hireDate;
+    }
+    if (Number.isFinite(body.vacationRate) && Number(body.vacationRate) >= 0) {
+      meta.vacation_rate = Number(body.vacationRate);
+    }
+    if (Number.isFinite(body.vacationAdjust)) {
+      meta.vacation_adjust = Number(body.vacationAdjust);
     }
 
     const attrs: {

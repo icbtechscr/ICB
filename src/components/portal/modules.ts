@@ -62,7 +62,6 @@ export const PORTAL_MODULES: PortalModule[] = [
     navLabel: "Vacaciones",
     description: "Saldo de días y solicitudes de vacaciones.",
     Icon: Palmtree,
-    comingSoon: true,
   },
   {
     id: "rendimiento",
