@@ -99,24 +99,33 @@ async function login() {
 }
 
 async function fetchCompletadas(cookie) {
-  const body = new URLSearchParams({ duser: USER, d: "", str3: "", SocaaID: ID, idiomasistema: "Español" }).toString();
-  const res = await request(`${BASE}ControlFacturacion - Consultas.php`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-      "content-length": Buffer.byteLength(body),
-      "x-requested-with": "XMLHttpRequest",
-      origin: new URL(BASE).origin,
-      referer: `${BASE}Page Main 4.php`,
-      ...(cookie ? { cookie } : {}),
-    },
-    body,
-  });
-  if (DEBUG) { console.log("POST Consultas.php ->", res.status, `(${res.body.length} chars)`); writeFileSync("cpi-lista.html", res.body, "utf8"); }
-  if (res.status >= 400) throw new Error(`Consulta falló (HTTP ${res.status})`);
-  return res.body;
+  const P = { duser: USER, d: "", str3: "", SocaaID: ID, idiomasistema: "Español" };
+  const candidatos = [
+    { name: "control",  ep: "ControlFacturacion.php",              params: { duser: USER, SocaaID: ID, idiomasistema: "Español" } },
+    { name: "control2", ep: "ControlFacturacion.php",              params: P },
+    { name: "consultas",ep: "ControlFacturacion - Consultas.php",  params: P },
+  ];
+  const rowsRe = /\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}/g;
+  let best = null;
+  for (const c of candidatos) {
+    const body = new URLSearchParams(c.params).toString();
+    let res;
+    try {
+      res = await request(`${BASE}${c.ep}`, {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded", "content-length": Buffer.byteLength(body), "x-requested-with": "XMLHttpRequest", origin: new URL(BASE).origin, referer: `${BASE}Page Main 4.php`, ...(cookie ? { cookie } : {}) },
+        body,
+      });
+    } catch (e) { console.log(`  ${c.name}: error ${e.message}`); continue; }
+    const n = (res.body.match(rowsRe) || []).length;
+    if (DEBUG) writeFileSync(`cpi-${c.name}.html`, res.body, "utf8");
+    console.log(`  candidato ${c.name} (${c.ep}) -> ${res.status}, ${res.body.length} chars, ~${n} filas con fecha`);
+    if (!best || n > best.n) best = { html: res.body, n, name: c.name };
+  }
+  if (!best || best.n < 2) throw new Error("Ningun endpoint devolvio la lista de facturas. Revisá los cpi-*.html.");
+  console.log(`  => usando "${best.name}" (${best.n} filas)`);
+  return best.html;
 }
-
 const MONEDA = { Colones: "CRC", Dolares: "USD", "Dólares": "USD", Euros: "EUR" };
 const strip = (s) => s.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
 const amount = (s) => { const n = Number(s.replace(/[^\d.,-]/g, "").replace(/,/g, "")); return Number.isFinite(n) ? n : 0; };
@@ -124,27 +133,34 @@ const norm = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().rep
 
 function parse(html) {
   const out = [];
-  for (const row of html.match(/<tr[\s\S]*?<\/tr>/gi) || []) {
-    if (!/(ACEPTADA|RECHAZADA|PROCESANDO|PENDIENTE)/i.test(row)) continue;
-    if (!/(Colones|Dolares|Dólares|Euros)/.test(row)) continue;
+  const seen = new Set();
+  // Cada factura es un <tr>...</tr> con fecha y monto. Estado por palabra o color.
+  const chunks = html.split(/<tr[\s>]/i).slice(1);
+  for (const raw of chunks) {
+    const row = raw.split(/<\/tr>/i)[0];
     const fecha = row.match(/(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})/);
-    const moneda = row.match(/\b(Colones|Dolares|Dólares|Euros)\b/);
-    const monto = row.match(/[¢$₡]\s?[\d][\d.,]*/);
-    const estado = row.match(/\b(ACEPTADA|RECHAZADA|PROCESANDO|PENDIENTE)\b/i);
-    const clave = row.match(/\b(\d{40,60})\b/);
+    const monto = row.match(/([¢$₡])\s?([\d][\d.,]*)/);
+    if (!fecha || !monto) continue;
     const cells = (row.match(/<td[\s\S]*?<\/td>/gi) || []).map(strip);
-    const key = clave ? clave[1] : [cells[0], cells[6], fecha ? fecha[0] : "", monto ? monto[0] : ""].join("|");
+    const clave = row.match(/\b(\d{40,60})\b/);
+    let estado = "";
+    if (/ACEPTAD/i.test(row)) estado = "ACEPTADA";
+    else if (/RECHAZAD/i.test(row)) estado = "RECHAZADA";
+    else if (/verde|green/i.test(row)) estado = "ACEPTADA";
+    else if (/rojo|red/i.test(row)) estado = "RECHAZADA";
+    const moneda = monto[1] === "$" ? "USD" : "CRC";
+    const key = clave ? clave[1] : [cells[0] || "", cells[6] || "", fecha[0], monto[0]].join("|");
+    if (seen.has(key)) continue;
+    seen.add(key);
     out.push({
       cpi_key: key, tipo: cells[0] || "Factura", factura: "",
-      fecha: fecha ? `${fecha[1]}T${fecha[2]}` : null,
+      fecha: `${fecha[1]}T${fecha[2]}`,
       origen: cells[4] || "", sucursal: cells[5] || "", vendedor: cells[6] || "", cliente: cells[7] || "",
-      moneda: moneda ? (MONEDA[moneda[1]] || moneda[1]) : "CRC",
-      subtotal: monto ? amount(monto[0]) : 0, estado: estado ? estado[1].toUpperCase() : "",
+      moneda, subtotal: amount(monto[2]), estado,
     });
   }
   return out;
 }
-
 async function main() {
   console.log("Ingresando a CPI…");
   const cookie = await login();
