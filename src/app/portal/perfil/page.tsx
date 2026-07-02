@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
-  BadgeCheck,
   CalendarDays,
   IdCard,
   Mail,
@@ -9,6 +8,9 @@ import {
   Briefcase,
   Palmtree,
   CalendarClock,
+  ShoppingBag,
+  Wallet,
+  Target,
 } from "lucide-react";
 import { getCurrentUser } from "@/lib/supabase-server";
 import {
@@ -25,8 +27,16 @@ import {
   fullMonthsSince,
 } from "@/lib/vacations";
 import { listMyVacationRequests } from "@/lib/vacations-server";
+import {
+  getMyMonthlyMetrics,
+  currentMonthLabel,
+  fmtPct,
+} from "@/lib/portal-metrics";
 import { getLocation, type Branch } from "@/lib/branches";
-import { AvatarUploader } from "@/components/portal/AvatarUploader";
+import { formatCRC } from "@/lib/utils";
+import { ProfileCover } from "@/components/portal/ProfileCover";
+import { Collapsible } from "@/components/portal/Collapsible";
+import { MetricCard } from "@/components/portal/MetricCard";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +86,7 @@ export default async function PerfilPage() {
     requests = [];
   }
   const balance = computeBalance(profile, requests);
+  const metrics = await getMyMonthlyMetrics(user.id);
 
   const rows: { icon: typeof Mail; label: string; value: string }[] = [
     { icon: Briefcase, label: "Rol", value: ROLE_LABEL[role] },
@@ -91,45 +102,53 @@ export default async function PerfilPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-3xl">
-      {/* Tarjeta banner */}
-      <section className="overflow-hidden rounded-3xl border border-ink-200 bg-white shadow-soft">
-        <div className="relative bg-gradient-to-br from-brand-700 via-brand-600 to-brand-800 px-6 pb-6 pt-8 text-center">
-          <div className="pointer-events-none absolute inset-0 opacity-30 [background:radial-gradient(circle_at_20%_10%,rgba(255,255,255,0.25),transparent_45%)]" />
-          <div className="relative flex flex-col items-center">
-            <AvatarUploader initialUrl={avatar} initials={getInitials(name)} />
-            <h1 className="mt-4 text-xl font-black tracking-tight text-white">
-              {name || "Colaborador"}
-            </h1>
-            <p className="mt-0.5 text-sm text-white/70">{ROLE_LABEL[role]}</p>
-            <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-accent-500/20 px-3 py-1 text-xs font-bold text-accent-100 ring-1 ring-inset ring-accent-400/30">
-              <BadgeCheck className="size-3.5" />
-              Activo
-            </span>
-          </div>
-        </div>
+    <div className="mx-auto max-w-3xl space-y-4">
+      <ProfileCover
+        initialUrl={avatar}
+        initials={getInitials(name)}
+        name={name}
+        roleLabel={ROLE_LABEL[role]}
+      />
 
-        {/* Estadísticas rápidas */}
-        <div className="grid grid-cols-2 divide-x divide-ink-200 border-b border-ink-200">
-          <div className="px-4 py-4 text-center">
-            <p className="text-2xl font-black text-brand-600">
-              {balance.hasHireDate ? balance.available : "—"}
-            </p>
-            <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-ink-500">
-              Días de vacaciones
-            </p>
-          </div>
-          <div className="px-4 py-4 text-center">
-            <p className="text-2xl font-black text-brand-600">
-              {branches.length || "—"}
-            </p>
-            <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-ink-500">
-              {branches.length === 1 ? "Sede asignada" : "Sedes asignadas"}
-            </p>
-          </div>
+      {/* Resumen de métricas del mes */}
+      <div>
+        <div className="mb-2 flex items-baseline justify-between">
+          <h2 className="text-sm font-bold text-ink-900">Resumen del mes</h2>
+          <span className="text-xs capitalize text-ink-500">
+            {currentMonthLabel()}
+          </span>
         </div>
+        <div className="grid grid-cols-3 gap-3">
+          <MetricCard
+            label="Ventas"
+            value={metrics.salesCount == null ? "—" : String(metrics.salesCount)}
+            Icon={ShoppingBag}
+            accent="brand"
+          />
+          <MetricCard
+            label="Vendido"
+            value={
+              metrics.salesAmountCRC == null
+                ? "—"
+                : formatCRC(metrics.salesAmountCRC)
+            }
+            Icon={Wallet}
+            accent="accent"
+          />
+          <MetricCard
+            label="Puntualidad"
+            value={fmtPct(metrics.punctualityPct)}
+            Icon={Target}
+            accent="warn"
+          />
+        </div>
+        <p className="mt-2 text-[11px] text-ink-400">
+          Estas métricas se conectarán con tus datos reales próximamente.
+        </p>
+      </div>
 
-        {/* Datos */}
+      {/* Datos personales (desplegable) */}
+      <Collapsible title="Información personal" defaultOpen>
         <dl className="divide-y divide-ink-100">
           {rows.map((r) => (
             <div key={r.label} className="flex items-center gap-3 px-5 py-3.5">
@@ -143,12 +162,12 @@ export default async function PerfilPage() {
             </div>
           ))}
         </dl>
-      </section>
+      </Collapsible>
 
       {/* Acceso rápido a vacaciones */}
       <Link
         href="/portal/vacaciones"
-        className="mt-4 flex items-center gap-3 rounded-2xl border border-ink-200 bg-white p-4 transition hover:border-brand-300 hover:shadow-soft"
+        className="flex items-center gap-3 rounded-2xl border border-ink-200 bg-white p-4 shadow-soft transition hover:border-brand-300 hover:shadow-lift"
       >
         <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
           <Palmtree className="size-5" />
@@ -156,12 +175,14 @@ export default async function PerfilPage() {
         <span className="min-w-0">
           <span className="block text-sm font-bold text-ink-900">Vacaciones</span>
           <span className="block text-xs text-ink-600">
-            Consultá tu saldo y solicitá días libres.
+            {balance.hasHireDate
+              ? `Tenés ${balance.available} día(s) disponibles.`
+              : "Consultá tu saldo y solicitá días libres."}
           </span>
         </span>
       </Link>
 
-      <p className="mt-6 text-center text-xs text-ink-400">
+      <p className="pt-1 text-center text-xs text-ink-400">
         ¿Algún dato incorrecto? Contactá a RRHH para actualizarlo.
       </p>
     </div>

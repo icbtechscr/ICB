@@ -7,6 +7,7 @@ import {
   Megaphone,
   Palmtree,
   TrendingUp,
+  ShoppingBag,
   User,
   type LucideIcon,
 } from "lucide-react";
@@ -27,10 +28,12 @@ export type PortalModule = {
   requires?: "sell";
   /** Ocultarlo de las tarjetas del inicio (p. ej. el propio inicio). */
   hideOnHome?: boolean;
-  /** Ocultarlo de la barra de navegación (p. ej. módulos secundarios). */
+  /** Ocultarlo de la barra de navegación (accesos secundarios). */
   hideInNav?: boolean;
 };
 
+// Orden = orden en la barra de navegación (los que no están ocultos).
+// Barra inferior (móvil): Inicio, Ventas, Rendimiento, Marcar, Perfil.
 export const PORTAL_MODULES: PortalModule[] = [
   {
     id: "inicio",
@@ -40,6 +43,22 @@ export const PORTAL_MODULES: PortalModule[] = [
     description: "Resumen de tu día y accesos rápidos.",
     Icon: Home,
     hideOnHome: true,
+  },
+  {
+    id: "ventas",
+    href: "/portal/ventas",
+    label: "Ventas",
+    navLabel: "Ventas",
+    description: "Tus ventas del mes y el monto vendido.",
+    Icon: ShoppingBag,
+  },
+  {
+    id: "rendimiento",
+    href: "/portal/rendimiento",
+    label: "Rendimiento",
+    navLabel: "Rendimiento",
+    description: "Puntualidad, asistencia y desempeño del mes.",
+    Icon: TrendingUp,
   },
   {
     id: "marcar",
@@ -57,6 +76,7 @@ export const PORTAL_MODULES: PortalModule[] = [
     description: "Publicá productos del catálogo en tu página.",
     Icon: Megaphone,
     requires: "sell",
+    hideInNav: true,
   },
   {
     id: "vacaciones",
@@ -65,6 +85,7 @@ export const PORTAL_MODULES: PortalModule[] = [
     navLabel: "Vacaciones",
     description: "Saldo de días y solicitudes de vacaciones.",
     Icon: Palmtree,
+    hideInNav: true,
   },
   {
     id: "perfil",
@@ -73,16 +94,6 @@ export const PORTAL_MODULES: PortalModule[] = [
     navLabel: "Perfil",
     description: "Tu foto, tus datos y tu información laboral.",
     Icon: User,
-  },
-  {
-    id: "rendimiento",
-    href: "/portal/rendimiento",
-    label: "Rendimiento",
-    navLabel: "Rendimiento",
-    description: "Tus marcas, ventas y métricas del mes.",
-    Icon: TrendingUp,
-    comingSoon: true,
-    hideInNav: true,
   },
 ];
 
