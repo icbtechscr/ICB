@@ -90,8 +90,12 @@ async function login() {
 
   if (/AVISO DE BLOQUEO/i.test(res.body)) throw new Error("CPI bloqueó la petición (AVISO DE BLOQUEO). Tu IP no fue aceptada.");
   if (/contrase.a o usuario incorrect|usuario o contrase.a incorrect/i.test(res.body)) throw new Error("Usuario o contraseña incorrectos según CPI.");
-  if (!jar.size) throw new Error(`Login sin cookie (GET ${pre.status}, POST ${res.status}). Corré con --debug y revisá cpi-post.html.`);
-  return jarStr(jar);
+  // CPI no usa cookie de sesion: autentica por parametros (duser + SocaaID) en
+  // cada llamada. Si el POST devolvio la app ("Aplicaciones"), el login sirvio.
+  if (!/Aplicaciones|Facturacion|Cerrar sesion|EXIT/i.test(res.body)) {
+    throw new Error(`El login no devolvio la app (GET ${pre.status}, POST ${res.status}). Revisá cpi-post.html.`);
+  }
+  return jarStr(jar); // puede ir vacio
 }
 
 async function fetchCompletadas(cookie) {
@@ -104,7 +108,7 @@ async function fetchCompletadas(cookie) {
       "x-requested-with": "XMLHttpRequest",
       origin: new URL(BASE).origin,
       referer: `${BASE}Page Main 4.php`,
-      cookie,
+      ...(cookie ? { cookie } : {}),
     },
     body,
   });
