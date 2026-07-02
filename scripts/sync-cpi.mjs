@@ -1,30 +1,21 @@
 // Sincroniza las ventas de CPI hacia Supabase, corriendo en TU computadora
 // (usa tu IP de Costa Rica, que CPI sí acepta). Gratis, sin proxy.
+// Usa el modulo https nativo (cookies confiables, sin el bug de undici en Windows).
 //
-// Uso:
-//   1. En .env.local (raíz del proyecto) agregá:
-//        CPI_USER=tu_usuario
-//        CPI_PASS=tu_clave
-//        CPI_ID=20
-//      (NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SECRET_KEY ya deberían estar ahí)
-//   2. Corré:  node scripts/sync-cpi.mjs
-//      Para ver el HTML crudo (afinar el parser): node scripts/sync-cpi.mjs --debug
+//   node scripts/sync-cpi.mjs           -> sincroniza
+//   node scripts/sync-cpi.mjs --debug   -> guarda cpi-get/post/lista.html
 import { readFileSync, writeFileSync } from "node:fs";
+import https from "node:https";
 import { createClient } from "@supabase/supabase-js";
 
-// --- cargar .env.local ---
 function loadEnv() {
   try {
     const txt = readFileSync(new URL("../.env.local", import.meta.url), "utf8");
     for (const line of txt.split(/\r?\n/)) {
       const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/i);
-      if (m && !process.env[m[1]]) {
-        process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
-      }
+      if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
     }
-  } catch {
-    console.warn("No se encontró .env.local (usaré variables del sistema).");
-  }
+  } catch { console.warn("No se encontró .env.local"); }
 }
 loadEnv();
 
@@ -36,66 +27,90 @@ const ID = process.env.CPI_ID || "20";
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SB_KEY = process.env.SUPABASE_SECRET_KEY || "";
 
-const HEADERS = {
-  "user-agent":
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-  accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-  "accept-language": "es-CR,es;q=0.9,en;q=0.8",
-};
+const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 
-function readSetCookies(res) {
-  const raw = typeof res.headers.getSetCookie === "function"
-    ? res.headers.getSetCookie()
-    : [res.headers.get("set-cookie") || ""].filter(Boolean);
-  return raw.map((c) => c.split(";")[0]).filter(Boolean);
+// request() con https nativo. Devuelve { status, headers, body }.
+function request(urlStr, { method = "GET", headers = {}, body = null } = {}) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(urlStr);
+    const opts = {
+      method,
+      hostname: url.hostname,
+      path: url.pathname + url.search, // URL ya codifica los espacios como %20
+      headers: {
+        "user-agent": UA,
+        accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "accept-language": "es-CR,es;q=0.9,en;q=0.8",
+        "accept-encoding": "identity",
+        ...headers,
+      },
+    };
+    const req = https.request(opts, (res) => {
+      let data = "";
+      res.setEncoding("utf8");
+      res.on("data", (c) => (data += c));
+      res.on("end", () => resolve({ status: res.statusCode, headers: res.headers, body: data }));
+    });
+    req.on("error", reject);
+    if (body) req.write(body);
+    req.end();
+  });
 }
-function mergeCookies(...groups) {
+
+function jarFrom(setCookie) {
   const jar = new Map();
-  for (const g of groups) for (const kv of g) {
-    const i = kv.indexOf("=");
-    if (i > 0) jar.set(kv.slice(0, i), kv.slice(i + 1));
-  }
-  return [...jar].map(([k, v]) => `${k}=${v}`).join("; ");
+  const list = Array.isArray(setCookie) ? setCookie : setCookie ? [setCookie] : [];
+  for (const c of list) { const kv = c.split(";")[0]; const i = kv.indexOf("="); if (i > 0) jar.set(kv.slice(0, i), kv.slice(i + 1)); }
+  return jar;
 }
+const jarStr = (jar) => [...jar].map(([k, v]) => `${k}=${v}`).join("; ");
 
 async function login() {
   if (!USER || !PASS || !ID) throw new Error("Faltan CPI_USER/CPI_PASS/CPI_ID en .env.local");
-  const pre = await fetch(`${BASE}Enter.php`, { headers: { ...HEADERS, referer: BASE } });
-  const c1 = readSetCookies(pre);
-  const body = new URLSearchParams({ Usuphp: USER, Passphp: PASS, SocaaID: ID });
-  const res = await fetch(`${BASE}Page Main 4.php`, {
+  const jar = new Map();
+
+  const pre = await request(`${BASE}Enter.php`, { headers: { referer: BASE } });
+  for (const [k, v] of jarFrom(pre.headers["set-cookie"])) jar.set(k, v);
+  if (DEBUG) { console.log("GET Enter.php ->", pre.status, "| cookies:", [...jar.keys()].join(",") || "(ninguna)"); writeFileSync("cpi-get.html", pre.body, "utf8"); }
+
+  const body = new URLSearchParams({ Usuphp: USER, Passphp: PASS, SocaaID: ID }).toString();
+  const res = await request(`${BASE}Page Main 4.php`, {
     method: "POST",
     headers: {
-      ...HEADERS,
       "content-type": "application/x-www-form-urlencoded",
+      "content-length": Buffer.byteLength(body),
       origin: new URL(BASE).origin,
       referer: `${BASE}Enter.php`,
-      ...(c1.length ? { cookie: mergeCookies(c1) } : {}),
+      ...(jar.size ? { cookie: jarStr(jar) } : {}),
     },
-    body: body.toString(),
-    redirect: "manual",
+    body,
   });
-  const cookie = mergeCookies(c1, readSetCookies(res));
-  if (!cookie) throw new Error(`Login sin cookie (GET ${pre.status}, POST ${res.status})`);
-  return cookie;
+  for (const [k, v] of jarFrom(res.headers["set-cookie"])) jar.set(k, v);
+  if (DEBUG) { console.log("POST Page Main 4.php ->", res.status, "| cookies:", [...jar.keys()].join(",") || "(ninguna)"); writeFileSync("cpi-post.html", res.body, "utf8"); }
+
+  if (/AVISO DE BLOQUEO/i.test(res.body)) throw new Error("CPI bloqueó la petición (AVISO DE BLOQUEO). Tu IP no fue aceptada.");
+  if (/contrase.a o usuario incorrect|usuario o contrase.a incorrect/i.test(res.body)) throw new Error("Usuario o contraseña incorrectos según CPI.");
+  if (!jar.size) throw new Error(`Login sin cookie (GET ${pre.status}, POST ${res.status}). Corré con --debug y revisá cpi-post.html.`);
+  return jarStr(jar);
 }
 
 async function fetchCompletadas(cookie) {
-  const body = new URLSearchParams({ duser: USER, d: "", str3: "", SocaaID: ID, idiomasistema: "Español" });
-  const res = await fetch(`${BASE}ControlFacturacion - Consultas.php`, {
+  const body = new URLSearchParams({ duser: USER, d: "", str3: "", SocaaID: ID, idiomasistema: "Español" }).toString();
+  const res = await request(`${BASE}ControlFacturacion - Consultas.php`, {
     method: "POST",
     headers: {
-      ...HEADERS,
       "content-type": "application/x-www-form-urlencoded",
+      "content-length": Buffer.byteLength(body),
       "x-requested-with": "XMLHttpRequest",
       origin: new URL(BASE).origin,
       referer: `${BASE}Page Main 4.php`,
       cookie,
     },
-    body: body.toString(),
+    body,
   });
-  if (!res.ok) throw new Error(`Consulta falló (HTTP ${res.status})`);
-  return res.text();
+  if (DEBUG) { console.log("POST Consultas.php ->", res.status, `(${res.body.length} chars)`); writeFileSync("cpi-lista.html", res.body, "utf8"); }
+  if (res.status >= 400) throw new Error(`Consulta falló (HTTP ${res.status})`);
+  return res.body;
 }
 
 const MONEDA = { Colones: "CRC", Dolares: "USD", "Dólares": "USD", Euros: "EUR" };
@@ -116,17 +131,11 @@ function parse(html) {
     const cells = (row.match(/<td[\s\S]*?<\/td>/gi) || []).map(strip);
     const key = clave ? clave[1] : [cells[0], cells[6], fecha ? fecha[0] : "", monto ? monto[0] : ""].join("|");
     out.push({
-      cpi_key: key,
-      tipo: cells[0] || "Factura",
-      factura: "",
+      cpi_key: key, tipo: cells[0] || "Factura", factura: "",
       fecha: fecha ? `${fecha[1]}T${fecha[2]}` : null,
-      origen: cells[4] || "",
-      sucursal: cells[5] || "",
-      vendedor: cells[6] || "",
-      cliente: cells[7] || "",
+      origen: cells[4] || "", sucursal: cells[5] || "", vendedor: cells[6] || "", cliente: cells[7] || "",
       moneda: moneda ? (MONEDA[moneda[1]] || moneda[1]) : "CRC",
-      subtotal: monto ? amount(monto[0]) : 0,
-      estado: estado ? estado[1].toUpperCase() : "",
+      subtotal: monto ? amount(monto[0]) : 0, estado: estado ? estado[1].toUpperCase() : "",
     });
   }
   return out;
@@ -137,35 +146,20 @@ async function main() {
   const cookie = await login();
   console.log("Sesión OK. Descargando facturas…");
   const html = await fetchCompletadas(cookie);
-  if (DEBUG) {
-    writeFileSync("cpi-debug.html", html, "utf8");
-    console.log(`HTML guardado en cpi-debug.html (${html.length} chars)`);
-  }
   const rows = parse(html);
   console.log(`Facturas leídas: ${rows.length}`);
-  if (rows.length === 0) {
-    console.log("No se encontraron filas. Corré con --debug y revisá cpi-debug.html.");
-    return;
-  }
+  if (rows.length === 0) { console.log("0 filas. Revisá cpi-lista.html (corré con --debug)."); return; }
   if (!SB_URL || !SB_KEY) throw new Error("Faltan NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SECRET_KEY en .env.local");
   const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
 
-  // Resolver vendedor -> usuario (mapa + auto-match por nombre).
   const { data: mapRows } = await sb.from("cpi_vendor_map").select("cpi_vendor, user_id");
-  const map = new Map();
-  const pending = [];
+  const map = new Map(); const pending = [];
   for (const r of mapRows || []) r.user_id ? map.set(r.cpi_vendor, r.user_id) : pending.push(r.cpi_vendor);
   if (pending.length) {
     const { data: list } = await sb.auth.admin.listUsers({ page: 1, perPage: 1000 });
     const byName = new Map();
-    for (const u of list?.users || []) {
-      const full = u.user_metadata?.full_name || "";
-      if (full) byName.set(norm(full), u.id);
-    }
-    for (const v of pending) {
-      const uid = byName.get(norm(v));
-      if (uid) { map.set(v, uid); await sb.from("cpi_vendor_map").update({ user_id: uid }).eq("cpi_vendor", v); }
-    }
+    for (const u of list?.users || []) { const f = u.user_metadata?.full_name || ""; if (f) byName.set(norm(f), u.id); }
+    for (const v of pending) { const uid = byName.get(norm(v)); if (uid) { map.set(v, uid); await sb.from("cpi_vendor_map").update({ user_id: uid }).eq("cpi_vendor", v); } }
   }
   for (const r of rows) r.user_id = map.get(r.vendedor) || null;
 
@@ -175,4 +169,4 @@ async function main() {
   console.log(`Listo. ${rows.length} facturas guardadas (${matched} ligadas a un usuario).`);
 }
 
-main().catch((e) => { console.error("ERROR:", e.message); process.exit(1); });
+main().catch((e) => { console.error("ERROR:", e.message); process.exitCode = 1; });
