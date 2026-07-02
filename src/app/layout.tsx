@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
   appleWebApp: {
     capable: true,
-    title: "ICB Marcaje",
+    title: "Portal ICB",
     statusBarStyle: "black-translucent",
   },
   icons: {

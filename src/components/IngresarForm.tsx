@@ -30,8 +30,8 @@ export function IngresarForm() {
         );
         return;
       }
-      // Redirección según rol: admin -> panel, colaborador -> marcaje.
-      const dest = getUserRole(data.user) === "admin" ? "/admin" : "/marcar";
+      // Redirección según rol: admin -> panel, colaborador -> su portal.
+      const dest = getUserRole(data.user) === "admin" ? "/admin" : "/portal";
       router.replace(dest);
       router.refresh();
     } catch (e) {

@@ -1,14 +1,14 @@
 import type { MetadataRoute } from "next";
 
 // Web App Manifest: permite "instalar" la página como app en el celular.
-// start_url = /marcar para que el ícono abra directo el marcaje del colaborador.
+// start_url = /portal para que el ícono abra directo el portal del colaborador.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "ICB Marcaje",
-    short_name: "ICB Marcaje",
+    name: "Portal ICB",
+    short_name: "Portal ICB",
     description:
-      "Marcaje de horario para colaboradores de ICB Technologies.",
-    start_url: "/marcar",
+      "Portal del colaborador de ICB Technologies: marcaje, ventas y más.",
+    start_url: "/portal",
     scope: "/",
     display: "standalone",
     background_color: "#0f1840",

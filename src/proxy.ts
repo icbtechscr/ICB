@@ -31,23 +31,19 @@ export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isLogin = path === "/admin/login";
   const isApi = path.startsWith("/api/admin");
-  const isMarcar = path.startsWith("/marcar");
-  const isVendor = path.startsWith("/vendedor");
+  // Portal del colaborador (incluye rutas legadas /marcar y /vendedor,
+  // que redirigen dentro del portal).
+  const isPortal =
+    path.startsWith("/portal") ||
+    path.startsWith("/marcar") ||
+    path.startsWith("/vendedor");
+  const isPortalVender =
+    path.startsWith("/portal/vender") || path.startsWith("/vendedor");
   const isVendorApi = path.startsWith("/api/vendor");
   const role = user ? getUserRole(user) : null;
 
-  // Marcaje de horario: solo requiere sesión (admins o colaboradores).
-  if (isMarcar) {
-    if (!user) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/ingresar";
-      return NextResponse.redirect(url);
-    }
-    return response;
-  }
-
-  // Panel de vendedor: requiere sesión y permiso de venta.
-  if (isVendor || isVendorApi) {
+  // Portal del colaborador: requiere sesión; vender requiere permiso de venta.
+  if (isPortal || isVendorApi) {
     if (!user) {
       if (isVendorApi) {
         return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -56,12 +52,12 @@ export async function proxy(request: NextRequest) {
       url.pathname = "/ingresar";
       return NextResponse.redirect(url);
     }
-    if (!canSell(role!)) {
+    if ((isPortalVender || isVendorApi) && !canSell(role!)) {
       if (isVendorApi) {
         return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
       }
       const url = request.nextUrl.clone();
-      url.pathname = "/marcar";
+      url.pathname = "/portal";
       return NextResponse.redirect(url);
     }
     return response;
@@ -77,20 +73,20 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Colaborador autenticado intentando entrar al panel → a marcar hora.
+  // Colaborador autenticado intentando entrar al panel → a su portal.
   if (user && role === "colaborador" && !isLogin) {
     if (isApi) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
     const url = request.nextUrl.clone();
-    url.pathname = "/marcar";
+    url.pathname = "/portal";
     return NextResponse.redirect(url);
   }
 
   // Ya logueado y entrando al login → mandar a su destino según rol.
   if (user && isLogin) {
     const url = request.nextUrl.clone();
-    url.pathname = role === "colaborador" ? "/marcar" : "/admin";
+    url.pathname = role === "colaborador" ? "/portal" : "/admin";
     return NextResponse.redirect(url);
   }
 
@@ -101,6 +97,7 @@ export const config = {
   matcher: [
     "/admin/:path*",
     "/api/admin/:path*",
+    "/portal/:path*",
     "/marcar/:path*",
     "/vendedor/:path*",
     "/api/vendor/:path*",

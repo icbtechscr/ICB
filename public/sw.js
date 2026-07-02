@@ -1,4 +1,4 @@
-/* Service Worker de ICB Marcaje — maneja las notificaciones push. */
+/* Service Worker del Portal ICB — maneja las notificaciones push. */
 
 self.addEventListener("push", (event) => {
   let data = {};
@@ -7,12 +7,12 @@ self.addEventListener("push", (event) => {
   } catch (e) {
     data = {};
   }
-  const title = data.title || "ICB Marcaje";
+  const title = data.title || "Portal ICB";
   const options = {
     body: data.body || "Recordá marcar tu entrada.",
     icon: "/icon-192.png",
     badge: "/icon-192.png",
-    data: { url: data.url || "/marcar" },
+    data: { url: data.url || "/portal/marcar" },
     tag: data.tag || "marcaje-reminder",
     renotify: true,
   };
@@ -21,7 +21,8 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || "/marcar";
+  const url =
+    (event.notification.data && event.notification.data.url) || "/portal/marcar";
   event.waitUntil(
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })

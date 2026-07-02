@@ -8,7 +8,9 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const origin = originFromRequest(req);
   if (!facebookConfigured()) {
-    return NextResponse.redirect(`${origin}/vendedor?error=fb_not_configured`);
+    return NextResponse.redirect(
+      `${origin}/portal/vender?error=fb_not_configured`
+    );
   }
   const redirectUri = `${origin}/api/vendor/facebook/callback`;
   const state = crypto.randomBytes(16).toString("hex");

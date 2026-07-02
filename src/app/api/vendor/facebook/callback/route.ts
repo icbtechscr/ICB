@@ -14,7 +14,8 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const origin = originFromRequest(req);
   const url = new URL(req.url);
-  const back = (e: string) => NextResponse.redirect(`${origin}/vendedor?error=${e}`);
+  const back = (e: string) =>
+    NextResponse.redirect(`${origin}/portal/vender?error=${e}`);
 
   // El usuario canceló o Facebook devolvió error.
   if (url.searchParams.get("error")) return back("fb_cancelled");
@@ -48,13 +49,13 @@ export async function GET(req: NextRequest) {
       fbUserName: fbName,
     });
 
-    const res = NextResponse.redirect(`${origin}/vendedor?connected=1`);
+    const res = NextResponse.redirect(`${origin}/portal/vender?connected=1`);
     res.cookies.delete("fb_oauth_state");
     return res;
   } catch (e) {
     const msg = e instanceof Error ? e.message : "fb_error";
     return NextResponse.redirect(
-      `${origin}/vendedor?error=fb_exception&detail=${encodeURIComponent(msg)}`
+      `${origin}/portal/vender?error=fb_exception&detail=${encodeURIComponent(msg)}`
     );
   }
 }

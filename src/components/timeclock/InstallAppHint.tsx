@@ -64,12 +64,12 @@ export function InstallAppHint() {
         </span>
         <div className="min-w-0">
           <p className="text-sm font-bold text-ink-900">
-            Instalá el marcador en tu teléfono
+            Instalá el portal en tu teléfono
           </p>
           {deferred ? (
             <>
               <p className="mt-0.5 text-xs text-ink-600">
-                Agregá un acceso directo para marcar más rápido.
+                Agregá un acceso directo para entrar más rápido.
               </p>
               <button
                 onClick={install}
@@ -85,7 +85,7 @@ export function InstallAppHint() {
               <Share className="inline size-3.5 -translate-y-0.5 text-brand-600" />{" "}
               <span className="font-semibold">Compartir</span> y luego{" "}
               <span className="font-semibold">“Agregar a inicio”</span>. Quedará
-              un ícono que abre el marcador directo.
+              un ícono que abre el portal directo.
             </p>
           )}
         </div>

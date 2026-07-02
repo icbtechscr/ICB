@@ -356,7 +356,7 @@ function ConnectionCard({
     setBusy(true);
     try {
       await fetch("/api/vendor/facebook/disconnect", { method: "POST" });
-      window.location.href = "/vendedor";
+      window.location.href = "/portal/vender";
     } finally {
       setBusy(false);
     }

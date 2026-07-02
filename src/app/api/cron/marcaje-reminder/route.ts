@@ -58,9 +58,9 @@ export async function GET(req: Request) {
       const result = await sendPush(
         { endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth },
         {
-          title: "ICB Marcaje",
+          title: "Portal ICB",
           body: "Aún no has marcado tu entrada de hoy. Tocá para marcar.",
-          url: "/marcar",
+          url: "/portal/marcar",
           tag: "marcaje-reminder",
         }
       );

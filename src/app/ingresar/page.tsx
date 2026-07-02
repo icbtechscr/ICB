@@ -12,7 +12,7 @@ export const metadata = {
 export default async function IngresarPage() {
   const user = await getCurrentUser();
   if (user) {
-    redirect(getUserRole(user) === "admin" ? "/admin" : "/marcar");
+    redirect(getUserRole(user) === "admin" ? "/admin" : "/portal");
   }
   return (
     <div className="flex min-h-[70vh] items-center justify-center bg-white px-4 py-16">
