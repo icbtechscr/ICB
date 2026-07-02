@@ -1,18 +1,14 @@
 // Cliente de scraping de CPI (appcontadorcpi.com). SOLO servidor.
 //
-// Contrato descubierto (2026-07) inspeccionando la app "Facturacion FE":
-//   - Login: POST "Page Main 4.php" con el formulario #formregistro:
-//       Usuphp (usuario), Passphp (clave), SocaaID (id de empresa, "20" para ICB)
-//     -> responde 200 y setea la cookie de sesion PHP.
-//   - Lista de facturas COMPLETADAS: POST "ControlFacturacion - Consultas.php"
-//       params: duser, d, str3, SocaaID, idiomasistema
-//     -> devuelve el HTML de la tabla. Cada <tr> de datos trae (por celda):
-//       tipo, [recibo], CLAVE(input 50 digitos), fecha, origen(+cod),
-//       sucursal(+cod), vendedor(+cod), referencia, -, medio pago, [idcliente],
-//       moneda, subtotal(¢/$), -, estado(ACEPTADA/RECHAZADA)
-//
-// NOTA: los valores exactos de `d` y `str3` (filtros/paginacion) se afinan en la
-// primera corrida real (ver sync con ?debug=1, que guarda el HTML crudo).
+// Contrato (2026-07) inspeccionando "Facturacion FE":
+//   - PHP crea la sesion (PHPSESSID) en el primer GET; el POST del formulario
+//     de login la autentica.
+//   - Login: POST "Page Main 4.php" con Usuphp, Passphp, SocaaID.
+//   - Lista COMPLETADAS: POST "ControlFacturacion - Consultas.php"
+//       params: duser, d, str3, SocaaID, idiomasistema  -> HTML de la tabla.
+//   - Fila (15 celdas): tipo, [recibo], CLAVE(50 dig), fecha, origen(+cod),
+//     sucursal(+cod), vendedor(+cod), referencia, -, medio pago, [idcliente],
+//     moneda, subtotal(¢/$), -, estado(ACEPTADA/RECHAZADA).
 
 const BASE = (process.env.CPI_BASE_URL || "https://www.appcontadorcpi.com/gm/").replace(
   /\/*$/,
@@ -22,15 +18,24 @@ const USER = process.env.CPI_USER || "";
 const PASS = process.env.CPI_PASS || "";
 const ID = process.env.CPI_ID || "20";
 
+// Headers de navegador: sin esto el servidor responde 403 a peticiones "bot".
+const BROWSER_HEADERS: Record<string, string> = {
+  "user-agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+  accept:
+    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+  "accept-language": "es-CR,es;q=0.9,en;q=0.8",
+};
+
 export function cpiConfigured(): boolean {
   return Boolean(USER && PASS && ID);
 }
 
 export type CpiInvoice = {
-  clave: string; // clave numerica (unica) — o "" si no se pudo leer
+  clave: string;
   tipo: string;
   factura: string;
-  fechaIso: string | null; // ISO local CR
+  fechaIso: string | null;
   origen: string;
   sucursal: string;
   vendedor: string;
@@ -61,23 +66,26 @@ function mergeCookies(...groups: string[][]): string {
   return [...jar].map(([k, v]) => `${k}=${v}`).join("; ");
 }
 
-// --- Login: PHP crea la sesion en el primer GET; el POST del formulario la
-// autentica. Devolvemos el header Cookie para reusar en las llamadas siguientes.
+// --- Login: GET para la cookie de sesion, luego POST del formulario ---
 async function cpiLogin(): Promise<string> {
   if (!cpiConfigured()) {
     throw new Error("CPI sin configurar (CPI_USER/CPI_PASS/CPI_ID)");
   }
-  // 1. Preflight GET: obtiene la cookie de sesion (PHPSESSID).
-  const pre = await fetch(`${BASE}Enter.php`, { method: "GET" });
+  const pre = await fetch(`${BASE}Enter.php`, {
+    method: "GET",
+    headers: { ...BROWSER_HEADERS, referer: BASE },
+  });
   const c1 = readSetCookies(pre);
   const jar1 = mergeCookies(c1);
 
-  // 2. POST del formulario de login sobre esa misma sesion.
   const body = new URLSearchParams({ Usuphp: USER, Passphp: PASS, SocaaID: ID });
   const res = await fetch(`${BASE}Page Main 4.php`, {
     method: "POST",
     headers: {
+      ...BROWSER_HEADERS,
       "content-type": "application/x-www-form-urlencoded",
+      origin: new URL(BASE).origin,
+      referer: `${BASE}Enter.php`,
       ...(jar1 ? { cookie: jar1 } : {}),
     },
     body: body.toString(),
@@ -86,8 +94,15 @@ async function cpiLogin(): Promise<string> {
   const c2 = readSetCookies(res);
   const cookie = mergeCookies(c1, c2);
   if (!cookie) {
+    let hint = "";
+    try {
+      const t = (await pre.text()).replace(/\s+/g, " ").slice(0, 160);
+      hint = ` — ${t}`;
+    } catch {
+      /* ignore */
+    }
     throw new Error(
-      `CPI: login sin cookie de sesion (GET ${pre.status}, POST ${res.status})`
+      `CPI: login sin cookie de sesion (GET ${pre.status}, POST ${res.status})${hint}`
     );
   }
   return cookie;
@@ -106,11 +121,19 @@ export async function cpiFetchCompletadasHtml(cookie?: string): Promise<string> 
   const res = await fetch(`${BASE}ControlFacturacion - Consultas.php`, {
     method: "POST",
     headers: {
+      ...BROWSER_HEADERS,
       "content-type": "application/x-www-form-urlencoded",
+      "x-requested-with": "XMLHttpRequest",
+      origin: new URL(BASE).origin,
+      referer: `${BASE}Page Main 4.php`,
       cookie: jar,
     },
     body: body.toString(),
   });
+  if (!res.ok) {
+    const t = (await res.text()).replace(/\s+/g, " ").slice(0, 160);
+    throw new Error(`CPI: consulta fallo (HTTP ${res.status}) — ${t}`);
+  }
   return res.text();
 }
 
@@ -139,7 +162,6 @@ function parseAmount(s: string): number {
 
 export function parseCompletadas(html: string): CpiInvoice[] {
   const out: CpiInvoice[] = [];
-  // Cada factura es un <tr> ... </tr> que contiene fecha + moneda + estado.
   const rowRe = /<tr[\s\S]*?<\/tr>/gi;
   const rows = html.match(rowRe) || [];
   for (const row of rows) {
@@ -150,24 +172,19 @@ export function parseCompletadas(html: string): CpiInvoice[] {
     const moneda = row.match(/\b(Colones|Dolares|Dólares|Euros)\b/);
     const monto = row.match(/[¢$₡]\s?[\d][\d.,]*/);
     const estado = row.match(/\b(ACEPTADA|RECHAZADA|PROCESANDO|PENDIENTE)\b/i);
-    const clave = row.match(/\b(\d{40,60})\b/); // clave numerica de Hacienda
+    const clave = row.match(/\b(\d{40,60})\b/);
 
-    // Celdas por texto, para ubicar tipo/origen/sucursal/vendedor.
     const cells = (row.match(/<td[\s\S]*?<\/td>/gi) || []).map(stripTags);
-    // input values (clave, codigos) por si el texto no basta
     const inputVals = (row.match(/value="([^"]*)"/gi) || []).map((m) =>
       m.replace(/^value="/i, "").replace(/"$/, "")
     );
 
     const tipo = cells[0] || "Factura";
-    // vendedor: la celda cuyo valor de input es el codigo de vendedor suele ser
-    // la 6a (index 6); tomamos el texto de esa celda si existe.
     const vendedor = cells[6] || "";
     const origen = cells[4] || "";
     const sucursal = cells[5] || "";
     const cliente = cells[7] || "";
     const vendedorCod = inputVals[5] || inputVals[4] || "";
-
     const monedaKey = moneda ? MONEDA_MAP[moneda[1]] || moneda[1] : "CRC";
 
     out.push({
@@ -188,7 +205,6 @@ export function parseCompletadas(html: string): CpiInvoice[] {
   return out;
 }
 
-// Trae y parsea en un solo paso (para el sync).
 export async function cpiGetCompletadas(): Promise<CpiInvoice[]> {
   const html = await cpiFetchCompletadasHtml();
   return parseCompletadas(html);
