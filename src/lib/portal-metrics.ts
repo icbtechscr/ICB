@@ -1,39 +1,54 @@
-// Métricas del colaborador (ventas, puntualidad, etc.) para el portal.
-//
-// TODO: conectar con las fuentes reales:
-//   - Ventas: pedidos/ventas atribuidas al colaborador.
-//   - Puntualidad/asistencia: calcular desde el marcaje (src/lib/timeclock-*).
-//   - Publicaciones: desde el panel de vendedor (src/lib/vendor).
-// Por ahora devolvemos valores nulos ("—" en la interfaz) hasta definir el
-// modelo de datos. Toda la lógica vive aquí para wire-up en un solo lugar.
+// Metricas del colaborador para el portal. Las ventas salen de CPI (tabla
+// cpi_sales, sincronizada). Puntualidad/asistencia quedan pendientes (TODO:
+// calcular desde el marcaje) y por ahora se muestran como "—".
+import { getMonthlySalesForUser } from "@/lib/cpi-sales";
 
 export type PortalMetrics = {
-  /** Cantidad de ventas del mes en curso. */
   salesCount: number | null;
-  /** Monto vendido en el mes (CRC). */
   salesAmountCRC: number | null;
-  /** Puntualidad del mes (0–100). */
+  salesAmountUSD: number | null;
   punctualityPct: number | null;
-  /** Asistencia del mes (0–100). */
   attendancePct: number | null;
-  /** Publicaciones hechas en el mes. */
   publications: number | null;
 };
 
 export const EMPTY_METRICS: PortalMetrics = {
   salesCount: null,
   salesAmountCRC: null,
+  salesAmountUSD: null,
   punctualityPct: null,
   attendancePct: null,
   publications: null,
 };
 
-/** Resumen de métricas del mes para un colaborador. Placeholder por ahora. */
-export async function getMyMonthlyMetrics(
-  _userId: string
-): Promise<PortalMetrics> {
-  // TODO: reemplazar con consultas reales.
-  return { ...EMPTY_METRICS };
+/** Año y mes (1-12) actuales en hora de Costa Rica. */
+export function crYearMonth(now: Date = new Date()): { year: number; month1: number } {
+  const s = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Costa_Rica",
+    year: "numeric",
+    month: "2-digit",
+  }).format(now); // YYYY-MM
+  const [y, m] = s.split("-").map(Number);
+  return { year: y, month1: m };
+}
+
+/** Resumen de metricas del mes en curso para un colaborador. */
+export async function getMyMonthlyMetrics(userId: string): Promise<PortalMetrics> {
+  try {
+    const { year, month1 } = crYearMonth();
+    const sales = await getMonthlySalesForUser(userId, year, month1);
+    return {
+      salesCount: sales.count,
+      salesAmountCRC: sales.amountCRC,
+      salesAmountUSD: sales.amountUSD,
+      punctualityPct: null,
+      attendancePct: null,
+      publications: null,
+    };
+  } catch {
+    // Sin CPI configurado / tablas aun no creadas: mostramos vacio.
+    return { ...EMPTY_METRICS };
+  }
 }
 
 /** Etiqueta del mes en curso, p. ej. "julio 2026". */

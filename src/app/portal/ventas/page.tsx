@@ -1,9 +1,16 @@
 import { redirect } from "next/navigation";
-import { ShoppingBag, Wallet, Receipt, TrendingUp } from "lucide-react";
+import { ShoppingBag, Wallet, DollarSign, TrendingUp } from "lucide-react";
 import { getCurrentUser } from "@/lib/supabase-server";
-import { getMyMonthlyMetrics, currentMonthLabel } from "@/lib/portal-metrics";
+import { getUserRole, isAdminLike } from "@/lib/roles";
+import {
+  getMyMonthlyMetrics,
+  currentMonthLabel,
+  crYearMonth,
+} from "@/lib/portal-metrics";
+import { listSalesForUser, type SaleRow } from "@/lib/cpi-sales";
 import { formatCRC } from "@/lib/utils";
 import { MetricCard } from "@/components/portal/MetricCard";
+import { SyncSalesButton } from "@/components/portal/SyncSalesButton";
 
 export const dynamic = "force-dynamic";
 
@@ -11,68 +18,125 @@ export const metadata = {
   title: "Ventas",
 };
 
+function fmtUSD(n: number): string {
+  return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function fmtFecha(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso.slice(0, 16).replace("T", " ");
+  return new Intl.DateTimeFormat("es-CR", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Costa_Rica",
+  }).format(d);
+}
+
 export default async function VentasPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/ingresar");
 
+  const canSync = isAdminLike(getUserRole(user));
   const m = await getMyMonthlyMetrics(user.id);
-  const avg =
-    m.salesAmountCRC != null && m.salesCount
-      ? Math.round(m.salesAmountCRC / m.salesCount)
-      : null;
+  const { year, month1 } = crYearMonth();
+  let sales: SaleRow[] = [];
+  try {
+    sales = await listSalesForUser(user.id, { year, month1, limit: 100 });
+  } catch {
+    sales = [];
+  }
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-5 flex items-baseline justify-between gap-3">
+      <div className="mb-5 flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-ink-900">
             Ventas
           </h1>
           <p className="mt-1 text-sm text-ink-600">
-            Tus ventas y el monto vendido del mes.
+            Tus facturas y el monto vendido de{" "}
+            <span className="capitalize">{currentMonthLabel()}</span>.
           </p>
         </div>
-        <span className="shrink-0 text-xs capitalize text-ink-500">
-          {currentMonthLabel()}
-        </span>
+        {canSync && <SyncSalesButton />}
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <MetricCard
-          label="Ventas del mes"
+          label="Facturas del mes"
           value={m.salesCount == null ? "—" : String(m.salesCount)}
           Icon={ShoppingBag}
           accent="brand"
         />
         <MetricCard
-          label="Monto vendido"
+          label="Vendido (colones)"
           value={m.salesAmountCRC == null ? "—" : formatCRC(m.salesAmountCRC)}
           Icon={Wallet}
           accent="accent"
         />
         <MetricCard
-          label="Ticket promedio"
-          value={avg == null ? "—" : formatCRC(avg)}
-          Icon={Receipt}
+          label="Vendido (dólares)"
+          value={
+            m.salesAmountUSD == null || m.salesAmountUSD === 0
+              ? "$0.00"
+              : fmtUSD(m.salesAmountUSD)
+          }
+          Icon={DollarSign}
           accent="brand"
         />
       </div>
 
-      {/* Detalle (placeholder hasta conectar datos reales) */}
-      <section className="mt-6 rounded-2xl border border-ink-200 bg-white p-8 text-center shadow-soft">
-        <span className="mx-auto inline-flex size-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
-          <TrendingUp className="size-7" />
-        </span>
-        <h2 className="mt-4 text-lg font-black tracking-tight text-ink-900">
-          Detalle de ventas
+      {/* Detalle de facturas */}
+      <section className="mt-6 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft">
+        <h2 className="border-b border-ink-100 px-5 py-3.5 text-sm font-bold text-ink-900">
+          Detalle de facturas
         </h2>
-        <p className="mx-auto mt-1.5 max-w-sm text-sm text-ink-600">
-          Aquí verás cada venta, la fecha y el monto. Vamos a conectar esta
-          sección con tus datos reales de ventas.
-        </p>
-        <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-warn/15 px-4 py-1.5 text-xs font-bold text-amber-700">
-          En construcción
-        </p>
+        {sales.length === 0 ? (
+          <div className="px-6 py-10 text-center">
+            <span className="mx-auto inline-flex size-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+              <TrendingUp className="size-6" />
+            </span>
+            <p className="mx-auto mt-3 max-w-sm text-sm text-ink-600">
+              Todavía no hay facturas para este mes. En cuanto se sincronice CPI
+              aparecerán aquí.
+            </p>
+          </div>
+        ) : (
+          <ul className="divide-y divide-ink-100">
+            {sales.map((s) => (
+              <li
+                key={s.cpi_key}
+                className="flex items-center gap-3 px-5 py-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-ink-900">
+                    {s.cliente || s.tipo}
+                  </p>
+                  <p className="text-xs text-ink-500">
+                    {fmtFecha(s.fecha)} · {s.origen || s.sucursal}
+                  </p>
+                </div>
+                <span
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                    s.estado === "ACEPTADA"
+                      ? "bg-accent-50 text-accent-700"
+                      : "bg-red-50 text-red-600"
+                  }`}
+                >
+                  {s.estado || "—"}
+                </span>
+                <span className="w-28 shrink-0 text-right text-sm font-black text-ink-900">
+                  {s.moneda === "USD"
+                    ? fmtUSD(Number(s.subtotal))
+                    : formatCRC(Number(s.subtotal))}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );

@@ -132,6 +132,14 @@ export default async function PerfilPage() {
                 ? "—"
                 : formatCRC(metrics.salesAmountCRC)
             }
+            sublabel={
+              metrics.salesAmountUSD
+                ? `+ $${metrics.salesAmountUSD.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })} USD`
+                : undefined
+            }
             Icon={Wallet}
             accent="accent"
           />
@@ -143,7 +151,8 @@ export default async function PerfilPage() {
           />
         </div>
         <p className="mt-2 text-[11px] text-ink-400">
-          Estas métricas se conectarán con tus datos reales próximamente.
+          Ventas tomadas de CPI. La puntualidad se conectará con tu marcaje
+          próximamente.
         </p>
       </div>
 
