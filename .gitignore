@@ -47,3 +47,4 @@ next-env.d.ts
 # Debug del scraper CPI
 scripts/cpi-*.html
 cpi-*.html
+scripts/sync-cpi.log
