@@ -27,6 +27,7 @@ type Row = {
   origen: string | null;
   sucursal: string | null;
   vendedor: string | null;
+  cliente: string | null;
   moneda: string | null;
   subtotal: number | null;
   estado: string | null;
@@ -78,7 +79,7 @@ export async function getSalesAnalytics(
     const { from, to } = monthRange(year, month1);
     const { data } = await sb
       .from("cpi_sales")
-      .select("fecha, origen, sucursal, vendedor, moneda, subtotal, estado, tipo")
+      .select("fecha, origen, sucursal, vendedor, cliente, moneda, subtotal, estado, tipo")
       .gte("fecha", from)
       .lt("fecha", to)
       .limit(20000);
@@ -199,7 +200,7 @@ export async function getUserSalesAnalytics(
     const { from, to } = monthRange(year, month1);
     const { data } = await sb
       .from("cpi_sales")
-      .select("fecha, origen, sucursal, vendedor, moneda, subtotal, estado, tipo, user_id")
+      .select("fecha, origen, sucursal, vendedor, cliente, moneda, subtotal, estado, tipo, user_id")
       .gte("fecha", from)
       .lt("fecha", to)
       .limit(50000);
