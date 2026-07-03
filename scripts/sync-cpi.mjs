@@ -205,14 +205,11 @@ function parse(html) {
     });
   }
   return out;
-}async function main() {
-  console.log("Ingresando a CPI…");
-  const cookie = await login();
-  console.log("Sesión OK. Descargando facturas…");
-  const html = await fetchCompletadas(cookie);
-  const rows = parse(html);
-  console.log(`Facturas leídas: ${rows.length}`);
-  if (rows.length === 0) { console.log("0 filas. Revisá cpi-lista.html (corré con --debug)."); return; }
+}
+
+// Guarda filas en Supabase con el mapeo vendedor->usuario.
+async function saveRows(rows) {
+  if (rows.length === 0) { console.log("Sin filas para guardar."); return; }
   if (!SB_URL || !SB_KEY) throw new Error("Faltan NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SECRET_KEY en .env.local");
   const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
 
@@ -231,6 +228,34 @@ function parse(html) {
   if (error) throw new Error("Supabase: " + error.message);
   const matched = rows.filter((r) => r.user_id).length;
   console.log(`Listo. ${rows.length} facturas guardadas (${matched} ligadas a un usuario).`);
+}
+
+// Ruta del archivo a importar si se paso --import (o --import=RUTA).
+function importPath() {
+  const i = process.argv.findIndex((a) => a === "--import" || a.startsWith("--import="));
+  if (i < 0) return null;
+  const a = process.argv[i];
+  if (a.includes("=")) return a.split("=").slice(1).join("=");
+  return process.argv[i + 1] || null;
+}
+
+async function main() {
+  const imp = importPath();
+  if (imp) {
+    console.log("Importando desde:", imp);
+    const rows = JSON.parse(readFileSync(imp, "utf8"));
+    console.log(`Filas en el archivo: ${rows.length}`);
+    await saveRows(rows);
+    return;
+  }
+  console.log("Ingresando a CPI\u2026");
+  const cookie = await login();
+  console.log("Sesion OK. Descargando facturas\u2026");
+  const html = await fetchCompletadas(cookie);
+  const rows = parse(html);
+  console.log(`Facturas leidas: ${rows.length}`);
+  if (rows.length === 0) { console.log("0 filas. Revisa cpi-lista.html (corre con --debug)."); return; }
+  await saveRows(rows);
 }
 
 main().catch((e) => { console.error("ERROR:", e.message); process.exitCode = 1; });
