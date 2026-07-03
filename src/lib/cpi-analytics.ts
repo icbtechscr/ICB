@@ -16,7 +16,9 @@ export type SalesAnalytics = {
   porVendedor: Bucket[]; // ranking desc por crc
   porPuntoVenta: Bucket[];
   porTipo: Bucket[];
+  porCliente: Bucket[];
   porDia: { day: string; crc: number; usd: number; count: number }[];
+  prevMonthCRC: number;
   hasData: boolean;
 };
 
@@ -66,8 +68,8 @@ export async function getSalesAnalytics(
   const empty: SalesAnalytics = {
     totalCRC: 0, totalUSD: 0, count: 0, aceptadas: 0, rechazadas: 0,
     ticketPromedioCRC: 0, vendedores: 0, sucursales: 0,
-    porSucursal: [], porVendedor: [], porPuntoVenta: [], porTipo: [],
-    porDia: [], hasData: false,
+    porSucursal: [], porVendedor: [], porPuntoVenta: [], porTipo: [], porCliente: [],
+    porDia: [], prevMonthCRC: 0, hasData: false,
   };
 
   let rows: Row[] = [];
@@ -92,6 +94,7 @@ export async function getSalesAnalytics(
   const ven = new Map<string, Bucket>();
   const pv = new Map<string, Bucket>();
   const tipo = new Map<string, Bucket>();
+  const cli = new Map<string, Bucket>();
   const dia = new Map<string, { day: string; crc: number; usd: number; count: number }>();
 
   let totalCRC = 0, totalUSD = 0, aceptadas = 0, rechazadas = 0;
@@ -112,6 +115,7 @@ export async function getSalesAnalytics(
     if (!ignored.has(r.vendedor || "—")) bump(ven, r.vendedor || "—", crc, usd);
     bump(pv, r.sucursal || "—", crc, usd);
     bump(tipo, r.tipo || "Factura", crc, usd);
+    if (r.cliente) bump(cli, r.cliente, crc, usd);
 
     const dkey = (r.fecha || "").slice(0, 10);
     if (dkey) {
@@ -128,6 +132,18 @@ export async function getSalesAnalytics(
     porDia.push(dia.get(key) ?? { day: key, crc: 0, usd: 0, count: 0 });
   }
 
+  // Total del mes anterior (para el crecimiento).
+  let prevMonthCRC = 0;
+  try {
+    const sb = createAdminClient();
+    const pm = month1 === 1 ? { y: year - 1, m: 12 } : { y: year, m: month1 - 1 };
+    const pr = monthRange(pm.y, pm.m);
+    const { data } = await sb.from("cpi_sales").select("moneda, subtotal").gte("fecha", pr.from).lt("fecha", pr.to).limit(50000);
+    for (const r of (data ?? []) as { moneda: string; subtotal: number }[]) {
+      if (r.moneda !== "USD") prevMonthCRC += Number(r.subtotal) || 0;
+    }
+  } catch { /* ignore */ }
+
   return {
     totalCRC, totalUSD, count: rows.length, aceptadas, rechazadas,
     ticketPromedioCRC: crcCount ? Math.round(totalCRC / crcCount) : 0,
@@ -137,7 +153,9 @@ export async function getSalesAnalytics(
     porVendedor: [...ven.values()].sort(bySortCrc),
     porPuntoVenta: [...pv.values()].sort(bySortCrc),
     porTipo: [...tipo.values()].sort((a, b) => b.count - a.count),
+    porCliente: [...cli.values()].sort(bySortCrc).slice(0, 10),
     porDia,
+    prevMonthCRC,
     hasData: true,
   };
 }
@@ -290,4 +308,95 @@ export async function getUserMonthlyEvolution(
     }));
   }
   return points;
+}
+
+// --- Desempeño por vendedor (panel admin) ---
+
+export type VendorPerf = {
+  vendedor: string;
+  count: number;
+  crc: number;
+  usd: number;
+  aceptadas: number;
+  rechazadas: number;
+  ticketCRC: number;
+  valor: number; // crc + usd*USD_RATE (para ordenar)
+  sharePct: number;
+  rank: number;
+};
+
+export type VendorPerformance = {
+  vendors: VendorPerf[];
+  totalCRC: number;
+  totalUSD: number;
+  count: number;
+  companyValor: number;
+  leaderValor: number;
+  hasData: boolean;
+};
+
+export async function getVendorPerformance(
+  year: number,
+  month1: number
+): Promise<VendorPerformance> {
+  const empty: VendorPerformance = {
+    vendors: [], totalCRC: 0, totalUSD: 0, count: 0,
+    companyValor: 0, leaderValor: 0, hasData: false,
+  };
+  let rows: Row[] = [];
+  try {
+    const sb = createAdminClient();
+    const { from, to } = monthRange(year, month1);
+    const { data } = await sb
+      .from("cpi_sales")
+      .select("vendedor, moneda, subtotal, estado")
+      .gte("fecha", from)
+      .lt("fecha", to)
+      .limit(50000);
+    rows = (data ?? []) as Row[];
+  } catch {
+    return empty;
+  }
+  if (rows.length === 0) return empty;
+
+  const ignored = await fetchIgnored();
+  type Agg = { crc: number; usd: number; count: number; crcCount: number; aceptadas: number; rechazadas: number };
+  const map = new Map<string, Agg>();
+  let totalCRC = 0, totalUSD = 0, counted = 0;
+  for (const r of rows) {
+    const vend = r.vendedor || "—";
+    if (ignored.has(vend)) continue;
+    const v = Number(r.subtotal) || 0;
+    const isUSD = r.moneda === "USD";
+    totalCRC += isUSD ? 0 : v;
+    totalUSD += isUSD ? v : 0;
+    counted += 1;
+    const a = map.get(vend) ?? { crc: 0, usd: 0, count: 0, crcCount: 0, aceptadas: 0, rechazadas: 0 };
+    if (isUSD) a.usd += v; else { a.crc += v; a.crcCount += 1; }
+    a.count += 1;
+    const est = (r.estado || "").toUpperCase();
+    if (est === "ACEPTADA") a.aceptadas += 1;
+    else if (est === "RECHAZADA") a.rechazadas += 1;
+    map.set(vend, a);
+  }
+
+  const list = [...map.entries()].map(([vendedor, a]) => ({
+    vendedor, count: a.count, crc: a.crc, usd: a.usd,
+    aceptadas: a.aceptadas, rechazadas: a.rechazadas,
+    ticketCRC: a.crcCount ? Math.round(a.crc / a.crcCount) : 0,
+    valor: a.crc + a.usd * USD_RATE,
+  }));
+  list.sort((x, y) => y.valor - x.valor);
+  const companyValor = list.reduce((s, v) => s + v.valor, 0);
+  const leaderValor = list[0]?.valor ?? 0;
+  const vendors: VendorPerf[] = list.map((v, i) => ({
+    ...v,
+    rank: i + 1,
+    sharePct: companyValor > 0 ? Math.round((v.valor / companyValor) * 1000) / 10 : 0,
+  }));
+
+  return {
+    vendors, totalCRC, totalUSD, count: counted,
+    companyValor, leaderValor, hasData: vendors.length > 0,
+  };
 }

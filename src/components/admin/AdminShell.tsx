@@ -16,7 +16,7 @@ import {
   Moon,
   Sun,
   Lock,
-  UserCog,
+  TrendingUp,
   type LucideIcon,
 } from "lucide-react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
@@ -38,10 +38,10 @@ const GROUPS: Group[] = [
     label: "Gestionar Tienda",
     Icon: Store,
     href: "/admin/productos",
-    prefixes: ["/admin/productos", "/admin/tienda", "/admin/pedidos"],
+    prefixes: ["/admin/productos", "/admin/pedidos", "/admin/ventas-sucursales"],
     sub: [
-      { href: "/admin/productos", label: "Productos", Icon: Package },
-      { href: "/admin/tienda", label: "Tienda", Icon: Store },
+      { href: "/admin/productos", label: "Inventario", Icon: Package },
+      { href: "/admin/ventas-sucursales", label: "Ventas de sucursal", Icon: Store },
       { href: "/admin/pedidos", label: "Pedidos online", Icon: ShoppingBag },
     ],
   },
@@ -50,18 +50,13 @@ const GROUPS: Group[] = [
     label: "Recursos Humanos",
     Icon: Users,
     href: "/admin/equipo",
-    prefixes: ["/admin/equipo", "/admin/solicitudes", "/admin/ventas-sucursales", "/admin/ventas-vendedores"],
+    prefixes: ["/admin/equipo", "/admin/solicitudes", "/admin/desempeno-vendedores"],
     sub: [
       { href: "/admin/equipo", label: "Colaboradores", Icon: Users },
       {
-        href: "/admin/ventas-sucursales",
-        label: "Ventas en sucursales",
-        Icon: Store,
-      },
-      {
-        href: "/admin/ventas-vendedores",
-        label: "Asignar vendedores",
-        Icon: UserCog,
+        href: "/admin/desempeno-vendedores",
+        label: "Desempeño de vendedores",
+        Icon: TrendingUp,
       },
       {
         href: "/admin/solicitudes",
