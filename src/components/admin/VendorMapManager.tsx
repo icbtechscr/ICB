@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Loader2, Check, UserCheck, UserX } from "lucide-react";
+import { Loader2, Check, UserCheck, UserX, EyeOff, Eye } from "lucide-react";
 import { formatCRC } from "@/lib/utils";
 
-type Vendor = { cpi_vendor: string; user_id: string | null; count: number; crc: number; usd: number };
+type Vendor = { cpi_vendor: string; user_id: string | null; ignored: boolean; count: number; crc: number; usd: number };
 type User = { id: string; name: string; email: string };
 
 export function VendorMapManager() {
@@ -53,6 +53,23 @@ export function VendorMapManager() {
     }
   }
 
+  async function toggleIgnored(cpi_vendor: string, ignored: boolean) {
+    setSavingKey(cpi_vendor);
+    setVendors((vs) => vs.map((v) => (v.cpi_vendor === cpi_vendor ? { ...v, ignored } : v)));
+    try {
+      const res = await fetch("/api/admin/cpi-vendors", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ cpi_vendor, ignored }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo guardar");
+    } finally {
+      setSavingKey(null);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center gap-2 rounded-2xl border border-ink-200 bg-white p-6 text-sm text-ink-500 shadow-soft">
@@ -82,11 +99,12 @@ export function VendorMapManager() {
               <th className="px-3 py-2.5 text-right font-bold">Facturas</th>
               <th className="px-3 py-2.5 text-right font-bold">Monto (₡)</th>
               <th className="px-5 py-2.5 font-bold">Usuario del portal</th>
+              <th className="px-3 py-2.5 text-center font-bold">Ranking</th>
             </tr>
           </thead>
           <tbody>
             {vendors.map((v) => (
-              <tr key={v.cpi_vendor} className="border-b border-ink-50 last:border-0">
+              <tr key={v.cpi_vendor} className={`border-b border-ink-50 last:border-0 ${v.ignored ? "opacity-50" : ""}`}>
                 <td className="px-5 py-2.5">
                   <span className="inline-flex items-center gap-2">
                     {v.user_id ? (
@@ -116,6 +134,21 @@ export function VendorMapManager() {
                     {savingKey === v.cpi_vendor && <Loader2 className="size-4 animate-spin text-ink-400" />}
                     {savedKey === v.cpi_vendor && <Check className="size-4 text-accent-600" />}
                   </div>
+                </td>
+                <td className="px-3 py-2.5 text-center">
+                  <button
+                    type="button"
+                    onClick={() => toggleIgnored(v.cpi_vendor, !v.ignored)}
+                    title={v.ignored ? "Incluir en el ranking" : "Excluir del ranking"}
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold transition ${
+                      v.ignored
+                        ? "bg-red-50 text-red-600 hover:bg-red-100"
+                        : "bg-ink-100 text-ink-500 hover:bg-ink-200"
+                    }`}
+                  >
+                    {v.ignored ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                    {v.ignored ? "Excluido" : "Excluir"}
+                  </button>
                 </td>
               </tr>
             ))}

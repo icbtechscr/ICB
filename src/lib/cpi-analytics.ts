@@ -49,6 +49,16 @@ function bump(map: Map<string, Bucket>, key: string, crc: number, usd: number) {
 
 const bySortCrc = (a: Bucket, b: Bucket) => b.crc - a.crc || b.count - a.count;
 
+async function fetchIgnored(): Promise<Set<string>> {
+  try {
+    const sb = createAdminClient();
+    const { data } = await sb.from("cpi_vendor_map").select("cpi_vendor, ignored").eq("ignored", true);
+    return new Set((data ?? []).map((r: { cpi_vendor: string }) => r.cpi_vendor));
+  } catch {
+    return new Set();
+  }
+}
+
 export async function getSalesAnalytics(
   year: number,
   month1: number
@@ -76,6 +86,7 @@ export async function getSalesAnalytics(
   }
   if (rows.length === 0) return empty;
 
+  const ignored = await fetchIgnored();
   const { days } = monthRange(year, month1);
   const suc = new Map<string, Bucket>();
   const ven = new Map<string, Bucket>();
@@ -98,7 +109,7 @@ export async function getSalesAnalytics(
     else if ((r.estado || "").toUpperCase() === "RECHAZADA") rechazadas += 1;
 
     bump(suc, r.origen || "—", crc, usd);
-    bump(ven, r.vendedor || "—", crc, usd);
+    if (!ignored.has(r.vendedor || "—")) bump(ven, r.vendedor || "—", crc, usd);
     bump(pv, r.sucursal || "—", crc, usd);
     bump(tipo, r.tipo || "Factura", crc, usd);
 
@@ -180,11 +191,13 @@ export async function getUserSalesAnalytics(
   }
   if (rows.length === 0) return empty;
 
+  const ignored = await fetchIgnored();
   const { days } = monthRange(year, month1);
-  // Valor por vendedor (para ranking) — solo filas con user_id.
+  // Valor por vendedor (para ranking) — solo filas con user_id y no excluidas.
   const valorByUser = new Map<string, number>();
   for (const r of rows) {
     if (!r.user_id) continue;
+    if (ignored.has(r.vendedor || "")) continue;
     const v = Number(r.subtotal) || 0;
     const valor = r.moneda === "USD" ? v * USD_RATE : v;
     valorByUser.set(r.user_id, (valorByUser.get(r.user_id) ?? 0) + valor);

@@ -2,6 +2,9 @@
 // cpi_sales, sincronizada). Puntualidad/asistencia quedan pendientes (TODO:
 // calcular desde el marcaje) y por ahora se muestran como "—".
 import { getMonthlySalesForUser } from "@/lib/cpi-sales";
+import { listMyEntriesRange } from "@/lib/timeclock-server";
+import { fmtTimeCR } from "@/lib/timeclock";
+import { getBranchEntryTime, ENTRY_GRACE_MIN } from "@/lib/branches";
 
 export type PortalMetrics = {
   salesCount: number | null;
@@ -32,16 +35,52 @@ export function crYearMonth(now: Date = new Date()): { year: number; month1: num
   return { year: y, month1: m };
 }
 
+function addMinutes(hhmm: string, min: number): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  const t = (h || 0) * 60 + (m || 0) + min;
+  const hh = String(Math.floor(t / 60) % 24).padStart(2, "0");
+  const mm = String(t % 60).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+/** Puntualidad del mes (0-100) segun la hora de entrada de cada sucursal. */
+export async function computeMonthlyPunctuality(
+  userId: string,
+  year: number,
+  month1: number
+): Promise<number | null> {
+  try {
+    const mm = String(month1).padStart(2, "0");
+    const lastDay = new Date(year, month1, 0).getDate();
+    const from = `${year}-${mm}-01`;
+    const to = `${year}-${mm}-${String(lastDay).padStart(2, "0")}`;
+    const entries = await listMyEntriesRange(userId, from, to);
+    const entradas = entries.filter((e) => e.punch_type === "entrada");
+    if (entradas.length === 0) return null;
+    let onTime = 0;
+    for (const e of entradas) {
+      const limite = addMinutes(getBranchEntryTime(e.branch_id), ENTRY_GRACE_MIN);
+      if (fmtTimeCR(e.punched_at) <= limite) onTime += 1;
+    }
+    return Math.round((onTime / entradas.length) * 100);
+  } catch {
+    return null;
+  }
+}
+
 /** Resumen de metricas del mes en curso para un colaborador. */
 export async function getMyMonthlyMetrics(userId: string): Promise<PortalMetrics> {
   try {
     const { year, month1 } = crYearMonth();
-    const sales = await getMonthlySalesForUser(userId, year, month1);
+    const [sales, punctualityPct] = await Promise.all([
+      getMonthlySalesForUser(userId, year, month1),
+      computeMonthlyPunctuality(userId, year, month1),
+    ]);
     return {
       salesCount: sales.count,
       salesAmountCRC: sales.amountCRC,
       salesAmountUSD: sales.amountUSD,
-      punctualityPct: null,
+      punctualityPct,
       attendancePct: null,
       publications: null,
     };

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase-server";
 import { getUserRole, getUserFullName, isAdminLike } from "@/lib/roles";
 import { createAdminClient } from "@/lib/supabase";
-import { listVendorsWithStats, setVendorUser } from "@/lib/cpi-sales";
+import { listVendorsWithStats, setVendorUser, setVendorIgnored } from "@/lib/cpi-sales";
 
 export const dynamic = "force-dynamic";
 
@@ -37,9 +37,17 @@ export async function GET() {
 export async function POST(req: Request) {
   if (!(await guard())) return new NextResponse("No autorizado", { status: 401 });
   try {
-    const body = (await req.json()) as { cpi_vendor?: string; user_id?: string | null };
+    const body = (await req.json()) as {
+      cpi_vendor?: string;
+      user_id?: string | null;
+      ignored?: boolean;
+    };
     if (!body.cpi_vendor) return new NextResponse("Falta cpi_vendor", { status: 400 });
-    await setVendorUser(body.cpi_vendor, body.user_id || null);
+    if (typeof body.ignored === "boolean") {
+      await setVendorIgnored(body.cpi_vendor, body.ignored);
+    } else {
+      await setVendorUser(body.cpi_vendor, body.user_id || null);
+    }
     return NextResponse.json({ ok: true });
   } catch (e) {
     return new NextResponse(e instanceof Error ? e.message : "Error", { status: 500 });

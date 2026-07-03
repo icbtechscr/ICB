@@ -21,7 +21,21 @@ export type Branch = {
   cedi?: boolean;
   /** true para "Trabajo remoto": marca verde desde cualquier lugar. */
   remote?: boolean;
+  /** Hora de entrada esperada (HH:MM, hora CR) para calcular puntualidad.
+   *  Si no se define, se usa DEFAULT_ENTRY_TIME. */
+  entryTime?: string;
 };
+
+/** Hora de entrada por defecto si la sucursal no define una. */
+export const DEFAULT_ENTRY_TIME = "08:00";
+/** Minutos de tolerancia antes de contar como "tarde". */
+export const ENTRY_GRACE_MIN = 10;
+
+/** Hora de entrada esperada (HH:MM) de una sucursal. */
+export function getBranchEntryTime(id: string | null | undefined): string {
+  const b = id ? BRANCHES.find((x) => x.id === id) : undefined;
+  return b?.entryTime || DEFAULT_ENTRY_TIME;
+}
 
 export const BRANCHES: Branch[] = [
   {

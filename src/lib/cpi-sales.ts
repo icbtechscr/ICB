@@ -162,6 +162,7 @@ export async function listSalesForUser(
 export type VendorStat = {
   cpi_vendor: string;
   user_id: string | null;
+  ignored: boolean;
   count: number;
   crc: number;
   usd: number;
@@ -171,14 +172,14 @@ export type VendorStat = {
 export async function listVendorsWithStats(): Promise<VendorStat[]> {
   const sb = createAdminClient();
   const [{ data: mapRows }, { data: sales }] = await Promise.all([
-    sb.from("cpi_vendor_map").select("cpi_vendor, user_id"),
+    sb.from("cpi_vendor_map").select("cpi_vendor, user_id, ignored"),
     sb.from("cpi_sales").select("vendedor, moneda, subtotal").limit(50000),
   ]);
 
   const stats = new Map<string, VendorStat>();
   const ensure = (v: string) => {
     const k = v || "—";
-    if (!stats.has(k)) stats.set(k, { cpi_vendor: k, user_id: null, count: 0, crc: 0, usd: 0 });
+    if (!stats.has(k)) stats.set(k, { cpi_vendor: k, user_id: null, ignored: false, count: 0, crc: 0, usd: 0 });
     return stats.get(k)!;
   };
   for (const r of (mapRows ?? []) as { cpi_vendor: string; user_id: string | null }[]) {
@@ -204,4 +205,12 @@ export async function setVendorUser(
     .from("cpi_vendor_map")
     .upsert({ cpi_vendor: cpiVendor, user_id: userId }, { onConflict: "cpi_vendor" });
   await sb.from("cpi_sales").update({ user_id: userId }).eq("vendedor", cpiVendor);
+}
+
+/** Excluye o incluye a un vendedor del ranking (no afecta el total de la empresa). */
+export async function setVendorIgnored(cpiVendor: string, ignored: boolean): Promise<void> {
+  const sb = createAdminClient();
+  await sb
+    .from("cpi_vendor_map")
+    .upsert({ cpi_vendor: cpiVendor, ignored }, { onConflict: "cpi_vendor" });
 }

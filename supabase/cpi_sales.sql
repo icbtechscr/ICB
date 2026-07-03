@@ -88,3 +88,7 @@ insert into cpi_vendor_map (cpi_vendor) values
   ('USUARIO DE CONSULTAS'),
   ('WILKELM SOLANO PORTILLA')
 on conflict (cpi_vendor) do nothing;
+
+-- Vendedores excluidos del ranking (p.ej. dueños/no comerciales). Sus ventas
+-- siguen contando en el total de la empresa, pero no aparecen como vendedor.
+alter table cpi_vendor_map add column if not exists ignored boolean not null default false;
