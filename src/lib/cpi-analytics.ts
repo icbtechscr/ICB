@@ -130,3 +130,151 @@ export async function getSalesAnalytics(
     hasData: true,
   };
 }
+
+// --- Analitica por vendedor (portal del colaborador) ---
+
+export type UserSalesAnalytics = {
+  count: number;
+  amountCRC: number;
+  amountUSD: number;
+  ticketPromedioCRC: number;
+  aceptadas: number;
+  rechazadas: number;
+  porDia: { day: string; crc: number }[];
+  porSucursal: Bucket[];
+  // Ranking (por "valor" = CRC + USD*520, un proxy para ordenar mezclando moneda)
+  rank: number | null;
+  totalVendedores: number;
+  sharePct: number | null; // % del total de la empresa
+  myValor: number;
+  leaderValor: number;
+  hasData: boolean;
+};
+
+const USD_RATE = 520; // solo para ordenar el ranking mezclando monedas
+
+export async function getUserSalesAnalytics(
+  userId: string,
+  year: number,
+  month1: number
+): Promise<UserSalesAnalytics> {
+  const empty: UserSalesAnalytics = {
+    count: 0, amountCRC: 0, amountUSD: 0, ticketPromedioCRC: 0,
+    aceptadas: 0, rechazadas: 0, porDia: [], porSucursal: [],
+    rank: null, totalVendedores: 0, sharePct: null, myValor: 0, leaderValor: 0,
+    hasData: false,
+  };
+  let rows: (Row & { user_id: string | null })[] = [];
+  try {
+    const sb = createAdminClient();
+    const { from, to } = monthRange(year, month1);
+    const { data } = await sb
+      .from("cpi_sales")
+      .select("fecha, origen, sucursal, vendedor, moneda, subtotal, estado, tipo, user_id")
+      .gte("fecha", from)
+      .lt("fecha", to)
+      .limit(50000);
+    rows = (data ?? []) as (Row & { user_id: string | null })[];
+  } catch {
+    return empty;
+  }
+  if (rows.length === 0) return empty;
+
+  const { days } = monthRange(year, month1);
+  // Valor por vendedor (para ranking) — solo filas con user_id.
+  const valorByUser = new Map<string, number>();
+  for (const r of rows) {
+    if (!r.user_id) continue;
+    const v = Number(r.subtotal) || 0;
+    const valor = r.moneda === "USD" ? v * USD_RATE : v;
+    valorByUser.set(r.user_id, (valorByUser.get(r.user_id) ?? 0) + valor);
+  }
+  const ranking = [...valorByUser.entries()].sort((a, b) => b[1] - a[1]);
+  const totalVendedores = ranking.length;
+  const companyValor = ranking.reduce((s, [, v]) => s + v, 0);
+  const leaderValor = ranking[0]?.[1] ?? 0;
+  const myValor = valorByUser.get(userId) ?? 0;
+  const rankIdx = ranking.findIndex(([id]) => id === userId);
+  const rank = rankIdx >= 0 ? rankIdx + 1 : null;
+
+  // Metricas propias.
+  const mine = rows.filter((r) => r.user_id === userId);
+  let amountCRC = 0, amountUSD = 0, aceptadas = 0, rechazadas = 0, crcCount = 0;
+  const suc = new Map<string, Bucket>();
+  const dia = new Map<string, number>();
+  for (const r of mine) {
+    const v = Number(r.subtotal) || 0;
+    const isUSD = r.moneda === "USD";
+    if (isUSD) amountUSD += v; else { amountCRC += v; crcCount += 1; }
+    const est = (r.estado || "").toUpperCase();
+    if (est === "ACEPTADA") aceptadas += 1;
+    else if (est === "RECHAZADA") rechazadas += 1;
+    bump(suc, r.origen || "—", isUSD ? 0 : v, isUSD ? v : 0);
+    const dk = (r.fecha || "").slice(0, 10);
+    if (dk) dia.set(dk, (dia.get(dk) ?? 0) + (isUSD ? 0 : v));
+  }
+  const porDia: { day: string; crc: number }[] = [];
+  for (let d = 1; d <= days; d++) {
+    const key = `${year}-${String(month1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    porDia.push({ day: key, crc: dia.get(key) ?? 0 });
+  }
+
+  return {
+    count: mine.length, amountCRC, amountUSD,
+    ticketPromedioCRC: crcCount ? Math.round(amountCRC / crcCount) : 0,
+    aceptadas, rechazadas, porDia,
+    porSucursal: [...suc.values()].sort(bySortCrc),
+    rank, totalVendedores,
+    sharePct: companyValor > 0 ? Math.round((myValor / companyValor) * 1000) / 10 : null,
+    myValor, leaderValor,
+    hasData: mine.length > 0,
+  };
+}
+
+export type MonthPoint = { ym: string; label: string; crc: number; count: number };
+
+/** Evolucion de los ultimos N meses (monto CRC) para un vendedor. */
+export async function getUserMonthlyEvolution(
+  userId: string,
+  monthsBack = 6,
+  now: Date = new Date()
+): Promise<MonthPoint[]> {
+  const points: MonthPoint[] = [];
+  const base: { year: number; month1: number }[] = [];
+  for (let i = monthsBack - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    base.push({ year: d.getFullYear(), month1: d.getMonth() + 1 });
+  }
+  try {
+    const sb = createAdminClient();
+    const from = new Date(Date.UTC(base[0].year, base[0].month1 - 1, 1)).toISOString();
+    const { data } = await sb
+      .from("cpi_sales")
+      .select("fecha, moneda, subtotal")
+      .eq("user_id", userId)
+      .gte("fecha", from)
+      .limit(50000);
+    const byMonth = new Map<string, { crc: number; count: number }>();
+    for (const r of (data ?? []) as { fecha: string | null; moneda: string; subtotal: number }[]) {
+      const ym = (r.fecha || "").slice(0, 7);
+      if (!ym) continue;
+      const m = byMonth.get(ym) ?? { crc: 0, count: 0 };
+      if (r.moneda !== "USD") m.crc += Number(r.subtotal) || 0;
+      m.count += 1;
+      byMonth.set(ym, m);
+    }
+    for (const b of base) {
+      const ym = `${b.year}-${String(b.month1).padStart(2, "0")}`;
+      const label = new Intl.DateTimeFormat("es-CR", { month: "short" }).format(new Date(b.year, b.month1 - 1, 1));
+      const m = byMonth.get(ym) ?? { crc: 0, count: 0 };
+      points.push({ ym, label, crc: m.crc, count: m.count });
+    }
+  } catch {
+    return base.map((b) => ({
+      ym: `${b.year}-${String(b.month1).padStart(2, "0")}`,
+      label: new Intl.DateTimeFormat("es-CR", { month: "short" }).format(new Date(b.year, b.month1 - 1, 1)),
+      crc: 0, count: 0,
+    }));
+  }
+  return points;
+}
