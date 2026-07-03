@@ -99,11 +99,27 @@ async function login() {
 }
 
 async function fetchCompletadas(cookie) {
-  const P = { duser: USER, d: "", str3: "", SocaaID: ID, idiomasistema: "Español" };
+  const pad = (n) => String(n).padStart(2, "0");
+  const now = new Date();
+  const desde = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`;
+  const hasta = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const base = { duser: USER, SocaaID: ID, idiomasistema: "Español" };
   const candidatos = [
-    { name: "control",  ep: "ControlFacturacion.php",              params: { duser: USER, SocaaID: ID, idiomasistema: "Español" } },
-    { name: "control2", ep: "ControlFacturacion.php",              params: P },
-    { name: "consultas",ep: "ControlFacturacion - Consultas.php",  params: P },
+    { name: "control",      ep: "ControlFacturacion.php", params: { ...base } },
+    { name: "control_cant", ep: "ControlFacturacion.php", params: { ...base, cantidadderegistrosamostrar: "5000" } },
+    { name: "control_fecha", ep: "ControlFacturacion.php", params: {
+        ...base, cantidadderegistrosamostrar: "5000",
+        activahastafecha: "true",
+        searchporfechafacturacion: desde,
+        searchhastaporfechafacturacion: hasta,
+      } },
+    { name: "consultas",    ep: "ControlFacturacion - Consultas.php", params: {
+        ...base, d: "", str3: "",
+        cantidadderegistrosamostrar: "5000",
+        activahastafecha: "true",
+        searchporfechafacturacion: desde,
+        searchhastaporfechafacturacion: hasta,
+      } },
   ];
   const rowsRe = /\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}/g;
   let best = null;
