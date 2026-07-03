@@ -36,6 +36,8 @@ export function isVacationStatus(v: unknown): v is VacationStatus {
 
 export type EmployeeHrProfile = {
   cedula: string;
+  /** Hora de entrada esperada (HH:MM) para puntualidad. Default 08:30. */
+  entryTime: string;
   hireDate: string | null; // YYYY-MM-DD
   /** Días de vacaciones que acumula por mes (normalmente 1). */
   vacationRate: number;
@@ -54,8 +56,10 @@ export function getEmployeeHrProfile(
   const rate = Number(meta.vacation_rate);
   const adjust = Number(meta.vacation_adjust);
   const hire = typeof meta.hire_date === "string" ? meta.hire_date : "";
+  const et = typeof meta.entry_time === "string" ? meta.entry_time : "";
   return {
     cedula: typeof meta.cedula === "string" ? meta.cedula : "",
+    entryTime: /^\d{2}:\d{2}$/.test(et) ? et : "08:30",
     hireDate: /^\d{4}-\d{2}-\d{2}$/.test(hire) ? hire : null,
     vacationRate: Number.isFinite(rate) && rate >= 0 ? rate : 1,
     vacationAdjust: Number.isFinite(adjust) ? adjust : 0,

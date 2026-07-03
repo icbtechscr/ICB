@@ -4,7 +4,9 @@
 import { getMonthlySalesForUser } from "@/lib/cpi-sales";
 import { listMyEntriesRange } from "@/lib/timeclock-server";
 import { fmtTimeCR } from "@/lib/timeclock";
-import { getBranchEntryTime, ENTRY_GRACE_MIN } from "@/lib/branches";
+import { ENTRY_GRACE_MIN } from "@/lib/branches";
+import { createAdminClient } from "@/lib/supabase";
+import { getEmployeeHrProfile } from "@/lib/vacations";
 
 export type PortalMetrics = {
   salesCount: number | null;
@@ -54,20 +56,26 @@ export async function computeMonthlyPunctuality(
     const lastDay = new Date(year, month1, 0).getDate();
     const from = `${year}-${mm}-01`;
     const to = `${year}-${mm}-${String(lastDay).padStart(2, "0")}`;
-    const entries = await listMyEntriesRange(userId, from, to);
-    const entradas = entries.filter((e) => e.punch_type === "entrada");
+    const [entries, userRes] = await Promise.all([
+      listMyEntriesRange(userId, from, to),
+      createAdminClient().auth.admin.getUserById(userId),
+    ]);
+    const entryTime = getEmployeeHrProfile(userRes.data?.user).entryTime;
+    const limite = addMinutes(entryTime, ENTRY_GRACE_MIN);
+    const wd = (iso: string) =>
+      new Intl.DateTimeFormat("en-US", { timeZone: "America/Costa_Rica", weekday: "short" }).format(new Date(iso));
+    // Solo entradas de lunes a sabado.
+    const entradas = entries.filter(
+      (e) => e.punch_type === "entrada" && wd(e.punched_at) !== "Sun"
+    );
     if (entradas.length === 0) return null;
     let onTime = 0;
-    for (const e of entradas) {
-      const limite = addMinutes(getBranchEntryTime(e.branch_id), ENTRY_GRACE_MIN);
-      if (fmtTimeCR(e.punched_at) <= limite) onTime += 1;
-    }
+    for (const e of entradas) if (fmtTimeCR(e.punched_at) <= limite) onTime += 1;
     return Math.round((onTime / entradas.length) * 100);
   } catch {
     return null;
   }
 }
-
 /** Resumen de metricas del mes en curso para un colaborador. */
 export async function getMyMonthlyMetrics(userId: string): Promise<PortalMetrics> {
   try {

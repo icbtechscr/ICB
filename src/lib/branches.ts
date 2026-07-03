@@ -27,7 +27,7 @@ export type Branch = {
 };
 
 /** Hora de entrada por defecto si la sucursal no define una. */
-export const DEFAULT_ENTRY_TIME = "08:00";
+export const DEFAULT_ENTRY_TIME = "08:30";
 /** Minutos de tolerancia antes de contar como "tarde". */
 export const ENTRY_GRACE_MIN = 10;
 

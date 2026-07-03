@@ -35,6 +35,7 @@ export type Collaborator = {
   cedula: string;
   hireDate: string | null;
   vacationRate: number;
+  entryTime: string;
   vacationAdjust: number;
   // Agregados de solicitudes (calculados en el servidor)
   vacationUsed: number;
@@ -120,6 +121,7 @@ type EditState = {
   hireDate: string; // "" = sin fecha
   vacationRate: string;
   vacationAdjust: string;
+  entryTime: string;
   password: string; // "" = no cambiar
 };
 
@@ -239,6 +241,7 @@ export function CollaboratorsManager({
       branchIds: u.branchIds,
       cedula: u.cedula,
       hireDate: u.hireDate ?? "",
+      entryTime: u.entryTime || "08:30",
       vacationRate: String(u.vacationRate),
       vacationAdjust: String(u.vacationAdjust),
       password: "",
@@ -265,6 +268,7 @@ export function CollaboratorsManager({
           branchIds: edit.role === "admin" ? [] : edit.branchIds,
           cedula: edit.cedula,
           hireDate: edit.hireDate || null,
+          entryTime: edit.entryTime,
           vacationRate: Number(edit.vacationRate),
           vacationAdjust: Number(edit.vacationAdjust),
           ...(edit.password ? { password: edit.password } : {}),
@@ -284,6 +288,7 @@ export function CollaboratorsManager({
                 branchIds: edit.role === "admin" ? [] : edit.branchIds,
                 cedula: edit.cedula.trim(),
                 hireDate: edit.hireDate || null,
+                entryTime: edit.entryTime || "08:30",
                 vacationRate: Number(edit.vacationRate) || 0,
                 vacationAdjust: Number(edit.vacationAdjust) || 0,
               }
@@ -391,6 +396,17 @@ export function CollaboratorsManager({
                 type="date"
                 value={edit.hireDate}
                 onChange={(e) => setEdit({ ...edit, hireDate: e.target.value })}
+                className="w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-ink-500">
+                Hora de entrada
+              </span>
+              <input
+                type="time"
+                value={edit.entryTime}
+                onChange={(e) => setEdit({ ...edit, entryTime: e.target.value })}
                 className="w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500"
               />
             </label>

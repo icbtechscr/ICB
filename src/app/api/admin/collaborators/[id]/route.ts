@@ -18,6 +18,7 @@ export async function PATCH(
       hireDate?: string | null;
       vacationRate?: number;
       vacationAdjust?: number;
+      entryTime?: string;
     };
 
     const admin = createAdminClient();
@@ -56,6 +57,9 @@ export async function PATCH(
     }
     if (Number.isFinite(body.vacationAdjust)) {
       meta.vacation_adjust = Number(body.vacationAdjust);
+    }
+    if (typeof body.entryTime === "string" && /^\d{2}:\d{2}$/.test(body.entryTime)) {
+      meta.entry_time = body.entryTime;
     }
 
     const attrs: {
@@ -105,6 +109,4 @@ export async function DELETE(
     return NextResponse.json({ ok: true });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return new NextResponse(msg, { status: 500 });
-  }
-}
+    return new NextResponse(msg

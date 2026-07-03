@@ -20,6 +20,7 @@ export type CollaboratorDTO = {
   hireDate: string | null;
   vacationRate: number;
   vacationAdjust: number;
+  entryTime: string;
 };
 
 function normalizeRole(raw?: string): UserRole {
@@ -65,6 +66,7 @@ export async function POST(req: Request) {
       hireDate?: string;
       vacationRate?: number;
       vacationAdjust?: number;
+      entryTime?: string;
     };
     const email = body.email?.trim().toLowerCase();
     const password = body.password ?? "";
@@ -85,6 +87,10 @@ export async function POST(req: Request) {
     const vacationAdjust = Number.isFinite(body.vacationAdjust)
       ? Number(body.vacationAdjust)
       : 0;
+    const entryTime =
+      typeof body.entryTime === "string" && /^\d{2}:\d{2}$/.test(body.entryTime)
+        ? body.entryTime
+        : "08:30";
 
     if (!email || !email.includes("@")) {
       return new NextResponse("Correo inválido", { status: 400 });
@@ -110,6 +116,7 @@ export async function POST(req: Request) {
         hire_date: hireDate,
         vacation_rate: vacationRate,
         vacation_adjust: vacationAdjust,
+        entry_time: entryTime,
       },
     });
     if (error) return new NextResponse(error.message, { status: 400 });
