@@ -109,4 +109,6 @@ export async function DELETE(
     return NextResponse.json({ ok: true });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return new NextResponse(msg
+    return new NextResponse(msg, { status: 500 });
+  }
+}
