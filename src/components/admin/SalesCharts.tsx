@@ -86,7 +86,7 @@ export function DayBars({
           const h = (d.value / max) * 100;
           const dd = d.day.slice(8, 10);
           return (
-            <div key={d.day} className="group relative flex-1">
+            <div key={d.day} className="flex h-full flex-1 items-end">
               <div
                 className={`w-full rounded-t ${d.value > 0 ? "bg-brand-500" : "bg-ink-100"}`}
                 style={{ height: `${Math.max(2, h)}%` }}

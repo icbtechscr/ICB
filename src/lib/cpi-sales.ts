@@ -214,3 +214,13 @@ export async function setVendorIgnored(cpiVendor: string, ignored: boolean): Pro
     .from("cpi_vendor_map")
     .upsert({ cpi_vendor: cpiVendor, ignored }, { onConflict: "cpi_vendor" });
 }
+
+/** Nombres de vendedor de CPI asignados a un usuario del portal. */
+export async function getVendorsForUser(userId: string): Promise<string[]> {
+  const sb = createAdminClient();
+  const { data } = await sb
+    .from("cpi_vendor_map")
+    .select("cpi_vendor")
+    .eq("user_id", userId);
+  return (data ?? []).map((r: { cpi_vendor: string }) => r.cpi_vendor);
+}

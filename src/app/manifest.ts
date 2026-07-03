@@ -4,8 +4,8 @@ import type { MetadataRoute } from "next";
 // start_url = /portal para que el ícono abra directo el portal del colaborador.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Portal ICB",
-    short_name: "Portal ICB",
+    name: "ICB Portal",
+    short_name: "ICB Portal",
     description:
       "Portal del colaborador de ICB Technologies: marcaje, ventas y más.",
     start_url: "/portal",

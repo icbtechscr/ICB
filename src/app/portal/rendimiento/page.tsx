@@ -1,14 +1,15 @@
 import { redirect } from "next/navigation";
 import {
   ShoppingBag, Wallet, DollarSign, Receipt, Trophy, TrendingUp,
-  ChevronLeft, ChevronRight, Building2, PieChart,
+  ChevronLeft, ChevronRight, Building2, PieChart, Medal,
 } from "lucide-react";
 import { getCurrentUser } from "@/lib/supabase-server";
 import { getUserFullName } from "@/lib/roles";
 import { crYearMonth } from "@/lib/portal-metrics";
 import {
-  getUserSalesAnalytics, getUserMonthlyEvolution,
+  getUserSalesAnalytics, getUserMonthlyEvolution, getVendorPerformance,
 } from "@/lib/cpi-analytics";
+import { getVendorsForUser } from "@/lib/cpi-sales";
 import { formatCRC } from "@/lib/utils";
 import { MetricCard } from "@/components/portal/MetricCard";
 import { BarList, DayBars, SplitBar, type BarItem } from "@/components/admin/SalesCharts";
@@ -25,6 +26,12 @@ function monthLabel(y: number, m: number) {
 function shift(y: number, m: number, d: number) {
   const x = new Date(y, m - 1 + d, 1);
   return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}`;
+}
+function medalClass(r: number): string {
+  if (r === 1) return "bg-gradient-to-br from-amber-300 to-amber-500 text-white ring-2 ring-amber-200";
+  if (r === 2) return "bg-gradient-to-br from-slate-300 to-slate-400 text-white";
+  if (r === 3) return "bg-gradient-to-br from-orange-400 to-amber-700 text-white";
+  return "bg-ink-100 text-ink-500";
 }
 
 export default async function RendimientoPage({
@@ -44,6 +51,8 @@ export default async function RendimientoPage({
 
   const a = await getUserSalesAnalytics(user.id, year, month1);
   const evo = await getUserMonthlyEvolution(user.id, 6);
+  const perf = await getVendorPerformance(year, month1);
+  const myVendors = new Set(await getVendorsForUser(user.id));
   const firstName = (getUserFullName(user) || "").split(" ")[0];
 
   const evoItems: BarItem[] = evo.map((p) => ({
@@ -68,6 +77,35 @@ export default async function RendimientoPage({
           <a href={`?mes=${shift(year, month1, 1)}`} className="inline-flex size-8 items-center justify-center rounded-full text-ink-600 hover:bg-ink-100"><ChevronRight className="size-4" /></a>
         </div>
       </div>
+
+      {perf.hasData && (
+        <section className="mb-4 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft">
+          <h2 className="flex items-center gap-2 border-b border-ink-100 px-5 py-3.5 text-sm font-bold text-ink-900">
+            <Medal className="size-4 text-brand-600" /> Ranking de vendedores
+          </h2>
+          <ol className="max-h-[26rem] divide-y divide-ink-100 overflow-y-auto">
+            {perf.vendors.map((v) => {
+              const mine = myVendors.has(v.vendedor);
+              return (
+                <li key={v.vendedor} className={`flex items-center gap-3 px-4 py-2.5 ${mine ? "bg-brand-50" : ""}`}>
+                  <span className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${medalClass(v.rank)}`}>
+                    {v.rank}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink-800">
+                    {v.vendedor}
+                    {mine && (
+                      <span className="ml-1.5 rounded-full bg-brand-600 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">Vos</span>
+                    )}
+                  </span>
+                  <span className="shrink-0 text-right text-sm font-black text-ink-900">
+                    {formatCRC(v.crc)}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      )}
 
       {!a.hasData ? (
         <div className="rounded-2xl border border-ink-200 bg-white p-10 text-center shadow-soft">
