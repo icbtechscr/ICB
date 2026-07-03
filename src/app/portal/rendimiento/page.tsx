@@ -78,35 +78,6 @@ export default async function RendimientoPage({
         </div>
       </div>
 
-      {perf.hasData && (
-        <section className="mb-4 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft">
-          <h2 className="flex items-center gap-2 border-b border-ink-100 px-5 py-3.5 text-sm font-bold text-ink-900">
-            <Medal className="size-4 text-brand-600" /> Ranking de vendedores
-          </h2>
-          <ol className="max-h-[26rem] divide-y divide-ink-100 overflow-y-auto">
-            {perf.vendors.map((v) => {
-              const mine = myVendors.has(v.vendedor);
-              return (
-                <li key={v.vendedor} className={`flex items-center gap-3 px-4 py-2.5 ${mine ? "bg-brand-50" : ""}`}>
-                  <span className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${medalClass(v.rank)}`}>
-                    {v.rank}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink-800">
-                    {v.vendedor}
-                    {mine && (
-                      <span className="ml-1.5 rounded-full bg-brand-600 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">Vos</span>
-                    )}
-                  </span>
-                  <span className="shrink-0 text-right text-sm font-black text-ink-900">
-                    {formatCRC(v.crc)}
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
-        </section>
-      )}
-
       {!a.hasData ? (
         <div className="rounded-2xl border border-ink-200 bg-white p-10 text-center shadow-soft">
           <span className="mx-auto inline-flex size-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600"><TrendingUp className="size-7" /></span>
@@ -188,6 +159,35 @@ export default async function RendimientoPage({
           </div>
         </div>
       )}
+      {perf.hasData && (
+        <section className="mb-4 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft">
+          <h2 className="flex items-center gap-2 border-b border-ink-100 px-5 py-3.5 text-sm font-bold text-ink-900">
+            <Medal className="size-4 text-brand-600" /> Ranking de vendedores
+          </h2>
+          <ol className="max-h-[26rem] divide-y divide-ink-100 overflow-y-auto">
+            {perf.vendors.map((v) => {
+              const mine = myVendors.has(v.vendedor);
+              return (
+                <li key={v.vendedor} className={`flex items-center gap-3 px-4 py-2.5 ${mine ? "bg-brand-50" : ""}`}>
+                  <span className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${medalClass(v.rank)}`}>
+                    {v.rank}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink-800">
+                    {v.vendedor}
+                    {mine && (
+                      <span className="ml-1.5 rounded-full bg-brand-600 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">Vos</span>
+                    )}
+                  </span>
+                  <span className="shrink-0 text-right text-sm font-black text-ink-900">
+                    {formatCRC(v.crc)}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      )}
+
     </div>
   );
 }
