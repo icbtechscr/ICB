@@ -98,110 +98,108 @@ async function login() {
   return jarStr(jar); // puede ir vacio
 }
 
-async function fetchCompletadas(cookie) {
+// Reporte -> Facturacion FE (ControlSpecFacturacion - Reportes.php).
+// Trae TODAS las facturas del rango de fechas (mes en curso) de todos los vendedores.
+// Parametros capturados de la app real (str22[] = columnas, str23 = group by).
+async function fetchReporte(cookie) {
   const pad = (n) => String(n).padStart(2, "0");
   const now = new Date();
-  const desde = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`;
-  const hasta = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-  const base = { duser: USER, SocaaID: ID, idiomasistema: "Español" };
-  const candidatos = [
-    { name: "control",      ep: "ControlFacturacion.php", params: { ...base } },
-    { name: "control_cant", ep: "ControlFacturacion.php", params: { ...base, cantidadderegistrosamostrar: "5000" } },
-    { name: "control_fecha", ep: "ControlFacturacion.php", params: {
-        ...base, cantidadderegistrosamostrar: "5000",
-        activahastafecha: "true",
-        searchporfechafacturacion: desde,
-        searchhastaporfechafacturacion: hasta,
-      } },
-    { name: "consultas",    ep: "ControlFacturacion - Consultas.php", params: {
-        ...base, d: "", str3: "",
-        cantidadderegistrosamostrar: "5000",
-        activahastafecha: "true",
-        searchporfechafacturacion: desde,
-        searchhastaporfechafacturacion: hasta,
-      } },
-  ];
-  const rowsRe = /\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}/g;
-  let best = null;
-  for (const c of candidatos) {
-    const body = new URLSearchParams(c.params).toString();
-    let res;
-    try {
-      res = await request(`${BASE}${c.ep}`, {
-        method: "POST",
-        headers: { "content-type": "application/x-www-form-urlencoded", "content-length": Buffer.byteLength(body), "x-requested-with": "XMLHttpRequest", origin: new URL(BASE).origin, referer: `${BASE}Page Main 4.php`, ...(cookie ? { cookie } : {}) },
-        body,
-      });
-    } catch (e) { console.log(`  ${c.name}: error ${e.message}`); continue; }
-    const n = (res.body.match(rowsRe) || []).length;
-    if (DEBUG) writeFileSync(`cpi-${c.name}.html`, res.body, "utf8");
-    console.log(`  candidato ${c.name} (${c.ep}) -> ${res.status}, ${res.body.length} chars, ~${n} filas con fecha`);
-    if (!best || n > best.n) best = { html: res.body, n, name: c.name };
+  const y = now.getFullYear();
+  const mo = pad(now.getMonth() + 1);
+  const desde = `${y}-${mo}-01 00:00:00`;
+  const hasta = `${y}-${mo}-${pad(now.getDate())} 23:59:59`;
+
+  const p = new URLSearchParams();
+  const add = (k, v) => p.append(k, v);
+  add("duser", USER); add("consolidado", "");
+  add("d", USER); add("e", ""); add("f", ""); add("g", "");
+  add("h", "9999"); add("i", ""); add("j", "");
+  add("k", desde); add("l", ""); add("m", hasta); add("n", "");
+  add("str2", "Botonplacadorada"); add("str3", "2"); add("str14", "");
+  add("str15", "fechamodifica DESC"); add("str16", ""); add("str17", "");
+  add("str20", ""); add("str21", "");
+  for (const col of ["tipo", "origen", "sucursal", "vendedor", "cliente", "estado", "actividad", "baseimponible"]) {
+    add("str22[]", col);
   }
-  if (!best || best.n < 2) throw new Error("Ningun endpoint devolvio la lista de facturas. Revisá los cpi-*.html.");
-  console.log(`  => usando "${best.name}" (${best.n} filas)`);
-  return best.html;
+  add("str23", " group by Facturas.cnum_factureal, Facturas.ind_tipfac,Detalles.cnum_factura");
+  add("str25", "4741.0|4759.0"); add("str27", "0|1"); add("familia", "");
+  add("SocaaID", ID); add("idiomasistema", "");
+  const body = p.toString();
+
+  const res = await request(`${BASE}ControlSpecFacturacion - Reportes.php`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      "content-length": Buffer.byteLength(body),
+      "x-requested-with": "XMLHttpRequest",
+      origin: new URL(BASE).origin,
+      referer: `${BASE}Page Main 4.php`,
+      ...(cookie ? { cookie } : {}),
+    },
+    body,
+  });
+  if (DEBUG) writeFileSync("cpi-reporte.html", res.body, "utf8");
+  if (res.status >= 400) {
+    throw new Error(`El reporte fallo (HTTP ${res.status}). Revisá cpi-reporte.html.`);
+  }
+  const n = (res.body.match(/\d{4}-\d{2}-\d{2}/g) || []).length;
+  console.log(`  Reporte ${desde.slice(0, 10)} a ${hasta.slice(0, 10)} -> ${res.status}, ${res.body.length} chars, ~${n} fechas`);
+  if (n < 1) throw new Error("El reporte no devolvio facturas. Revisá cpi-reporte.html.");
+  return res.body;
 }
 const MONEDA = { Colones: "CRC", Dolares: "USD", "Dólares": "USD", Euros: "EUR" };
 const strip = (s) => s.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
 const amount = (s) => { const n = Number(s.replace(/[^\d.,-]/g, "").replace(/,/g, "")); return Number.isFinite(n) ? n : 0; };
 const norm = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 
+// Parser del reporte "Facturacion FE". Cada fila trae 25 columnas fijas:
+//  [0] tipo  [2] fecha(YYYY-MM-DD)  [3] factura  [4] origen  [5] sucursal
+//  [6] vendedor  [10] cliente(id - nombre)  [11] moneda  [16] SUBTOTAL
+//  [22] estado
 function parse(html) {
   const out = [];
   const seen = new Set();
-  const TIPOS = /(Factura exportacion|Nota Debito|Nota Credito|Tiquete|Apartado|Factura)/i;
-  const decodeEnt = (x) => (x || "").replace(/&#162;/g, "").replace(/&#36;/g, "").replace(/&amp;/g, "&");
-  const afterInput = (row, name) => {
-    const m = row.match(new RegExp(name + '"[^>]*>\\s*([^<]+)', "i"));
-    return m ? m[1].replace(/\s+/g, " ").trim() : "";
+  const decodeEnt = (x) => (x || "")
+    .replace(/&#162;|¢|₡|&#36;|\$/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&");
+  const money = (cell) => {
+    const n = Number(decodeEnt(String(cell)).replace(/[()]/g, "").replace(/[^\d.,-]/g, "").replace(/,/g, ""));
+    return Number.isFinite(n) ? n : 0;
   };
   const chunks = html.split(/<tr[\s>]/i).slice(1);
   for (const raw of chunks) {
     const row = raw.split(/<\/tr>/i)[0];
-    if (!/(ACEPTADA|RECHAZADA|PROCESAN|PENDIENTE)/i.test(row)) continue;
-    const fecha = row.match(/(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})/);
-    if (!fecha) continue;
+    const cells = (row.match(/<td[\s\S]*?<\/td>/gi) || []).map(strip);
+    if (cells.length < 23) continue;
 
-    const byName = {}; const values = [];
-    for (const inp of row.match(/<input[^>]*>/gi) || []) {
-      const nm = (inp.match(/name="([^"]*)"/i) || [])[1];
-      const vl = (inp.match(/value="([^"]*)"/i) || [])[1];
-      if (vl != null) values.push(vl);
-      if (nm && byName[nm] === undefined) byName[nm] = vl;
-    }
+    const fechaM = (cells[2] || "").match(/\d{4}-\d{2}-\d{2}/);
+    if (!fechaM) continue;
+    const fecha = fechaM[0];
 
-    // El monto puede venir como texto (completadas) o en un input (prefacturas).
-    let mM = row.match(/(&#162;|&#36;|₡|¢)\s?([\d][\d.,]*)/);
-    if (!mM) { const d = row.match(/\$\s?([\d][\d.,]*)/); if (d) mM = ["$", "$", d[1]]; }
-    const sym = mM ? mM[1] : "";
-    const montoNum = mM ? mM[2] : "0";
-    const monedaVal = values.find((v) => /^(Colones|Dolares|Dólares|Euros)$/i.test(v || "")) || "";
-    const moneda = /(&#36;|\$)/.test(sym) || /Dolar|Dólar/i.test(monedaVal) ? "USD"
-      : /Euro/i.test(monedaVal) ? "EUR" : "CRC";
-    const estado = /ACEPTADA/i.test(row) ? "ACEPTADA"
-      : /RECHAZADA/i.test(row) ? "RECHAZADA"
-      : /PROCESAN/i.test(row) ? "PROCESANDO" : "PENDIENTE";
-    const tipoM = row.match(TIPOS);
-    const factura = byName["numeroclickctrlfacturacion"] || "";
-    const clave = byName["clavenumelineafacturacion"] || (row.match(/\b(\d{40,60})\b/) || [])[1] || "";
-    const vendedor = afterInput(row, "codidvendedorfacturacion");
-    const origen = afterInput(row, "sucursalsearchfacturacion");
-    const sucursal = afterInput(row, "puntoventasearchfacturacion");
-    let cliente = "";
-    for (const inp of row.match(/<input[^>]*numeroclickctrlconsgprove[^>]*>/gi) || []) {
-      const vl = (inp.match(/value="([^"]*)"/i) || [])[1] || "";
-      if (vl && !/^\d+$/.test(vl)) { cliente = vl; break; }
-    }
+    const tipo = cells[0] || "Factura";
+    const factura = cells[3] || "";
+    const origen = cells[4] || "";
+    const sucursal = cells[5] || "";
+    const vendedor = cells[6] || "";
+    let cliente = cells[10] || "";
+    const cm = cliente.match(/^\s*\d+\s*-\s*(.+)$/);
+    if (cm) cliente = cm[1].trim();
+    const monedaTxt = cells[11] || "";
+    const moneda = /Dolar|Dólar/i.test(monedaTxt) ? "USD"
+      : /Euro/i.test(monedaTxt) ? "EUR" : "CRC";
+    const subtotal = money(cells[16] || "0");
+    const estado = cells[22] || "";
 
-    const key = clave || [factura, fecha[0]].join("|");
-    if (!key || seen.has(key)) continue;
+    if (!factura) continue;
+    const key = [tipo, factura, fecha].join("|");
+    if (seen.has(key)) continue;
     seen.add(key);
     out.push({
-      cpi_key: key, tipo: tipoM ? tipoM[1] : "Factura", factura,
-      fecha: `${fecha[1]}T${fecha[2]}`,
+      cpi_key: key, tipo, factura,
+      fecha: `${fecha}T12:00:00`,
       origen, sucursal, vendedor, cliente, moneda,
-      subtotal: amount(montoNum), estado,
+      subtotal, estado,
     });
   }
   return out;
@@ -224,6 +222,20 @@ async function saveRows(rows) {
   }
   for (const r of rows) r.user_id = map.get(r.vendedor) || null;
 
+  // El reporte es la fuente de verdad del mes: limpiamos el rango antes de insertar
+  // para no dejar duplicados (claves viejas) ni facturas anuladas en CPI.
+  const pad = (n) => String(n).padStart(2, "0");
+  const now = new Date();
+  const mStart = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`;
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const mEnd = `${nextMonth.getFullYear()}-${pad(nextMonth.getMonth() + 1)}-01`;
+  const { error: delErr } = await sb
+    .from("cpi_sales")
+    .delete()
+    .gte("fecha", mStart)
+    .lt("fecha", mEnd);
+  if (delErr) throw new Error("Supabase (limpiar mes): " + delErr.message);
+
   const { error } = await sb.from("cpi_sales").upsert(rows, { onConflict: "cpi_key" });
   if (error) throw new Error("Supabase: " + error.message);
   const matched = rows.filter((r) => r.user_id).length;
@@ -242,19 +254,22 @@ function importPath() {
 async function main() {
   const imp = importPath();
   if (imp) {
-    console.log("Importando desde:", imp);
-    const rows = JSON.parse(readFileSync(imp, "utf8"));
-    console.log(`Filas en el archivo: ${rows.length}`);
+    console.log("Importando facturas desde archivo:", imp);
+    const html = readFileSync(imp, "utf8");
+    const rows = parse(html);
+    console.log(`Parseadas ${rows.length} facturas del archivo.`);
+    if (rows.length === 0) { console.log("0 filas. ¿Es el HTML del reporte correcto?"); return; }
     await saveRows(rows);
     return;
   }
-  console.log("Ingresando a CPI\u2026");
+
+  console.log("Iniciando sesión en CPI…");
   const cookie = await login();
-  console.log("Sesion OK. Descargando facturas\u2026");
-  const html = await fetchCompletadas(cookie);
+  console.log("Sesión OK. Descargando el reporte de facturación…");
+  const html = await fetchReporte(cookie);
   const rows = parse(html);
-  console.log(`Facturas leidas: ${rows.length}`);
-  if (rows.length === 0) { console.log("0 filas. Revisa cpi-lista.html (corre con --debug)."); return; }
+  console.log(`Parseadas ${rows.length} facturas.`);
+  if (rows.length === 0) { console.log("0 filas. Revisa cpi-reporte.html (corré con --debug)."); return; }
   await saveRows(rows);
 }
 
