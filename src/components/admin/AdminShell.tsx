@@ -57,13 +57,23 @@ const GROUPS: Group[] = [
     label: "Recursos Humanos",
     Icon: Users,
     href: "/admin/equipo",
-    prefixes: ["/admin/equipo", "/admin/solicitudes", "/admin/desempeno-vendedores"],
+    prefixes: [
+      "/admin/equipo",
+      "/admin/solicitudes",
+      "/admin/desempeno-vendedores",
+      "/admin/cotizaciones-vendedores",
+    ],
     sub: [
       { href: "/admin/equipo", label: "Colaboradores", Icon: Users },
       {
         href: "/admin/desempeno-vendedores",
         label: "Desempeño de vendedores",
         Icon: TrendingUp,
+      },
+      {
+        href: "/admin/cotizaciones-vendedores",
+        label: "Cotizaciones vendedores",
+        Icon: ClipboardList,
       },
       {
         href: "/admin/solicitudes",

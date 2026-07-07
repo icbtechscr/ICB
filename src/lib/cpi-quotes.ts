@@ -45,6 +45,45 @@ export type RecentQuote = {
   lineCount: number;
 };
 
+export type VendorQuoteProduct = {
+  descripcion: string;
+  sku: string;
+  quoteCount: number;
+  cantidad: number;
+  crc: number;
+  usd: number;
+};
+
+export type QuoteVendorPerf = {
+  vendedor: string;
+  rank: number;
+  count: number;
+  crc: number;
+  usd: number;
+  valor: number;
+  ticketCRC: number;
+  clientes: number;
+  productos: number;
+  lineas: number;
+  activeDays: number;
+  bestDay: string | null;
+  sharePct: number;
+  topProducts: VendorQuoteProduct[];
+};
+
+export type QuoteVendorPerformance = {
+  vendors: QuoteVendorPerf[];
+  totalCRC: number;
+  totalUSD: number;
+  count: number;
+  clientes: number;
+  productos: number;
+  lineas: number;
+  activeDays: number;
+  topProducts: VendorQuoteProduct[];
+  hasData: boolean;
+};
+
 export type QuoteAnalytics = {
   totalCRC: number;
   totalUSD: number;
@@ -312,6 +351,8 @@ function byValue(a: QuoteBucket, b: QuoteBucket) {
   return b.crc - a.crc || b.usd - a.usd || b.count - a.count;
 }
 
+const USD_RATE = 520;
+
 async function fetchQuoteLines(keys: string[]): Promise<QuoteLineDbRow[]> {
   if (keys.length === 0) return [];
   const sb = createAdminClient();
@@ -328,6 +369,40 @@ async function fetchQuoteLines(keys: string[]): Promise<QuoteLineDbRow[]> {
     rows.push(...(((data ?? []) as QuoteLineDbRow[]) ?? []));
   }
   return rows;
+}
+
+async function fetchIgnoredVendors(): Promise<Set<string>> {
+  try {
+    const sb = createAdminClient();
+    const { data } = await sb
+      .from("cpi_vendor_map")
+      .select("cpi_vendor, ignored")
+      .eq("ignored", true);
+    return new Set((data ?? []).map((row: { cpi_vendor: string }) => row.cpi_vendor));
+  } catch {
+    return new Set();
+  }
+}
+
+function toVendorProducts(products: Map<string, {
+  descripcion: string;
+  sku: string;
+  quotes: Set<string>;
+  cantidad: number;
+  crc: number;
+  usd: number;
+}>): VendorQuoteProduct[] {
+  return [...products.values()]
+    .map((item) => ({
+      descripcion: item.descripcion,
+      sku: item.sku,
+      quoteCount: item.quotes.size,
+      cantidad: item.cantidad,
+      crc: item.crc,
+      usd: item.usd,
+    }))
+    .sort((a, b) => b.quoteCount - a.quoteCount || b.cantidad - a.cantidad || b.crc - a.crc)
+    .slice(0, 8);
 }
 
 function emptyAnalytics(dayKeys: string[] = []): QuoteAnalytics {
@@ -537,4 +612,197 @@ export async function getQuoteAnalytics(
   const days = new Date(year, month1, 0).getDate();
   const to = `${year}-${String(month1).padStart(2, "0")}-${String(days).padStart(2, "0")}`;
   return getQuoteAnalyticsForRange(from, to, dayKeysForMonth(year, month1));
+}
+
+export async function getQuoteVendorPerformance(
+  year: number,
+  month1: number
+): Promise<QuoteVendorPerformance> {
+  const empty: QuoteVendorPerformance = {
+    vendors: [],
+    totalCRC: 0,
+    totalUSD: 0,
+    count: 0,
+    clientes: 0,
+    productos: 0,
+    lineas: 0,
+    activeDays: 0,
+    topProducts: [],
+    hasData: false,
+  };
+
+  const from = `${year}-${String(month1).padStart(2, "0")}-01`;
+  const days = new Date(year, month1, 0).getDate();
+  const to = `${year}-${String(month1).padStart(2, "0")}-${String(days).padStart(2, "0")}`;
+
+  let quotes: QuoteDbRow[] = [];
+  try {
+    const sb = createAdminClient();
+    const { data } = await sb
+      .from("cpi_quotes")
+      .select(
+        "id, cpi_key, cpi_id, quote_number, tipo, fecha, origen, sucursal, sucursal_code, point_of_sale_code, vendedor, vendedor_cod, cliente, cliente_id, medio_pago, moneda, subtotal, estado, actividad, user_id"
+      )
+      .gte("fecha", dayStart(from))
+      .lte("fecha", dayEnd(to))
+      .limit(50000);
+    quotes = (data ?? []) as QuoteDbRow[];
+  } catch {
+    return empty;
+  }
+  if (quotes.length === 0) return empty;
+
+  const ignored = await fetchIgnoredVendors();
+  const usableQuotes = quotes.filter((quote) => !ignored.has(quote.vendedor || ""));
+  if (usableQuotes.length === 0) return empty;
+
+  const lines = await fetchQuoteLines(usableQuotes.map((quote) => quote.cpi_key));
+  const quoteByKey = new Map(usableQuotes.map((quote) => [quote.cpi_key, quote]));
+  type ProductAgg = {
+    descripcion: string;
+    sku: string;
+    quotes: Set<string>;
+    cantidad: number;
+    crc: number;
+    usd: number;
+  };
+  type VendorAgg = {
+    vendedor: string;
+    count: number;
+    crc: number;
+    usd: number;
+    crcCount: number;
+    clientes: Set<string>;
+    productos: Set<string>;
+    days: Map<string, number>;
+    lineas: number;
+    products: Map<string, ProductAgg>;
+  };
+
+  const vendors = new Map<string, VendorAgg>();
+  const companyClients = new Set<string>();
+  const companyProducts = new Map<string, ProductAgg>();
+  const companyDays = new Set<string>();
+  let totalCRC = 0;
+  let totalUSD = 0;
+
+  const ensureVendor = (name: string) => {
+    const key = name || "-";
+    const agg =
+      vendors.get(key) ??
+      {
+        vendedor: key,
+        count: 0,
+        crc: 0,
+        usd: 0,
+        crcCount: 0,
+        clientes: new Set<string>(),
+        productos: new Set<string>(),
+        days: new Map<string, number>(),
+        lineas: 0,
+        products: new Map<string, ProductAgg>(),
+      };
+    vendors.set(key, agg);
+    return agg;
+  };
+
+  for (const quote of usableQuotes) {
+    const agg = ensureVendor(quote.vendedor);
+    const amount = Number(quote.subtotal) || 0;
+    const isUSD = quote.moneda === "USD";
+    if (isUSD) {
+      agg.usd += amount;
+      totalUSD += amount;
+    } else {
+      agg.crc += amount;
+      agg.crcCount += 1;
+      totalCRC += amount;
+    }
+    agg.count += 1;
+    if (quote.cliente) {
+      agg.clientes.add(quote.cliente);
+      companyClients.add(quote.cliente);
+    }
+    const day = (quote.fecha || "").slice(0, 10);
+    if (day) {
+      companyDays.add(day);
+      agg.days.set(day, (agg.days.get(day) ?? 0) + 1);
+    }
+  }
+
+  const bumpProduct = (
+    map: Map<string, ProductAgg>,
+    line: QuoteLineDbRow,
+    quote: QuoteDbRow
+  ) => {
+    const desc = (line.descripcion || "").trim();
+    if (!desc) return "";
+    const key = productKey(desc, line.sku);
+    const agg =
+      map.get(key) ??
+      {
+        descripcion: desc,
+        sku: line.sku || "",
+        quotes: new Set<string>(),
+        cantidad: 0,
+        crc: 0,
+        usd: 0,
+      };
+    const total = Number(line.total_con_impuesto || line.total || line.subtotal) || 0;
+    agg.quotes.add(line.cpi_key);
+    agg.cantidad += Number(line.cantidad) || 0;
+    if (quote.moneda === "USD") agg.usd += total;
+    else agg.crc += total;
+    map.set(key, agg);
+    return key;
+  };
+
+  let lineas = 0;
+  for (const line of lines) {
+    const quote = quoteByKey.get(line.cpi_key);
+    if (!quote) continue;
+    const agg = ensureVendor(quote.vendedor);
+    lineas += 1;
+    agg.lineas += 1;
+    const productId = bumpProduct(agg.products, line, quote);
+    bumpProduct(companyProducts, line, quote);
+    if (productId) agg.productos.add(productId);
+  }
+
+  const companyCount = usableQuotes.length;
+  const list = [...vendors.values()].map((agg) => {
+    const bestDay =
+      [...agg.days.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0] ??
+      null;
+    const valor = agg.crc + agg.usd * USD_RATE;
+    return {
+      vendedor: agg.vendedor,
+      count: agg.count,
+      crc: agg.crc,
+      usd: agg.usd,
+      valor,
+      ticketCRC: agg.crcCount ? Math.round(agg.crc / agg.crcCount) : 0,
+      clientes: agg.clientes.size,
+      productos: agg.productos.size,
+      lineas: agg.lineas,
+      activeDays: agg.days.size,
+      bestDay,
+      sharePct: companyCount ? Math.round((agg.count / companyCount) * 1000) / 10 : 0,
+      topProducts: toVendorProducts(agg.products),
+    };
+  });
+  list.sort((a, b) => b.count - a.count || b.valor - a.valor || a.vendedor.localeCompare(b.vendedor));
+
+  return {
+    vendors: list.map((vendor, index) => ({ ...vendor, rank: index + 1 })),
+    totalCRC,
+    totalUSD,
+    count: companyCount,
+    clientes: companyClients.size,
+    productos: companyProducts.size,
+    lineas,
+    activeDays: companyDays.size,
+    topProducts: toVendorProducts(companyProducts),
+    hasData: list.length > 0,
+  };
 }
