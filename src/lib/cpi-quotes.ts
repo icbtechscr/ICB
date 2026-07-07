@@ -71,6 +71,19 @@ export type QuoteVendorPerf = {
   topProducts: VendorQuoteProduct[];
 };
 
+export type QuoteVendorDay = {
+  day: string;
+  count: number;
+  crc: number;
+  usd: number;
+  vendors: number;
+  clientes: number;
+  productos: number;
+  lineas: number;
+  leader: string;
+  leaderCount: number;
+};
+
 export type QuoteVendorPerformance = {
   vendors: QuoteVendorPerf[];
   totalCRC: number;
@@ -80,6 +93,7 @@ export type QuoteVendorPerformance = {
   productos: number;
   lineas: number;
   activeDays: number;
+  porDia: QuoteVendorDay[];
   topProducts: VendorQuoteProduct[];
   hasData: boolean;
 };
@@ -614,9 +628,10 @@ export async function getQuoteAnalytics(
   return getQuoteAnalyticsForRange(from, to, dayKeysForMonth(year, month1));
 }
 
-export async function getQuoteVendorPerformance(
-  year: number,
-  month1: number
+async function getQuoteVendorPerformanceForDays(
+  fromDay: string,
+  toDay: string,
+  dayKeys: string[]
 ): Promise<QuoteVendorPerformance> {
   const empty: QuoteVendorPerformance = {
     vendors: [],
@@ -627,13 +642,22 @@ export async function getQuoteVendorPerformance(
     productos: 0,
     lineas: 0,
     activeDays: 0,
+    porDia: dayKeys.map((day) => ({
+      day,
+      count: 0,
+      crc: 0,
+      usd: 0,
+      vendors: 0,
+      clientes: 0,
+      productos: 0,
+      lineas: 0,
+      leader: "",
+      leaderCount: 0,
+    })),
     topProducts: [],
     hasData: false,
   };
-
-  const from = `${year}-${String(month1).padStart(2, "0")}-01`;
-  const days = new Date(year, month1, 0).getDate();
-  const to = `${year}-${String(month1).padStart(2, "0")}-${String(days).padStart(2, "0")}`;
+  if (!fromDay || !toDay || fromDay > toDay) return empty;
 
   let quotes: QuoteDbRow[] = [];
   try {
@@ -643,8 +667,8 @@ export async function getQuoteVendorPerformance(
       .select(
         "id, cpi_key, cpi_id, quote_number, tipo, fecha, origen, sucursal, sucursal_code, point_of_sale_code, vendedor, vendedor_cod, cliente, cliente_id, medio_pago, moneda, subtotal, estado, actividad, user_id"
       )
-      .gte("fecha", dayStart(from))
-      .lte("fecha", dayEnd(to))
+      .gte("fecha", dayStart(fromDay))
+      .lte("fecha", dayEnd(toDay))
       .limit(50000);
     quotes = (data ?? []) as QuoteDbRow[];
   } catch {
@@ -683,6 +707,17 @@ export async function getQuoteVendorPerformance(
   const companyClients = new Set<string>();
   const companyProducts = new Map<string, ProductAgg>();
   const companyDays = new Set<string>();
+  const daily = new Map<string, {
+    day: string;
+    count: number;
+    crc: number;
+    usd: number;
+    vendors: Set<string>;
+    clientes: Set<string>;
+    productos: Set<string>;
+    lineas: number;
+    vendorCounts: Map<string, number>;
+  }>();
   let totalCRC = 0;
   let totalUSD = 0;
 
@@ -705,6 +740,23 @@ export async function getQuoteVendorPerformance(
     vendors.set(key, agg);
     return agg;
   };
+  const ensureDay = (day: string) => {
+    const agg =
+      daily.get(day) ??
+      {
+        day,
+        count: 0,
+        crc: 0,
+        usd: 0,
+        vendors: new Set<string>(),
+        clientes: new Set<string>(),
+        productos: new Set<string>(),
+        lineas: 0,
+        vendorCounts: new Map<string, number>(),
+      };
+    daily.set(day, agg);
+    return agg;
+  };
 
   for (const quote of usableQuotes) {
     const agg = ensureVendor(quote.vendedor);
@@ -725,6 +777,16 @@ export async function getQuoteVendorPerformance(
     }
     const day = (quote.fecha || "").slice(0, 10);
     if (day) {
+      const dayAgg = ensureDay(day);
+      dayAgg.count += 1;
+      dayAgg.crc += isUSD ? 0 : amount;
+      dayAgg.usd += isUSD ? amount : 0;
+      dayAgg.vendors.add(quote.vendedor || "-");
+      dayAgg.vendorCounts.set(
+        quote.vendedor || "-",
+        (dayAgg.vendorCounts.get(quote.vendedor || "-") ?? 0) + 1
+      );
+      if (quote.cliente) dayAgg.clientes.add(quote.cliente);
       companyDays.add(day);
       agg.days.set(day, (agg.days.get(day) ?? 0) + 1);
     }
@@ -767,6 +829,12 @@ export async function getQuoteVendorPerformance(
     const productId = bumpProduct(agg.products, line, quote);
     bumpProduct(companyProducts, line, quote);
     if (productId) agg.productos.add(productId);
+    const day = (quote.fecha || "").slice(0, 10);
+    if (day) {
+      const dayAgg = ensureDay(day);
+      dayAgg.lineas += 1;
+      if (productId) dayAgg.productos.add(productId);
+    }
   }
 
   const companyCount = usableQuotes.length;
@@ -792,6 +860,38 @@ export async function getQuoteVendorPerformance(
     };
   });
   list.sort((a, b) => b.count - a.count || b.valor - a.valor || a.vendedor.localeCompare(b.vendedor));
+  const porDia: QuoteVendorDay[] = dayKeys.map((day) => {
+    const agg = daily.get(day);
+    if (!agg) {
+      return {
+        day,
+        count: 0,
+        crc: 0,
+        usd: 0,
+        vendors: 0,
+        clientes: 0,
+        productos: 0,
+        lineas: 0,
+        leader: "",
+        leaderCount: 0,
+      };
+    }
+    const leaderEntry = [...agg.vendorCounts.entries()].sort(
+      (a, b) => b[1] - a[1] || a[0].localeCompare(b[0])
+    )[0];
+    return {
+      day,
+      count: agg.count,
+      crc: agg.crc,
+      usd: agg.usd,
+      vendors: agg.vendors.size,
+      clientes: agg.clientes.size,
+      productos: agg.productos.size,
+      lineas: agg.lineas,
+      leader: leaderEntry?.[0] ?? "",
+      leaderCount: leaderEntry?.[1] ?? 0,
+    };
+  });
 
   return {
     vendors: list.map((vendor, index) => ({ ...vendor, rank: index + 1 })),
@@ -802,7 +902,34 @@ export async function getQuoteVendorPerformance(
     productos: companyProducts.size,
     lineas,
     activeDays: companyDays.size,
+    porDia,
     topProducts: toVendorProducts(companyProducts),
     hasData: list.length > 0,
   };
+}
+
+export async function getQuoteVendorDayPerformance(
+  day: string
+): Promise<QuoteVendorPerformance> {
+  const cleanDay = day.slice(0, 10);
+  return getQuoteVendorPerformanceForDays(cleanDay, cleanDay, [cleanDay]);
+}
+
+export async function getQuoteVendorRangePerformance(
+  fromDay: string,
+  toDay: string
+): Promise<QuoteVendorPerformance> {
+  const from = fromDay.slice(0, 10);
+  const to = toDay.slice(0, 10);
+  return getQuoteVendorPerformanceForDays(from, to, dayKeysForRange(from, to));
+}
+
+export async function getQuoteVendorPerformance(
+  year: number,
+  month1: number
+): Promise<QuoteVendorPerformance> {
+  const from = `${year}-${String(month1).padStart(2, "0")}-01`;
+  const days = new Date(year, month1, 0).getDate();
+  const to = `${year}-${String(month1).padStart(2, "0")}-${String(days).padStart(2, "0")}`;
+  return getQuoteVendorPerformanceForDays(from, to, dayKeysForMonth(year, month1));
 }
