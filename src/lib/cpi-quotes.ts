@@ -1,0 +1,486 @@
+// Capa de servidor para cotizaciones CPI: sincronizacion y analitica.
+import { createAdminClient } from "@/lib/supabase";
+import {
+  cpiGetCotizacionesWithLines,
+  normalizeName,
+  type CpiQuoteWithLines,
+} from "@/lib/cpi";
+
+type VendorMapRow = { cpi_vendor: string; user_id: string | null };
+
+export type QuoteSyncOptions = {
+  from?: string; // YYYY-MM-DD
+  to?: string; // YYYY-MM-DD
+  limit?: number;
+};
+
+export type SyncQuotesResult = {
+  fetched: number;
+  upserted: number;
+  lines: number;
+  matchedVendors: number;
+  from: string;
+  to: string;
+  error?: string;
+};
+
+export type QuoteBucket = { key: string; count: number; crc: number; usd: number };
+
+export type TopQuotedProduct = {
+  descripcion: string;
+  sku: string;
+  quoteCount: number;
+  cantidad: number;
+  crc: number;
+  usd: number;
+};
+
+export type RecentQuote = {
+  quoteNumber: string;
+  fecha: string | null;
+  cliente: string;
+  vendedor: string;
+  moneda: string;
+  subtotal: number;
+  lineCount: number;
+};
+
+export type QuoteAnalytics = {
+  totalCRC: number;
+  totalUSD: number;
+  count: number;
+  ticketPromedioCRC: number;
+  vendedores: number;
+  clientes: number;
+  porDia: { day: string; count: number; crc: number; usd: number }[];
+  porVendedor: QuoteBucket[];
+  porSucursal: QuoteBucket[];
+  porCliente: QuoteBucket[];
+  topProducts: TopQuotedProduct[];
+  recentQuotes: RecentQuote[];
+  hasData: boolean;
+};
+
+type QuoteDbRow = {
+  id?: string;
+  cpi_key: string;
+  cpi_id: string;
+  quote_number: string;
+  tipo: string;
+  fecha: string | null;
+  origen: string;
+  sucursal: string;
+  sucursal_code: string;
+  point_of_sale_code: string;
+  vendedor: string;
+  vendedor_cod: string;
+  cliente: string;
+  cliente_id: string;
+  medio_pago: string;
+  moneda: string;
+  subtotal: number;
+  estado: string;
+  actividad: string;
+  user_id: string | null;
+};
+
+type QuoteLineDbRow = {
+  cpi_key: string;
+  quote_number: string;
+  line_id: string | null;
+  linea: number | null;
+  item_id: string | null;
+  sku: string | null;
+  descripcion: string;
+  cantidad: number;
+  precio_unit: number;
+  descuento: number;
+  subtotal: number;
+  impuesto: number;
+  total: number;
+  total_con_impuesto: number;
+};
+
+function crDate(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Costa_Rica",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+function defaultRange(opts: QuoteSyncOptions): { from: string; to: string } {
+  const today = crDate();
+  return { from: opts.from || today, to: opts.to || opts.from || today };
+}
+
+function monthRange(year: number, month1: number): { from: string; to: string; days: number } {
+  const from = new Date(Date.UTC(year, month1 - 1, 1));
+  const to = new Date(Date.UTC(year, month1, 1));
+  const days = new Date(year, month1, 0).getDate();
+  return { from: from.toISOString(), to: to.toISOString(), days };
+}
+
+function dayStart(day: string): string {
+  return `${day.slice(0, 10)}T00:00:00-06:00`;
+}
+
+function dayEnd(day: string): string {
+  return `${day.slice(0, 10)}T23:59:59-06:00`;
+}
+
+function dbDate(dayOrIso: string | null): string | null {
+  if (!dayOrIso) return null;
+  const day = dayOrIso.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
+  return `${day}T12:00:00-06:00`;
+}
+
+function keyFor(quote: CpiQuoteWithLines): string {
+  return quote.quoteNumber || quote.cpiId;
+}
+
+function uniqueQuotes(quotes: CpiQuoteWithLines[]): CpiQuoteWithLines[] {
+  const map = new Map<string, CpiQuoteWithLines>();
+  for (const quote of quotes) {
+    const key = keyFor(quote);
+    if (key) map.set(key, quote);
+  }
+  return [...map.values()];
+}
+
+async function ensureVendors(vendors: string[]): Promise<void> {
+  const rows = [...new Set(vendors.filter(Boolean))].map((cpi_vendor) => ({
+    cpi_vendor,
+  }));
+  if (rows.length === 0) return;
+  const sb = createAdminClient();
+  await sb.from("cpi_vendor_map").upsert(rows, { onConflict: "cpi_vendor" });
+}
+
+async function resolveVendorMap(): Promise<Map<string, string>> {
+  const sb = createAdminClient();
+  const { data: rows } = await sb
+    .from("cpi_vendor_map")
+    .select("cpi_vendor, user_id");
+  const map = new Map<string, string>();
+  const pending: string[] = [];
+  for (const row of (rows ?? []) as VendorMapRow[]) {
+    if (row.user_id) map.set(row.cpi_vendor, row.user_id);
+    else pending.push(row.cpi_vendor);
+  }
+  if (pending.length === 0) return map;
+
+  const { data: list } = await sb.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  const byName = new Map<string, string>();
+  for (const user of list?.users ?? []) {
+    const full = (user.user_metadata?.full_name as string | undefined) ?? "";
+    if (full) byName.set(normalizeName(full), user.id);
+  }
+  for (const vendor of pending) {
+    const userId = byName.get(normalizeName(vendor));
+    if (!userId) continue;
+    map.set(vendor, userId);
+    await sb.from("cpi_vendor_map").update({ user_id: userId }).eq("cpi_vendor", vendor);
+  }
+  return map;
+}
+
+export async function syncCpiQuotes(
+  opts: QuoteSyncOptions = {}
+): Promise<SyncQuotesResult> {
+  const { from, to } = defaultRange(opts);
+  const fetched = uniqueQuotes(
+    await cpiGetCotizacionesWithLines({ from, to, limit: opts.limit ?? 1000 })
+  );
+  if (fetched.length === 0) {
+    return { fetched: 0, upserted: 0, lines: 0, matchedVendors: 0, from, to };
+  }
+
+  await ensureVendors(fetched.map((quote) => quote.vendedor));
+  const vendorMap = await resolveVendorMap();
+  const quoteRows: QuoteDbRow[] = fetched.map((quote) => ({
+    cpi_key: keyFor(quote),
+    cpi_id: quote.cpiId,
+    quote_number: quote.quoteNumber,
+    tipo: quote.tipo || "Cotizacion",
+    fecha: dbDate(quote.fechaIso),
+    origen: quote.origen,
+    sucursal: quote.sucursal,
+    sucursal_code: quote.sucursalCode,
+    point_of_sale_code: quote.puntoVentaCode,
+    vendedor: quote.vendedor,
+    vendedor_cod: quote.vendedorCod,
+    cliente: quote.cliente,
+    cliente_id: quote.clienteId,
+    medio_pago: quote.medioPago,
+    moneda: quote.moneda || "CRC",
+    subtotal: quote.subtotal,
+    estado: quote.estado,
+    actividad: quote.actividad,
+    user_id: vendorMap.get(quote.vendedor) ?? null,
+  }));
+
+  const sb = createAdminClient();
+  const keys = quoteRows.map((row) => row.cpi_key);
+  await sb.from("cpi_quotes").delete().gte("fecha", dayStart(from)).lte("fecha", dayEnd(to));
+  const { data: savedQuotes, error } = await sb
+    .from("cpi_quotes")
+    .upsert(quoteRows, { onConflict: "cpi_key" })
+    .select("id, cpi_key");
+  if (error) {
+    return {
+      fetched: fetched.length,
+      upserted: 0,
+      lines: 0,
+      matchedVendors: vendorMap.size,
+      from,
+      to,
+      error: error.message,
+    };
+  }
+
+  await sb.from("cpi_quote_lines").delete().in("cpi_key", keys);
+  const idByKey = new Map(
+    ((savedQuotes ?? []) as { id: string; cpi_key: string }[]).map((row) => [
+      row.cpi_key,
+      row.id,
+    ])
+  );
+  const lineRows = fetched.flatMap((quote) => {
+    const key = keyFor(quote);
+    const quoteId = idByKey.get(key) ?? null;
+    return quote.lines.map((line) => ({
+      quote_id: quoteId,
+      cpi_key: key,
+      quote_number: quote.quoteNumber,
+      line_id: line.lineId || null,
+      linea: line.lineNo || null,
+      item_id: line.itemId || null,
+      sku: line.sku || null,
+      descripcion: line.descripcion,
+      cantidad: line.cantidad,
+      precio_unit: line.precioUnit,
+      descuento: line.descuento,
+      subtotal: line.subtotal,
+      impuesto: line.impuesto,
+      total: line.total,
+      total_con_impuesto: line.totalConImpuesto,
+    }));
+  });
+  if (lineRows.length > 0) {
+    const { error: linesError } = await sb.from("cpi_quote_lines").insert(lineRows);
+    if (linesError) {
+      return {
+        fetched: fetched.length,
+        upserted: savedQuotes?.length ?? quoteRows.length,
+        lines: 0,
+        matchedVendors: vendorMap.size,
+        from,
+        to,
+        error: linesError.message,
+      };
+    }
+  }
+
+  return {
+    fetched: fetched.length,
+    upserted: savedQuotes?.length ?? quoteRows.length,
+    lines: lineRows.length,
+    matchedVendors: vendorMap.size,
+    from,
+    to,
+  };
+}
+
+function bump(map: Map<string, QuoteBucket>, key: string, crc: number, usd: number) {
+  const k = key || "-";
+  const bucket = map.get(k) ?? { key: k, count: 0, crc: 0, usd: 0 };
+  bucket.count += 1;
+  bucket.crc += crc;
+  bucket.usd += usd;
+  map.set(k, bucket);
+}
+
+function productKey(desc: string, sku: string | null): string {
+  return normalizeName(sku || desc).slice(0, 160);
+}
+
+function byValue(a: QuoteBucket, b: QuoteBucket) {
+  return b.crc - a.crc || b.usd - a.usd || b.count - a.count;
+}
+
+async function fetchQuoteLines(keys: string[]): Promise<QuoteLineDbRow[]> {
+  if (keys.length === 0) return [];
+  const sb = createAdminClient();
+  const rows: QuoteLineDbRow[] = [];
+  for (let i = 0; i < keys.length; i += 400) {
+    const chunk = keys.slice(i, i + 400);
+    const { data } = await sb
+      .from("cpi_quote_lines")
+      .select(
+        "cpi_key, quote_number, line_id, linea, item_id, sku, descripcion, cantidad, precio_unit, descuento, subtotal, impuesto, total, total_con_impuesto"
+      )
+      .in("cpi_key", chunk)
+      .limit(50000);
+    rows.push(...(((data ?? []) as QuoteLineDbRow[]) ?? []));
+  }
+  return rows;
+}
+
+export async function getQuoteAnalytics(
+  year: number,
+  month1: number
+): Promise<QuoteAnalytics> {
+  const empty: QuoteAnalytics = {
+    totalCRC: 0,
+    totalUSD: 0,
+    count: 0,
+    ticketPromedioCRC: 0,
+    vendedores: 0,
+    clientes: 0,
+    porDia: [],
+    porVendedor: [],
+    porSucursal: [],
+    porCliente: [],
+    topProducts: [],
+    recentQuotes: [],
+    hasData: false,
+  };
+
+  let quotes: QuoteDbRow[] = [];
+  try {
+    const sb = createAdminClient();
+    const { from, to } = monthRange(year, month1);
+    const { data } = await sb
+      .from("cpi_quotes")
+      .select(
+        "id, cpi_key, cpi_id, quote_number, tipo, fecha, origen, sucursal, sucursal_code, point_of_sale_code, vendedor, vendedor_cod, cliente, cliente_id, medio_pago, moneda, subtotal, estado, actividad, user_id"
+      )
+      .gte("fecha", from)
+      .lt("fecha", to)
+      .order("fecha", { ascending: false })
+      .limit(50000);
+    quotes = (data ?? []) as QuoteDbRow[];
+  } catch {
+    return empty;
+  }
+  if (quotes.length === 0) return empty;
+
+  const lines = await fetchQuoteLines(quotes.map((quote) => quote.cpi_key));
+  const quoteByKey = new Map(quotes.map((quote) => [quote.cpi_key, quote]));
+  const lineCountByKey = new Map<string, number>();
+  for (const line of lines) {
+    lineCountByKey.set(line.cpi_key, (lineCountByKey.get(line.cpi_key) ?? 0) + 1);
+  }
+
+  const { days } = monthRange(year, month1);
+  const dia = new Map<string, { day: string; count: number; crc: number; usd: number }>();
+  const ven = new Map<string, QuoteBucket>();
+  const suc = new Map<string, QuoteBucket>();
+  const cli = new Map<string, QuoteBucket>();
+  const clients = new Set<string>();
+  const vendors = new Set<string>();
+  let totalCRC = 0;
+  let totalUSD = 0;
+  let crcCount = 0;
+
+  for (const quote of quotes) {
+    const amount = Number(quote.subtotal) || 0;
+    const isUSD = quote.moneda === "USD";
+    const crc = isUSD ? 0 : amount;
+    const usd = isUSD ? amount : 0;
+    totalCRC += crc;
+    totalUSD += usd;
+    if (!isUSD) crcCount += 1;
+    if (quote.vendedor) vendors.add(quote.vendedor);
+    if (quote.cliente) clients.add(quote.cliente);
+    bump(ven, quote.vendedor, crc, usd);
+    bump(suc, quote.origen || quote.sucursal, crc, usd);
+    bump(cli, quote.cliente, crc, usd);
+    const day = (quote.fecha || "").slice(0, 10);
+    if (day) {
+      const bucket = dia.get(day) ?? { day, count: 0, crc: 0, usd: 0 };
+      bucket.count += 1;
+      bucket.crc += crc;
+      bucket.usd += usd;
+      dia.set(day, bucket);
+    }
+  }
+
+  const porDia: QuoteAnalytics["porDia"] = [];
+  for (let d = 1; d <= days; d++) {
+    const key = `${year}-${String(month1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    porDia.push(dia.get(key) ?? { day: key, count: 0, crc: 0, usd: 0 });
+  }
+
+  type ProductAgg = {
+    descripcion: string;
+    sku: string;
+    quotes: Set<string>;
+    cantidad: number;
+    crc: number;
+    usd: number;
+  };
+  const products = new Map<string, ProductAgg>();
+  for (const line of lines) {
+    const desc = (line.descripcion || "").trim();
+    if (!desc) continue;
+    const quote = quoteByKey.get(line.cpi_key);
+    if (!quote) continue;
+    const key = productKey(desc, line.sku);
+    const agg =
+      products.get(key) ??
+      {
+        descripcion: desc,
+        sku: line.sku || "",
+        quotes: new Set<string>(),
+        cantidad: 0,
+        crc: 0,
+        usd: 0,
+      };
+    const total = Number(line.total_con_impuesto || line.total || line.subtotal) || 0;
+    agg.quotes.add(line.cpi_key);
+    agg.cantidad += Number(line.cantidad) || 0;
+    if (quote.moneda === "USD") agg.usd += total;
+    else agg.crc += total;
+    products.set(key, agg);
+  }
+
+  const topProducts: TopQuotedProduct[] = [...products.values()]
+    .map((item) => ({
+      descripcion: item.descripcion,
+      sku: item.sku,
+      quoteCount: item.quotes.size,
+      cantidad: item.cantidad,
+      crc: item.crc,
+      usd: item.usd,
+    }))
+    .sort((a, b) => b.quoteCount - a.quoteCount || b.cantidad - a.cantidad || b.crc - a.crc)
+    .slice(0, 20);
+
+  return {
+    totalCRC,
+    totalUSD,
+    count: quotes.length,
+    ticketPromedioCRC: crcCount ? Math.round(totalCRC / crcCount) : 0,
+    vendedores: vendors.size,
+    clientes: clients.size,
+    porDia,
+    porVendedor: [...ven.values()].sort(byValue).slice(0, 15),
+    porSucursal: [...suc.values()].sort(byValue).slice(0, 15),
+    porCliente: [...cli.values()].sort(byValue).slice(0, 15),
+    topProducts,
+    recentQuotes: quotes.slice(0, 20).map((quote) => ({
+      quoteNumber: quote.quote_number,
+      fecha: quote.fecha,
+      cliente: quote.cliente,
+      vendedor: quote.vendedor,
+      moneda: quote.moneda,
+      subtotal: Number(quote.subtotal) || 0,
+      lineCount: lineCountByKey.get(quote.cpi_key) ?? 0,
+    })),
+    hasData: true,
+  };
+}

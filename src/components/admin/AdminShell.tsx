@@ -17,6 +17,7 @@ import {
   Sun,
   Lock,
   TrendingUp,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
@@ -38,10 +39,16 @@ const GROUPS: Group[] = [
     label: "Gestionar Tienda",
     Icon: Store,
     href: "/admin/productos",
-    prefixes: ["/admin/productos", "/admin/pedidos", "/admin/ventas-sucursales"],
+    prefixes: [
+      "/admin/productos",
+      "/admin/pedidos",
+      "/admin/ventas-sucursales",
+      "/admin/cotizaciones",
+    ],
     sub: [
       { href: "/admin/productos", label: "Inventario", Icon: Package },
       { href: "/admin/ventas-sucursales", label: "Ventas de sucursal", Icon: Store },
+      { href: "/admin/cotizaciones", label: "Cotizaciones CPI", Icon: ClipboardList },
       { href: "/admin/pedidos", label: "Pedidos online", Icon: ShoppingBag },
     ],
   },
