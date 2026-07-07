@@ -330,11 +330,8 @@ async function fetchQuoteLines(keys: string[]): Promise<QuoteLineDbRow[]> {
   return rows;
 }
 
-export async function getQuoteAnalytics(
-  year: number,
-  month1: number
-): Promise<QuoteAnalytics> {
-  const empty: QuoteAnalytics = {
+function emptyAnalytics(dayKeys: string[] = []): QuoteAnalytics {
+  return {
     totalCRC: 0,
     totalUSD: 0,
     count: 0,
@@ -342,7 +339,7 @@ export async function getQuoteAnalytics(
     productos: 0,
     vendedores: 0,
     clientes: 0,
-    porDia: [],
+    porDia: dayKeys.map((day) => ({ day, count: 0, crc: 0, usd: 0 })),
     porVendedor: [],
     porSucursal: [],
     porCliente: [],
@@ -350,18 +347,53 @@ export async function getQuoteAnalytics(
     recentQuotes: [],
     hasData: false,
   };
+}
+
+function dayKeysForMonth(year: number, month1: number): string[] {
+  const days = new Date(year, month1, 0).getDate();
+  const keys: string[] = [];
+  for (let d = 1; d <= days; d++) {
+    keys.push(`${year}-${String(month1).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
+  }
+  return keys;
+}
+
+function addDays(day: string, amount: number): string {
+  const [year, month, date] = day.split("-").map(Number);
+  const d = new Date(Date.UTC(year, month - 1, date + amount));
+  return d.toISOString().slice(0, 10);
+}
+
+function dayKeysForRange(fromDay: string, toDay: string): string[] {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fromDay) || !/^\d{4}-\d{2}-\d{2}$/.test(toDay)) {
+    return [];
+  }
+  if (fromDay > toDay) return [];
+  const keys: string[] = [];
+  for (let day = fromDay; day <= toDay; day = addDays(day, 1)) {
+    keys.push(day);
+  }
+  return keys;
+}
+
+async function getQuoteAnalyticsForRange(
+  fromDay: string,
+  toDay: string,
+  dayKeys: string[]
+): Promise<QuoteAnalytics> {
+  const empty = emptyAnalytics(dayKeys);
+  if (!fromDay || !toDay || fromDay > toDay) return empty;
 
   let quotes: QuoteDbRow[] = [];
   try {
     const sb = createAdminClient();
-    const { from, to } = monthRange(year, month1);
     const { data } = await sb
       .from("cpi_quotes")
       .select(
         "id, cpi_key, cpi_id, quote_number, tipo, fecha, origen, sucursal, sucursal_code, point_of_sale_code, vendedor, vendedor_cod, cliente, cliente_id, medio_pago, moneda, subtotal, estado, actividad, user_id"
       )
-      .gte("fecha", from)
-      .lt("fecha", to)
+      .gte("fecha", dayStart(fromDay))
+      .lte("fecha", dayEnd(toDay))
       .order("fecha", { ascending: false })
       .limit(50000);
     quotes = (data ?? []) as QuoteDbRow[];
@@ -377,7 +409,6 @@ export async function getQuoteAnalytics(
     lineCountByKey.set(line.cpi_key, (lineCountByKey.get(line.cpi_key) ?? 0) + 1);
   }
 
-  const { days } = monthRange(year, month1);
   const dia = new Map<string, { day: string; count: number; crc: number; usd: number }>();
   const ven = new Map<string, QuoteBucket>();
   const suc = new Map<string, QuoteBucket>();
@@ -411,11 +442,7 @@ export async function getQuoteAnalytics(
     }
   }
 
-  const porDia: QuoteAnalytics["porDia"] = [];
-  for (let d = 1; d <= days; d++) {
-    const key = `${year}-${String(month1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    porDia.push(dia.get(key) ?? { day: key, count: 0, crc: 0, usd: 0 });
-  }
+  const porDia = dayKeys.map((key) => dia.get(key) ?? { day: key, count: 0, crc: 0, usd: 0 });
 
   type ProductAgg = {
     descripcion: string;
@@ -486,4 +513,28 @@ export async function getQuoteAnalytics(
     })),
     hasData: true,
   };
+}
+
+export async function getQuoteDayAnalytics(day: string): Promise<QuoteAnalytics> {
+  const cleanDay = day.slice(0, 10);
+  return getQuoteAnalyticsForRange(cleanDay, cleanDay, [cleanDay]);
+}
+
+export async function getQuoteRangeAnalytics(
+  fromDay: string,
+  toDay: string
+): Promise<QuoteAnalytics> {
+  const from = fromDay.slice(0, 10);
+  const to = toDay.slice(0, 10);
+  return getQuoteAnalyticsForRange(from, to, dayKeysForRange(from, to));
+}
+
+export async function getQuoteAnalytics(
+  year: number,
+  month1: number
+): Promise<QuoteAnalytics> {
+  const from = `${year}-${String(month1).padStart(2, "0")}-01`;
+  const days = new Date(year, month1, 0).getDate();
+  const to = `${year}-${String(month1).padStart(2, "0")}-${String(days).padStart(2, "0")}`;
+  return getQuoteAnalyticsForRange(from, to, dayKeysForMonth(year, month1));
 }
