@@ -98,6 +98,16 @@ export type QuoteVendorPerformance = {
   hasData: boolean;
 };
 
+export type UserQuoteDaySummary = {
+  day: string;
+  count: number;
+  crc: number;
+  usd: number;
+  clientes: number;
+  productos: number;
+  lineas: number;
+};
+
 export type UserQuoteAnalytics = {
   count: number;
   amountCRC: number;
@@ -107,7 +117,7 @@ export type UserQuoteAnalytics = {
   productos: number;
   lineas: number;
   activeDays: number;
-  porDia: { day: string; count: number; crc: number }[];
+  porDia: UserQuoteDaySummary[];
   porSucursal: QuoteBucket[];
   topProducts: VendorQuoteProduct[];
   rank: number | null;
@@ -664,12 +674,8 @@ function preferredName(names: Map<string, number>): string {
   );
 }
 
-export async function getUserQuoteAnalytics(
-  userId: string,
-  year: number,
-  month1: number
-): Promise<UserQuoteAnalytics> {
-  const empty: UserQuoteAnalytics = {
+function emptyUserQuoteAnalytics(dayKeys: string[]): UserQuoteAnalytics {
+  return {
     count: 0,
     amountCRC: 0,
     amountUSD: 0,
@@ -678,7 +684,15 @@ export async function getUserQuoteAnalytics(
     productos: 0,
     lineas: 0,
     activeDays: 0,
-    porDia: dayKeysForMonth(year, month1).map((day) => ({ day, count: 0, crc: 0 })),
+    porDia: dayKeys.map((day) => ({
+      day,
+      count: 0,
+      crc: 0,
+      usd: 0,
+      clientes: 0,
+      productos: 0,
+      lineas: 0,
+    })),
     porSucursal: [],
     topProducts: [],
     rank: null,
@@ -690,11 +704,16 @@ export async function getUserQuoteAnalytics(
     leaderCount: 0,
     hasData: false,
   };
+}
 
-  const month = String(month1).padStart(2, "0");
-  const fromDay = `${year}-${month}-01`;
-  const days = new Date(year, month1, 0).getDate();
-  const toDay = `${year}-${month}-${String(days).padStart(2, "0")}`;
+async function getUserQuoteAnalyticsForDays(
+  userId: string,
+  fromDay: string,
+  toDay: string,
+  dayKeys: string[]
+): Promise<UserQuoteAnalytics> {
+  const empty = emptyUserQuoteAnalytics(dayKeys);
+  if (!fromDay || !toDay || fromDay > toDay) return empty;
 
   let quotes: QuoteDbRow[] = [];
   try {
@@ -767,9 +786,17 @@ export async function getUserQuoteAnalytics(
   const quoteByKey = new Map(mine.map((quote) => [quote.cpi_key, quote]));
   const lines = await fetchQuoteLines(mine.map((quote) => quote.cpi_key));
   const suc = new Map<string, QuoteBucket>();
-  const dia = new Map<string, { day: string; count: number; crc: number }>();
   const clients = new Set<string>();
   const activeDays = new Set<string>();
+  type DayAgg = {
+    day: string;
+    count: number;
+    crc: number;
+    usd: number;
+    clientes: Set<string>;
+    productos: Set<string>;
+    lineas: number;
+  };
   type ProductAgg = {
     descripcion: string;
     sku: string;
@@ -779,9 +806,25 @@ export async function getUserQuoteAnalytics(
     usd: number;
   };
   const products = new Map<string, ProductAgg>();
+  const dia = new Map<string, DayAgg>();
   let amountCRC = 0;
   let amountUSD = 0;
   let crcCount = 0;
+  const ensureDay = (day: string) => {
+    const current =
+      dia.get(day) ??
+      {
+        day,
+        count: 0,
+        crc: 0,
+        usd: 0,
+        clientes: new Set<string>(),
+        productos: new Set<string>(),
+        lineas: 0,
+      };
+    dia.set(day, current);
+    return current;
+  };
 
   for (const quote of mine) {
     const amount = Number(quote.subtotal) || 0;
@@ -796,10 +839,11 @@ export async function getUserQuoteAnalytics(
     const day = (quote.fecha || "").slice(0, 10);
     if (day) {
       activeDays.add(day);
-      const bucket = dia.get(day) ?? { day, count: 0, crc: 0 };
+      const bucket = ensureDay(day);
       bucket.count += 1;
       bucket.crc += crc;
-      dia.set(day, bucket);
+      bucket.usd += usd;
+      if (quote.cliente) bucket.clientes.add(quote.cliente);
     }
   }
 
@@ -825,6 +869,12 @@ export async function getUserQuoteAnalytics(
     if (quote.moneda === "USD") agg.usd += total;
     else agg.crc += total;
     products.set(key, agg);
+    const day = (quote.fecha || "").slice(0, 10);
+    if (day) {
+      const dayAgg = ensureDay(day);
+      dayAgg.lineas += 1;
+      dayAgg.productos.add(key);
+    }
   }
 
   return {
@@ -836,7 +886,28 @@ export async function getUserQuoteAnalytics(
     productos: products.size,
     lineas: lines.length,
     activeDays: activeDays.size,
-    porDia: dayKeysForMonth(year, month1).map((day) => dia.get(day) ?? { day, count: 0, crc: 0 }),
+    porDia: dayKeys.map((day) => {
+      const item = dia.get(day);
+      return item
+        ? {
+            day,
+            count: item.count,
+            crc: item.crc,
+            usd: item.usd,
+            clientes: item.clientes.size,
+            productos: item.productos.size,
+            lineas: item.lineas,
+          }
+        : {
+            day,
+            count: 0,
+            crc: 0,
+            usd: 0,
+            clientes: 0,
+            productos: 0,
+            lineas: 0,
+          };
+    }),
     porSucursal: [...suc.values()].sort(byValue),
     topProducts: toVendorProducts(products),
     rank: myRank >= 0 ? myRank + 1 : null,
@@ -848,6 +919,26 @@ export async function getUserQuoteAnalytics(
     leaderCount: leader?.count ?? 0,
     hasData: true,
   };
+}
+
+export async function getUserQuoteDayAnalytics(
+  userId: string,
+  day: string
+): Promise<UserQuoteAnalytics> {
+  const cleanDay = day.slice(0, 10);
+  return getUserQuoteAnalyticsForDays(userId, cleanDay, cleanDay, [cleanDay]);
+}
+
+export async function getUserQuoteAnalytics(
+  userId: string,
+  year: number,
+  month1: number
+): Promise<UserQuoteAnalytics> {
+  const month = String(month1).padStart(2, "0");
+  const from = `${year}-${month}-01`;
+  const days = new Date(year, month1, 0).getDate();
+  const to = `${year}-${month}-${String(days).padStart(2, "0")}`;
+  return getUserQuoteAnalyticsForDays(userId, from, to, dayKeysForMonth(year, month1));
 }
 
 export async function getUserQuoteMonthlyEvolution(

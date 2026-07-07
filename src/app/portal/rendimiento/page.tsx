@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import {
   BadgeDollarSign,
   Building2,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
@@ -17,6 +18,7 @@ import {
   TrendingUp,
   Users,
   Wallet,
+  type LucideIcon,
 } from "lucide-react";
 import { getCurrentUser } from "@/lib/supabase-server";
 import { getUserFullName } from "@/lib/roles";
@@ -27,7 +29,8 @@ import {
   getVendorPerformance as getSalesVendorPerformance,
 } from "@/lib/cpi-analytics";
 import {
-  getQuoteVendorPerformance,
+  getQuoteVendorDayPerformance,
+  getUserQuoteDayAnalytics,
   getUserQuoteAnalytics,
   getUserQuoteMonthlyEvolution,
 } from "@/lib/cpi-quotes";
@@ -57,8 +60,34 @@ function money(crc: number, usd: number) {
   return usd > 0 ? `${fmtCRC(crc)} / ${fmtUSD(usd)}` : fmtCRC(crc);
 }
 
+function crToday() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Costa_Rica",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
 function monthLabel(y: number, m: number) {
   return new Intl.DateTimeFormat("es-CR", { month: "long", year: "numeric" }).format(new Date(y, m - 1, 1));
+}
+
+function dayLabel(day: string) {
+  const clean = day.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(clean)) return clean || "-";
+  return `${clean.slice(8, 10)}/${clean.slice(5, 7)}/${clean.slice(0, 4)}`;
+}
+
+function longDayLabel(day: string) {
+  const clean = day.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(clean)) return clean || "-";
+  const [year, month, date] = clean.split("-").map(Number);
+  return new Intl.DateTimeFormat("es-CR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+  }).format(new Date(year, month - 1, date));
 }
 
 function shift(y: number, m: number, d: number) {
@@ -78,6 +107,24 @@ function monthHref(view: "ventas" | "cotizaciones", year: number, month1: number
   return `?vista=${view}&mes=${shift(year, month1, delta)}`;
 }
 
+function monthLastDay(year: number, month1: number) {
+  return `${ym(year, month1)}-${String(new Date(year, month1, 0).getDate()).padStart(2, "0")}`;
+}
+
+function selectedQuoteDay(input: string | undefined, year: number, month1: number) {
+  const month = ym(year, month1);
+  if (input && /^\d{4}-\d{2}-\d{2}$/.test(input) && input.slice(0, 7) === month) {
+    return input;
+  }
+  const today = crToday();
+  if (today.slice(0, 7) === month) return today;
+  return month < today.slice(0, 7) ? monthLastDay(year, month1) : `${month}-01`;
+}
+
+function quoteDayHref(day: string) {
+  return `?vista=cotizaciones&mes=${day.slice(0, 7)}&dia=${day.slice(0, 10)}`;
+}
+
 function medalClass(r: number): string {
   if (r === 1) return "bg-gradient-to-br from-amber-300 to-amber-500 text-white ring-2 ring-amber-200";
   if (r === 2) return "bg-gradient-to-br from-slate-300 to-slate-400 text-white";
@@ -95,10 +142,10 @@ function ViewTabs({
   month1: number;
 }) {
   return (
-    <div className="mb-5 inline-flex rounded-full border border-ink-200 bg-white p-1">
+    <div className="mb-5 grid w-full grid-cols-2 rounded-full border border-ink-200 bg-white p-1 sm:inline-flex sm:w-auto">
       <Link
         href={hrefFor("ventas", year, month1)}
-        className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold ${
+        className={`inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-2 text-sm font-bold ${
           activeView === "ventas" ? "bg-brand-600 text-white" : "text-ink-600 hover:bg-ink-100"
         }`}
       >
@@ -107,7 +154,7 @@ function ViewTabs({
       </Link>
       <Link
         href={hrefFor("cotizaciones", year, month1)}
-        className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold ${
+        className={`inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-2 text-sm font-bold ${
           activeView === "cotizaciones" ? "bg-brand-600 text-white" : "text-ink-600 hover:bg-ink-100"
         }`}
       >
@@ -128,21 +175,23 @@ function PageHeader({
   month1: number;
 }) {
   return (
-    <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h1 className="text-2xl font-black tracking-tight text-ink-900">Rendimiento</h1>
+    <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+      <div className="min-w-0">
+        <h1 className="text-xl font-black tracking-tight text-ink-900 sm:text-2xl">Rendimiento</h1>
         <p className="mt-1 text-sm text-ink-600">
-          Tus ventas, cotizaciones y posicion del mes.
+          {activeView === "cotizaciones"
+            ? "Tus cotizaciones por dia y tu posicion."
+            : "Tus ventas y tu posicion del mes."}
         </p>
       </div>
-      <div className="inline-flex items-center gap-1 rounded-full border border-ink-200 bg-white p-1">
+      <div className="inline-flex w-full items-center gap-1 rounded-full border border-ink-200 bg-white p-1 sm:w-auto">
         <Link
           href={monthHref(activeView, year, month1, -1)}
           className="inline-flex size-8 items-center justify-center rounded-full text-ink-600 hover:bg-ink-100"
         >
           <ChevronLeft className="size-4" />
         </Link>
-        <span className="min-w-32 px-2 text-center text-sm font-bold capitalize text-ink-900">
+        <span className="min-w-0 flex-1 px-2 text-center text-sm font-bold capitalize text-ink-900 sm:min-w-32">
           {monthLabel(year, month1)}
         </span>
         <Link
@@ -152,6 +201,41 @@ function PageHeader({
           <ChevronRight className="size-4" />
         </Link>
       </div>
+    </div>
+  );
+}
+
+function CompactStat({
+  label,
+  value,
+  sub,
+  Icon,
+  accent = "brand",
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  Icon: LucideIcon;
+  accent?: "brand" | "accent" | "warn";
+}) {
+  const tone =
+    accent === "accent"
+      ? "bg-accent-50 text-accent-700"
+      : accent === "warn"
+        ? "bg-warn/15 text-amber-700"
+        : "bg-brand-50 text-brand-600";
+  return (
+    <div className="min-w-0 rounded-xl border border-ink-200 bg-white p-3 shadow-soft">
+      <div className="flex items-center gap-2">
+        <span className={`inline-flex size-8 shrink-0 items-center justify-center rounded-lg ${tone}`}>
+          <Icon className="size-4" />
+        </span>
+      <p className="min-w-0 truncate text-[11px] font-bold text-ink-500">{label}</p>
+    </div>
+      <p className="mt-2 break-words text-lg font-black leading-tight tracking-tight text-ink-900 sm:text-xl" title={value}>
+        {value}
+      </p>
+      {sub && <p className="mt-0.5 truncate text-[11px] text-ink-400">{sub}</p>}
     </div>
   );
 }
@@ -303,18 +387,21 @@ async function QuotePerformance({
   firstName,
   year,
   month1,
+  selectedDay,
   myVendors,
 }: {
   userId: string;
   firstName: string;
   year: number;
   month1: number;
+  selectedDay: string;
   myVendors: Set<string>;
 }) {
-  const [q, evo, perf] = await Promise.all([
+  const [day, month, evo, perfDay] = await Promise.all([
+    getUserQuoteDayAnalytics(userId, selectedDay),
     getUserQuoteAnalytics(userId, year, month1),
     getUserQuoteMonthlyEvolution(userId, 6),
-    getQuoteVendorPerformance(year, month1),
+    getQuoteVendorDayPerformance(selectedDay),
   ]);
   const evoItems: BarItem[] = evo.map((p) => ({
     label: p.label,
@@ -322,13 +409,13 @@ async function QuotePerformance({
     display: `${p.count} COTs`,
     sub: fmtCRC(p.crc),
   }));
-  const sucItems: BarItem[] = q.porSucursal.map((b) => ({
+  const sucItems: BarItem[] = day.porSucursal.map((b) => ({
     label: b.key,
     value: b.count,
     display: `${b.count} COTs`,
     sub: money(b.crc, b.usd),
   }));
-  const productItems: BarItem[] = q.topProducts.map((product) => ({
+  const productItems: BarItem[] = day.topProducts.map((product) => ({
     label: product.descripcion,
     value: product.quoteCount,
     display: String(product.quoteCount),
@@ -336,18 +423,23 @@ async function QuotePerformance({
       ? `${product.sku} / ${product.cantidad.toLocaleString("es-CR", { maximumFractionDigits: 2 })} unidades`
       : `${product.cantidad.toLocaleString("es-CR", { maximumFractionDigits: 2 })} unidades`,
   }));
-  const leader = perf.vendors[0];
-  const cotGap = Math.max(0, (leader?.count ?? q.leaderCount) - q.count);
-  const valueGap = Math.max(0, (leader?.valor ?? q.leaderValor) - q.myValor);
+  const leader = perfDay.vendors[0];
+  const cotGap = Math.max(0, (leader?.count ?? day.leaderCount) - day.count);
+  const valueGap = Math.max(0, (leader?.valor ?? day.leaderValor) - day.myValor);
+  const dailyRows = month.porDia
+    .filter((row) => row.count > 0)
+    .sort((a, b) => b.day.localeCompare(a.day));
+  const hasAnyData = day.hasData || month.hasData || perfDay.hasData;
+  const isToday = selectedDay === crToday();
 
   return (
     <>
-      {!q.hasData ? (
+      {!hasAnyData ? (
         <div className="rounded-2xl border border-ink-200 bg-white p-10 text-center shadow-soft">
           <span className="mx-auto inline-flex size-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
             <PackageSearch className="size-7" />
           </span>
-          <h2 className="mt-4 text-lg font-black text-ink-900">Sin cotizaciones este mes</h2>
+          <h2 className="mt-4 text-lg font-black text-ink-900">Sin cotizaciones en este mes</h2>
           <p className="mx-auto mt-1.5 max-w-sm text-sm text-ink-600">
             Cuando se sincronice CPI, tus COTs de {monthLabel(year, month1)} apareceran aqui.
             Si ya hiciste cotizaciones, puede faltar enlazar tu vendedor con el portal.
@@ -355,45 +447,96 @@ async function QuotePerformance({
         </div>
       ) : (
         <div className="space-y-4">
-          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-accent-700 via-brand-600 to-ink-900 p-6 text-white shadow-lift">
-            <div className="pointer-events-none absolute inset-0 opacity-35 [background:radial-gradient(circle_at_85%_-10%,rgba(255,255,255,0.35),transparent_50%)]" />
-            <div className="relative flex items-center gap-4">
-              <span className="inline-flex size-16 shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-inset ring-white/25">
-                <ClipboardList className="size-8" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-wide text-white/60">Tu posicion en cotizaciones</p>
-                <p className="text-3xl font-black leading-tight">
-                  {q.rank ? `#${q.rank}` : "-"}
-                  <span className="ml-2 text-sm font-semibold text-white/70">de {q.totalVendedores} vendedores</span>
-                </p>
-                <p className="mt-0.5 text-sm text-white/80">
-                  {q.sharePct != null ? `Aportas el ${q.sharePct}% de las COTs enlazadas` : ""}
-                  {cotGap > 0 ? ` / te faltan ${cotGap} COTs para el lider` : q.rank === 1 ? " / vas de lider" : ""}
-                </p>
+          <section className="rounded-2xl border border-ink-200 bg-white p-4 shadow-soft sm:p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex min-w-0 items-start gap-3">
+                <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                  <ClipboardList className="size-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-wide text-ink-400">
+                    {isToday ? "Cotizaciones de hoy" : "Cotizaciones del dia"}
+                  </p>
+                  <h2 className="truncate text-lg font-black capitalize text-ink-900 sm:text-xl">
+                    {longDayLabel(selectedDay)}
+                  </h2>
+                  <p className="text-xs font-semibold text-ink-500">
+                    {day.rank ? `Posicion #${day.rank} de ${day.totalVendedores}` : "Sin COTs tuyas en este dia"}
+                  </p>
+                </div>
               </div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-ink-50 px-3 py-2 text-xs font-bold text-ink-700">
+                <CalendarDays className="size-4 text-brand-600" />
+                {dayLabel(selectedDay)}
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <CompactStat label="COTs" value={String(day.count)} Icon={ClipboardList} accent="brand" />
+              <CompactStat label="CRC" value={fmtCRC(day.amountCRC)} Icon={Wallet} accent="accent" />
+              <CompactStat label="USD" value={day.amountUSD > 0 ? fmtUSD(day.amountUSD) : "$0.00"} Icon={DollarSign} accent="brand" />
+              <CompactStat label="Ticket" value={fmtCRC(day.ticketPromedioCRC)} Icon={Receipt} accent="warn" />
+              <CompactStat label="Clientes" value={String(day.clientes)} Icon={Users} accent="brand" />
+              <CompactStat label="Productos" value={String(day.productos)} Icon={ShoppingBasket} accent="accent" />
+              <CompactStat label="Lineas" value={String(day.lineas)} Icon={Receipt} accent="brand" />
+              <CompactStat label="Ranking" value={day.rank ? `#${day.rank}` : "-"} sub={day.sharePct != null ? `${day.sharePct}%` : undefined} Icon={Trophy} accent="warn" />
             </div>
           </section>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <MetricCard label="Mis COTs" value={String(q.count)} Icon={ClipboardList} accent="brand" />
-            <MetricCard label="Cotizado (CRC)" value={fmtCRC(q.amountCRC)} Icon={Wallet} accent="accent" />
-            <MetricCard label="Cotizado (USD)" value={q.amountUSD > 0 ? fmtUSD(q.amountUSD) : "$0.00"} Icon={DollarSign} accent="brand" />
-            <MetricCard label="Ticket promedio" value={fmtCRC(q.ticketPromedioCRC)} Icon={Receipt} accent="warn" />
-            <MetricCard label="Clientes" value={String(q.clientes)} Icon={Users} accent="brand" />
-            <MetricCard label="Productos" value={String(q.productos)} Icon={ShoppingBasket} accent="accent" />
-            <MetricCard label="Lineas" value={String(q.lineas)} Icon={Receipt} accent="brand" />
-            <MetricCard label="Dias activos" value={String(q.activeDays)} Icon={TrendingUp} accent="warn" />
-          </div>
-
           <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft">
             <h2 className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-ink-900">
-              <TrendingUp className="size-4 text-brand-600" /> Tus cotizaciones por dia
+              <TrendingUp className="size-4 text-brand-600" /> Movimiento diario del mes
             </h2>
             <DayBars
-              data={q.porDia.map((d) => ({ day: d.day, value: d.count }))}
+              data={month.porDia.map((d) => ({ day: d.day, value: d.count }))}
               fmt={(n) => `${n} COTs`}
             />
+          </section>
+
+          <section className="rounded-2xl border border-ink-200 bg-white p-4 shadow-soft sm:p-5">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="inline-flex items-center gap-2 text-sm font-bold text-ink-900">
+                <CalendarDays className="size-4 text-brand-600" /> Historial dia a dia
+              </h2>
+              <span className="text-xs font-semibold text-ink-400">{dailyRows.length} dia(s)</span>
+            </div>
+            {dailyRows.length === 0 ? (
+              <p className="py-5 text-center text-sm text-ink-400">Sin dias con cotizaciones en este mes</p>
+            ) : (
+              <div className="space-y-2">
+                {dailyRows.map((row) => {
+                  const active = row.day === selectedDay;
+                  return (
+                    <Link
+                      key={row.day}
+                      href={quoteDayHref(row.day)}
+                      className={`block rounded-xl border p-3 transition ${
+                        active
+                          ? "border-brand-200 bg-brand-50"
+                          : "border-ink-100 bg-white hover:border-brand-100 hover:bg-ink-50"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-black text-ink-900">{dayLabel(row.day)}</p>
+                          <p className="mt-0.5 truncate text-xs font-semibold text-ink-500">
+                            {row.clientes} cliente(s) / {row.productos} producto(s)
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="text-sm font-black text-brand-600">{row.count} COTs</p>
+                          <p className="text-xs font-bold text-ink-700">{money(row.crc, row.usd)}</p>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold text-ink-500">
+                        <span className="rounded-full bg-ink-50 px-2 py-1">{row.lineas} linea(s)</span>
+                        {active && <span className="rounded-full bg-brand-600 px-2 py-1 text-white">Viendo</span>}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </section>
 
           <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft">
@@ -406,26 +549,26 @@ async function QuotePerformance({
           <div className="grid gap-4 sm:grid-cols-2">
             <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft">
               <h2 className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-ink-900">
-                <Building2 className="size-4 text-brand-600" /> COTs por sucursal
+                <Building2 className="size-4 text-brand-600" /> Sucursales del dia
               </h2>
-              <BarList items={sucItems} accent="accent" rank={false} />
+              <BarList items={sucItems} accent="accent" rank={false} emptyText="Sin sucursales este dia" />
             </section>
 
             <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft">
               <h2 className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-ink-900">
-                <ShoppingBasket className="size-4 text-brand-600" /> Tus productos mas cotizados
+                <ShoppingBasket className="size-4 text-brand-600" /> Productos del dia
               </h2>
-              <BarList items={productItems} accent="warn" />
+              <BarList items={productItems} accent="warn" emptyText="Sin productos este dia" />
             </section>
           </div>
 
-          {perf.hasData && (
+          {perfDay.hasData && (
             <section className="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft">
               <h2 className="flex items-center gap-2 border-b border-ink-100 px-5 py-3.5 text-sm font-bold text-ink-900">
-                <Medal className="size-4 text-brand-600" /> Ranking de cotizaciones
+                <Medal className="size-4 text-brand-600" /> Ranking del dia
               </h2>
               <ol className="max-h-[26rem] divide-y divide-ink-100 overflow-y-auto">
-                {perf.vendors.map((v) => {
+                {perfDay.vendors.map((v) => {
                   const mine = myVendors.has(v.vendedor);
                   return (
                     <li key={v.vendedor} className={`flex items-center gap-3 px-4 py-2.5 ${mine ? "bg-brand-50" : ""}`}>
@@ -451,24 +594,24 @@ async function QuotePerformance({
 
           <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft">
             <h2 className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-ink-900">
-              <BadgeDollarSign className="size-4 text-brand-600" /> Lider de cotizaciones y comparacion
+              <BadgeDollarSign className="size-4 text-brand-600" /> Lider del dia y comparacion
             </h2>
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-ink-100 bg-ink-50 p-4">
                 <p className="text-xs font-bold uppercase text-ink-400">Lider</p>
-                <p className="mt-1 truncate text-sm font-black text-ink-900" title={leader?.vendedor || q.leaderName}>
-                  {leader?.vendedor || q.leaderName || "-"}
+                <p className="mt-1 truncate text-sm font-black text-ink-900" title={leader?.vendedor || day.leaderName}>
+                  {leader?.vendedor || day.leaderName || "-"}
                 </p>
-                <p className="mt-2 text-2xl font-black text-ink-900">{leader?.count ?? q.leaderCount}</p>
-                <p className="text-xs font-semibold text-ink-500">COTs en el mes</p>
+                <p className="mt-2 text-2xl font-black text-ink-900">{leader?.count ?? day.leaderCount}</p>
+                <p className="text-xs font-semibold text-ink-500">COTs del dia</p>
               </div>
               <div className="rounded-2xl border border-brand-100 bg-brand-50 p-4">
                 <p className="text-xs font-bold uppercase text-brand-500">Vos</p>
                 <p className="mt-1 truncate text-sm font-black text-ink-900">
                   {firstName || "Tu avance"}
                 </p>
-                <p className="mt-2 text-2xl font-black text-ink-900">{q.count}</p>
-                <p className="text-xs font-semibold text-ink-500">{money(q.amountCRC, q.amountUSD)}</p>
+                <p className="mt-2 text-2xl font-black text-ink-900">{day.count}</p>
+                <p className="text-xs font-semibold text-ink-500">{money(day.amountCRC, day.amountUSD)}</p>
               </div>
               <div className="rounded-2xl border border-ink-100 bg-white p-4">
                 <p className="text-xs font-bold uppercase text-ink-400">Diferencia</p>
@@ -489,7 +632,7 @@ async function QuotePerformance({
 export default async function RendimientoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mes?: string; vista?: string }>;
+  searchParams: Promise<{ mes?: string; vista?: string; dia?: string }>;
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/ingresar");
@@ -506,6 +649,7 @@ export default async function RendimientoPage({
     }
   }
 
+  const quoteDay = selectedQuoteDay(sp.dia, year, month1);
   const myVendors = new Set(await getVendorsForUser(user.id));
   const firstName = (getUserFullName(user) || "").split(" ")[0];
 
@@ -519,6 +663,7 @@ export default async function RendimientoPage({
           firstName={firstName}
           year={year}
           month1={month1}
+          selectedDay={quoteDay}
           myVendors={myVendors}
         />
       ) : (
