@@ -39,20 +39,22 @@ export function BarList({
     return <p className="py-6 text-center text-sm text-ink-400">{emptyText}</p>;
   }
   return (
-    <ol className="space-y-2.5">
+    <ol className="min-w-0 space-y-2.5">
       {items.map((it, idx) => (
-        <li key={it.label + idx} className="flex items-center gap-3">
+        <li key={it.label + idx} className="flex min-w-0 items-center gap-3">
           {rank && (
             <span className="w-5 shrink-0 text-right text-xs font-bold text-ink-400">
               {idx + 1}
             </span>
           )}
           <div className="min-w-0 flex-1">
-            <div className="flex items-baseline justify-between gap-2">
+            <div className="flex min-w-0 items-baseline justify-between gap-2">
               <span className="truncate text-sm font-semibold text-ink-800" title={it.label}>
                 {it.label}
               </span>
-              <span className="shrink-0 text-sm font-black text-ink-900">{it.display}</span>
+              <span className="max-w-[42%] shrink-0 truncate text-right text-sm font-black text-ink-900" title={it.display}>
+                {it.display}
+              </span>
             </div>
             <div className={`mt-1 h-2 w-full overflow-hidden rounded-full ${a.track}`}>
               <div
@@ -60,7 +62,11 @@ export function BarList({
                 style={{ width: `${Math.max(2, (it.value / max) * 100)}%` }}
               />
             </div>
-            {it.sub && <p className="mt-0.5 text-[11px] text-ink-400">{it.sub}</p>}
+            {it.sub && (
+              <p className="mt-0.5 truncate text-[11px] text-ink-400" title={it.sub}>
+                {it.sub}
+              </p>
+            )}
           </div>
         </li>
       ))}
@@ -80,7 +86,7 @@ export function DayBars({
     return <p className="py-6 text-center text-sm text-ink-400">Sin ventas este mes</p>;
   }
   return (
-    <div>
+    <div className="min-w-0 overflow-hidden">
       <div className="flex h-40 items-end gap-[3px]">
         {data.map((d) => {
           const h = (d.value / max) * 100;

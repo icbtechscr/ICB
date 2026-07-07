@@ -48,7 +48,7 @@ export function PortalShell({
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-ink-50">
+    <div className="flex min-h-screen min-w-0 flex-col overflow-x-hidden bg-ink-50">
       {/* Encabezado */}
       <header className="sticky top-0 z-40 border-b border-ink-200 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
@@ -152,7 +152,7 @@ export function PortalShell({
       </header>
 
       {/* Contenido: deja espacio abajo para la barra móvil */}
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-28 pt-6 md:pb-16 md:pt-8">
+      <main className="mx-auto w-full max-w-5xl min-w-0 flex-1 overflow-x-hidden px-4 pb-28 pt-6 md:pb-16 md:pt-8">
         {children}
       </main>
 

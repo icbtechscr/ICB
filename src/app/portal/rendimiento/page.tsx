@@ -122,7 +122,12 @@ function selectedQuoteDay(input: string | undefined, year: number, month1: numbe
 }
 
 function quoteDayHref(day: string) {
-  return `?vista=cotizaciones&mes=${day.slice(0, 7)}&dia=${day.slice(0, 10)}`;
+  return `?vista=cotizaciones&mes=${day.slice(0, 7)}&sub=dia&dia=${day.slice(0, 10)}`;
+}
+
+function quoteSubHref(sub: "dia" | "historial", year: number, month1: number, day: string) {
+  const base = `?vista=cotizaciones&mes=${ym(year, month1)}&sub=${sub}`;
+  return sub === "dia" ? `${base}&dia=${day.slice(0, 10)}` : base;
 }
 
 function medalClass(r: number): string {
@@ -230,12 +235,47 @@ function CompactStat({
         <span className={`inline-flex size-8 shrink-0 items-center justify-center rounded-lg ${tone}`}>
           <Icon className="size-4" />
         </span>
-      <p className="min-w-0 truncate text-[11px] font-bold text-ink-500">{label}</p>
-    </div>
+        <p className="min-w-0 truncate text-[11px] font-bold text-ink-500">{label}</p>
+      </div>
       <p className="mt-2 break-words text-lg font-black leading-tight tracking-tight text-ink-900 sm:text-xl" title={value}>
         {value}
       </p>
       {sub && <p className="mt-0.5 truncate text-[11px] text-ink-400">{sub}</p>}
+    </div>
+  );
+}
+
+function QuoteSubTabs({
+  activeSubTab,
+  year,
+  month1,
+  selectedDay,
+}: {
+  activeSubTab: "dia" | "historial";
+  year: number;
+  month1: number;
+  selectedDay: string;
+}) {
+  return (
+    <div className="mb-4 grid w-full grid-cols-2 rounded-full border border-ink-200 bg-white p-1">
+      <Link
+        href={quoteSubHref("dia", year, month1, selectedDay)}
+        className={`inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-2 text-sm font-bold ${
+          activeSubTab === "dia" ? "bg-brand-600 text-white" : "text-ink-600 hover:bg-ink-100"
+        }`}
+      >
+        <ClipboardList className="size-4" />
+        Dia
+      </Link>
+      <Link
+        href={quoteSubHref("historial", year, month1, selectedDay)}
+        className={`inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-2 text-sm font-bold ${
+          activeSubTab === "historial" ? "bg-brand-600 text-white" : "text-ink-600 hover:bg-ink-100"
+        }`}
+      >
+        <CalendarDays className="size-4" />
+        Historial
+      </Link>
     </div>
   );
 }
@@ -388,6 +428,7 @@ async function QuotePerformance({
   year,
   month1,
   selectedDay,
+  activeSubTab,
   myVendors,
 }: {
   userId: string;
@@ -395,6 +436,7 @@ async function QuotePerformance({
   year: number;
   month1: number;
   selectedDay: string;
+  activeSubTab: "dia" | "historial";
   myVendors: Set<string>;
 }) {
   const [day, month, evo, perfDay] = await Promise.all([
@@ -434,6 +476,12 @@ async function QuotePerformance({
 
   return (
     <>
+      <QuoteSubTabs
+        activeSubTab={activeSubTab}
+        year={year}
+        month1={month1}
+        selectedDay={selectedDay}
+      />
       {!hasAnyData ? (
         <div className="rounded-2xl border border-ink-200 bg-white p-10 text-center shadow-soft">
           <span className="mx-auto inline-flex size-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
@@ -445,6 +493,55 @@ async function QuotePerformance({
             Si ya hiciste cotizaciones, puede faltar enlazar tu vendedor con el portal.
           </p>
         </div>
+      ) : activeSubTab === "historial" ? (
+        <section className="rounded-2xl border border-ink-200 bg-white p-3 shadow-soft sm:p-4">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="inline-flex min-w-0 items-center gap-2 text-sm font-bold text-ink-900">
+              <CalendarDays className="size-4 shrink-0 text-brand-600" />
+              <span className="truncate">Historial diario</span>
+            </h2>
+            <span className="shrink-0 text-xs font-semibold text-ink-400">{dailyRows.length} dia(s)</span>
+          </div>
+          {dailyRows.length === 0 ? (
+            <p className="py-5 text-center text-sm text-ink-400">Sin dias con cotizaciones en este mes</p>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {dailyRows.map((row) => {
+                const active = row.day === selectedDay;
+                return (
+                  <Link
+                    key={row.day}
+                    href={quoteDayHref(row.day)}
+                    className={`block min-w-0 rounded-xl border p-2.5 transition ${
+                      active
+                        ? "border-brand-200 bg-brand-50"
+                        : "border-ink-100 bg-white hover:border-brand-100 hover:bg-ink-50"
+                    }`}
+                  >
+                    <div className="flex min-w-0 items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-black text-ink-900">{dayLabel(row.day)}</p>
+                        <p className="mt-0.5 truncate text-[11px] font-semibold text-ink-500">
+                          {row.clientes} cliente(s) / {row.productos} producto(s)
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-xs font-black text-brand-600">{row.count} COTs</p>
+                        <p className="max-w-24 truncate text-[11px] font-bold text-ink-700" title={money(row.crc, row.usd)}>
+                          {money(row.crc, row.usd)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5 text-[10px] font-semibold text-ink-500">
+                      <span className="rounded-full bg-ink-50 px-2 py-0.5">{row.lineas} linea(s)</span>
+                      {active && <span className="rounded-full bg-brand-600 px-2 py-0.5 text-white">Seleccionado</span>}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </section>
       ) : (
         <div className="space-y-4">
           <section className="rounded-2xl border border-ink-200 bg-white p-4 shadow-soft sm:p-5">
@@ -491,52 +588,6 @@ async function QuotePerformance({
               data={month.porDia.map((d) => ({ day: d.day, value: d.count }))}
               fmt={(n) => `${n} COTs`}
             />
-          </section>
-
-          <section className="rounded-2xl border border-ink-200 bg-white p-4 shadow-soft sm:p-5">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="inline-flex items-center gap-2 text-sm font-bold text-ink-900">
-                <CalendarDays className="size-4 text-brand-600" /> Historial dia a dia
-              </h2>
-              <span className="text-xs font-semibold text-ink-400">{dailyRows.length} dia(s)</span>
-            </div>
-            {dailyRows.length === 0 ? (
-              <p className="py-5 text-center text-sm text-ink-400">Sin dias con cotizaciones en este mes</p>
-            ) : (
-              <div className="space-y-2">
-                {dailyRows.map((row) => {
-                  const active = row.day === selectedDay;
-                  return (
-                    <Link
-                      key={row.day}
-                      href={quoteDayHref(row.day)}
-                      className={`block rounded-xl border p-3 transition ${
-                        active
-                          ? "border-brand-200 bg-brand-50"
-                          : "border-ink-100 bg-white hover:border-brand-100 hover:bg-ink-50"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="font-black text-ink-900">{dayLabel(row.day)}</p>
-                          <p className="mt-0.5 truncate text-xs font-semibold text-ink-500">
-                            {row.clientes} cliente(s) / {row.productos} producto(s)
-                          </p>
-                        </div>
-                        <div className="shrink-0 text-right">
-                          <p className="text-sm font-black text-brand-600">{row.count} COTs</p>
-                          <p className="text-xs font-bold text-ink-700">{money(row.crc, row.usd)}</p>
-                        </div>
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold text-ink-500">
-                        <span className="rounded-full bg-ink-50 px-2 py-1">{row.lineas} linea(s)</span>
-                        {active && <span className="rounded-full bg-brand-600 px-2 py-1 text-white">Viendo</span>}
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
           </section>
 
           <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft">
@@ -632,7 +683,7 @@ async function QuotePerformance({
 export default async function RendimientoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mes?: string; vista?: string; dia?: string }>;
+  searchParams: Promise<{ mes?: string; vista?: string; dia?: string; sub?: string }>;
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/ingresar");
@@ -650,11 +701,12 @@ export default async function RendimientoPage({
   }
 
   const quoteDay = selectedQuoteDay(sp.dia, year, month1);
+  const quoteSubTab = sp.sub === "historial" ? "historial" : "dia";
   const myVendors = new Set(await getVendorsForUser(user.id));
   const firstName = (getUserFullName(user) || "").split(" ")[0];
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-3xl min-w-0 overflow-x-hidden">
       <PageHeader activeView={activeView} year={year} month1={month1} />
       <ViewTabs activeView={activeView} year={year} month1={month1} />
       {activeView === "cotizaciones" ? (
@@ -664,6 +716,7 @@ export default async function RendimientoPage({
           year={year}
           month1={month1}
           selectedDay={quoteDay}
+          activeSubTab={quoteSubTab}
           myVendors={myVendors}
         />
       ) : (
