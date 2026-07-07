@@ -98,6 +98,35 @@ export type QuoteVendorPerformance = {
   hasData: boolean;
 };
 
+export type UserQuoteAnalytics = {
+  count: number;
+  amountCRC: number;
+  amountUSD: number;
+  ticketPromedioCRC: number;
+  clientes: number;
+  productos: number;
+  lineas: number;
+  activeDays: number;
+  porDia: { day: string; count: number; crc: number }[];
+  porSucursal: QuoteBucket[];
+  topProducts: VendorQuoteProduct[];
+  rank: number | null;
+  totalVendedores: number;
+  sharePct: number | null;
+  myValor: number;
+  leaderValor: number;
+  leaderName: string;
+  leaderCount: number;
+  hasData: boolean;
+};
+
+export type QuoteMonthPoint = {
+  ym: string;
+  label: string;
+  count: number;
+  crc: number;
+};
+
 export type QuoteAnalytics = {
   totalCRC: number;
   totalUSD: number;
@@ -626,6 +655,249 @@ export async function getQuoteAnalytics(
   const days = new Date(year, month1, 0).getDate();
   const to = `${year}-${String(month1).padStart(2, "0")}-${String(days).padStart(2, "0")}`;
   return getQuoteAnalyticsForRange(from, to, dayKeysForMonth(year, month1));
+}
+
+function preferredName(names: Map<string, number>): string {
+  return (
+    [...names.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0] ??
+    "-"
+  );
+}
+
+export async function getUserQuoteAnalytics(
+  userId: string,
+  year: number,
+  month1: number
+): Promise<UserQuoteAnalytics> {
+  const empty: UserQuoteAnalytics = {
+    count: 0,
+    amountCRC: 0,
+    amountUSD: 0,
+    ticketPromedioCRC: 0,
+    clientes: 0,
+    productos: 0,
+    lineas: 0,
+    activeDays: 0,
+    porDia: dayKeysForMonth(year, month1).map((day) => ({ day, count: 0, crc: 0 })),
+    porSucursal: [],
+    topProducts: [],
+    rank: null,
+    totalVendedores: 0,
+    sharePct: null,
+    myValor: 0,
+    leaderValor: 0,
+    leaderName: "",
+    leaderCount: 0,
+    hasData: false,
+  };
+
+  const month = String(month1).padStart(2, "0");
+  const fromDay = `${year}-${month}-01`;
+  const days = new Date(year, month1, 0).getDate();
+  const toDay = `${year}-${month}-${String(days).padStart(2, "0")}`;
+
+  let quotes: QuoteDbRow[] = [];
+  try {
+    const sb = createAdminClient();
+    const { data } = await sb
+      .from("cpi_quotes")
+      .select(
+        "id, cpi_key, cpi_id, quote_number, tipo, fecha, origen, sucursal, sucursal_code, point_of_sale_code, vendedor, vendedor_cod, cliente, cliente_id, medio_pago, moneda, subtotal, estado, actividad, user_id"
+      )
+      .gte("fecha", dayStart(fromDay))
+      .lte("fecha", dayEnd(toDay))
+      .limit(50000);
+    quotes = (data ?? []) as QuoteDbRow[];
+  } catch {
+    return empty;
+  }
+  if (quotes.length === 0) return empty;
+
+  const ignored = await fetchIgnoredVendors();
+  type RankAgg = {
+    userId: string;
+    count: number;
+    crc: number;
+    usd: number;
+    valor: number;
+    names: Map<string, number>;
+  };
+  const rankByUser = new Map<string, RankAgg>();
+  for (const quote of quotes) {
+    if (!quote.user_id || ignored.has(quote.vendedor || "")) continue;
+    const amount = Number(quote.subtotal) || 0;
+    const isUSD = quote.moneda === "USD";
+    const agg =
+      rankByUser.get(quote.user_id) ??
+      {
+        userId: quote.user_id,
+        count: 0,
+        crc: 0,
+        usd: 0,
+        valor: 0,
+        names: new Map<string, number>(),
+      };
+    agg.count += 1;
+    if (isUSD) agg.usd += amount;
+    else agg.crc += amount;
+    agg.valor += isUSD ? amount * USD_RATE : amount;
+    const vendorName = quote.vendedor || "-";
+    agg.names.set(vendorName, (agg.names.get(vendorName) ?? 0) + 1);
+    rankByUser.set(quote.user_id, agg);
+  }
+  const ranking = [...rankByUser.values()].sort(
+    (a, b) => b.count - a.count || b.valor - a.valor || preferredName(a.names).localeCompare(preferredName(b.names))
+  );
+  const leader = ranking[0];
+  const myRank = ranking.findIndex((item) => item.userId === userId);
+  const myRankAgg = rankByUser.get(userId);
+  const companyCount = ranking.reduce((sum, item) => sum + item.count, 0);
+
+  const mine = quotes.filter((quote) => quote.user_id === userId);
+  if (mine.length === 0) {
+    return {
+      ...empty,
+      totalVendedores: ranking.length,
+      leaderValor: leader?.valor ?? 0,
+      leaderName: leader ? preferredName(leader.names) : "",
+      leaderCount: leader?.count ?? 0,
+    };
+  }
+
+  const quoteByKey = new Map(mine.map((quote) => [quote.cpi_key, quote]));
+  const lines = await fetchQuoteLines(mine.map((quote) => quote.cpi_key));
+  const suc = new Map<string, QuoteBucket>();
+  const dia = new Map<string, { day: string; count: number; crc: number }>();
+  const clients = new Set<string>();
+  const activeDays = new Set<string>();
+  type ProductAgg = {
+    descripcion: string;
+    sku: string;
+    quotes: Set<string>;
+    cantidad: number;
+    crc: number;
+    usd: number;
+  };
+  const products = new Map<string, ProductAgg>();
+  let amountCRC = 0;
+  let amountUSD = 0;
+  let crcCount = 0;
+
+  for (const quote of mine) {
+    const amount = Number(quote.subtotal) || 0;
+    const isUSD = quote.moneda === "USD";
+    const crc = isUSD ? 0 : amount;
+    const usd = isUSD ? amount : 0;
+    amountCRC += crc;
+    amountUSD += usd;
+    if (!isUSD) crcCount += 1;
+    if (quote.cliente) clients.add(quote.cliente);
+    bump(suc, quote.origen || quote.sucursal, crc, usd);
+    const day = (quote.fecha || "").slice(0, 10);
+    if (day) {
+      activeDays.add(day);
+      const bucket = dia.get(day) ?? { day, count: 0, crc: 0 };
+      bucket.count += 1;
+      bucket.crc += crc;
+      dia.set(day, bucket);
+    }
+  }
+
+  for (const line of lines) {
+    const quote = quoteByKey.get(line.cpi_key);
+    if (!quote) continue;
+    const desc = (line.descripcion || "").trim();
+    if (!desc) continue;
+    const key = productKey(desc, line.sku);
+    const agg =
+      products.get(key) ??
+      {
+        descripcion: desc,
+        sku: line.sku || "",
+        quotes: new Set<string>(),
+        cantidad: 0,
+        crc: 0,
+        usd: 0,
+      };
+    const total = Number(line.total_con_impuesto || line.total || line.subtotal) || 0;
+    agg.quotes.add(line.cpi_key);
+    agg.cantidad += Number(line.cantidad) || 0;
+    if (quote.moneda === "USD") agg.usd += total;
+    else agg.crc += total;
+    products.set(key, agg);
+  }
+
+  return {
+    count: mine.length,
+    amountCRC,
+    amountUSD,
+    ticketPromedioCRC: crcCount ? Math.round(amountCRC / crcCount) : 0,
+    clientes: clients.size,
+    productos: products.size,
+    lineas: lines.length,
+    activeDays: activeDays.size,
+    porDia: dayKeysForMonth(year, month1).map((day) => dia.get(day) ?? { day, count: 0, crc: 0 }),
+    porSucursal: [...suc.values()].sort(byValue),
+    topProducts: toVendorProducts(products),
+    rank: myRank >= 0 ? myRank + 1 : null,
+    totalVendedores: ranking.length,
+    sharePct: companyCount > 0 ? Math.round((mine.length / companyCount) * 1000) / 10 : null,
+    myValor: myRankAgg?.valor ?? amountCRC + amountUSD * USD_RATE,
+    leaderValor: leader?.valor ?? 0,
+    leaderName: leader ? preferredName(leader.names) : "",
+    leaderCount: leader?.count ?? 0,
+    hasData: true,
+  };
+}
+
+export async function getUserQuoteMonthlyEvolution(
+  userId: string,
+  monthsBack = 6,
+  now: Date = new Date()
+): Promise<QuoteMonthPoint[]> {
+  const base: { year: number; month1: number }[] = [];
+  for (let i = monthsBack - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    base.push({ year: d.getFullYear(), month1: d.getMonth() + 1 });
+  }
+  const fallback = base.map((item) => ({
+    ym: `${item.year}-${String(item.month1).padStart(2, "0")}`,
+    label: new Intl.DateTimeFormat("es-CR", { month: "short" }).format(
+      new Date(item.year, item.month1 - 1, 1)
+    ),
+    count: 0,
+    crc: 0,
+  }));
+
+  try {
+    const first = fallback[0]?.ym;
+    const last = fallback[fallback.length - 1]?.ym;
+    if (!first || !last) return fallback;
+    const lastParts = last.split("-").map(Number);
+    const lastDay = new Date(lastParts[0], lastParts[1], 0).getDate();
+    const { data } = await createAdminClient()
+      .from("cpi_quotes")
+      .select("fecha, moneda, subtotal")
+      .eq("user_id", userId)
+      .gte("fecha", dayStart(`${first}-01`))
+      .lte("fecha", dayEnd(`${last}-${String(lastDay).padStart(2, "0")}`))
+      .limit(50000);
+    const byMonth = new Map<string, { count: number; crc: number }>();
+    for (const row of (data ?? []) as { fecha: string | null; moneda: string; subtotal: number }[]) {
+      const ym = (row.fecha || "").slice(0, 7);
+      if (!ym) continue;
+      const current = byMonth.get(ym) ?? { count: 0, crc: 0 };
+      current.count += 1;
+      if (row.moneda !== "USD") current.crc += Number(row.subtotal) || 0;
+      byMonth.set(ym, current);
+    }
+    return fallback.map((item) => {
+      const current = byMonth.get(item.ym) ?? { count: 0, crc: 0 };
+      return { ...item, ...current };
+    });
+  } catch {
+    return fallback;
+  }
 }
 
 async function getQuoteVendorPerformanceForDays(
