@@ -49,3 +49,4 @@ scripts/cpi-*.html
 cpi-*.html
 scripts/sync-cpi.log
 scripts/sync-cpi-quotes.log
+scripts/sync-cpi-all.log
