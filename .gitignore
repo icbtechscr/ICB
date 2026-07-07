@@ -48,3 +48,4 @@ next-env.d.ts
 scripts/cpi-*.html
 cpi-*.html
 scripts/sync-cpi.log
+scripts/sync-cpi-quotes.log

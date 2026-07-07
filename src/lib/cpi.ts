@@ -1,4 +1,5 @@
 // Cliente de scraping de CPI (appcontadorcpi.com). SOLO servidor.
+import https from "node:https";
 //
 // Contrato (2026-07) inspeccionando "Facturacion FE":
 //   - PHP crea la sesion (PHPSESSID) en el primer GET; el POST del formulario
@@ -8,7 +9,7 @@
 //       params: duser, d, str3, SocaaID, idiomasistema  -> HTML de la tabla.
 //   - Fila (15 celdas): tipo, [recibo], CLAVE(50 dig), fecha, origen(+cod),
 //     sucursal(+cod), vendedor(+cod), referencia, -, medio pago, [idcliente],
-//     moneda, subtotal(¢/$), -, estado(ACEPTADA/RECHAZADA).
+//     moneda, subtotal(CRC/USD), -, estado(ACEPTADA/RECHAZADA).
 
 const BASE = (process.env.CPI_BASE_URL || "https://www.appcontadorcpi.com/gm/").replace(
   /\/*$/,
@@ -25,6 +26,13 @@ const BROWSER_HEADERS: Record<string, string> = {
   accept:
     "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
   "accept-language": "es-CR,es;q=0.9,en;q=0.8",
+  "accept-encoding": "identity",
+};
+
+type CpiHttpResponse = {
+  status: number;
+  headers: Record<string, string | string[] | undefined>;
+  body: string;
 };
 
 export function cpiConfigured(): boolean {
@@ -91,16 +99,6 @@ export type CpiQuoteFetchOptions = {
   limit?: number;
 };
 
-// --- Cookies helpers ---
-function readSetCookies(res: Response): string[] {
-  const h = res.headers as Headers & { getSetCookie?: () => string[] };
-  const raw =
-    typeof h.getSetCookie === "function"
-      ? h.getSetCookie()
-      : [res.headers.get("set-cookie") || ""].filter(Boolean);
-  return raw.map((c) => c.split(";")[0]).filter(Boolean);
-}
-
 function mergeCookies(...groups: string[][]): string {
   const jar = new Map<string, string>();
   for (const g of groups)
@@ -111,42 +109,106 @@ function mergeCookies(...groups: string[][]): string {
   return [...jar].map(([k, v]) => `${k}=${v}`).join("; ");
 }
 
+function readNativeSetCookies(headers: CpiHttpResponse["headers"]): string[] {
+  const raw = headers["set-cookie"];
+  const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
+  return list.map((c) => c.split(";")[0]).filter(Boolean);
+}
+
+function cpiRequest(
+  pathOrUrl: string,
+  opts: { method?: "GET" | "POST"; headers?: Record<string, string>; body?: string } = {}
+): Promise<CpiHttpResponse> {
+  return new Promise((resolve, reject) => {
+    const url = new URL(pathOrUrl, BASE);
+    const body = opts.body ?? "";
+    const headers: Record<string, string | number> = {
+      ...BROWSER_HEADERS,
+      ...(opts.headers ?? {}),
+    };
+    if (body && headers["content-length"] == null) {
+      headers["content-length"] = Buffer.byteLength(body);
+    }
+
+    const req = https.request(
+      {
+        method: opts.method ?? "GET",
+        hostname: url.hostname,
+        path: url.pathname + url.search,
+        headers,
+      },
+      (res) => {
+        let data = "";
+        res.setEncoding("utf8");
+        res.on("data", (chunk) => {
+          data += chunk;
+        });
+        res.on("end", () => {
+          resolve({
+            status: res.statusCode ?? 0,
+            headers: res.headers as CpiHttpResponse["headers"],
+            body: data,
+          });
+        });
+      }
+    );
+    req.on("error", reject);
+    if (body) req.write(body);
+    req.end();
+  });
+}
+
+function ensureCpiOk(res: CpiHttpResponse, label: string): void {
+  if (/AVISO DE BLOQUEO/i.test(res.body)) {
+    throw new Error(
+      `CPI: ${label} bloqueada (HTTP ${res.status}). El sitio devolvio AVISO DE BLOQUEO.`
+    );
+  }
+  if (res.status >= 400) {
+    const t = res.body.replace(/\s+/g, " ").slice(0, 160);
+    throw new Error(`CPI: ${label} fallo (HTTP ${res.status}) - ${t}`);
+  }
+}
+
 // --- Login: GET para la cookie de sesion, luego POST del formulario ---
 async function cpiLogin(): Promise<string> {
   if (!cpiConfigured()) {
     throw new Error("CPI sin configurar (CPI_USER/CPI_PASS/CPI_ID)");
   }
-  const pre = await fetch(`${BASE}Enter.php`, {
+  const pre = await cpiRequest("Enter.php", {
     method: "GET",
-    headers: { ...BROWSER_HEADERS, referer: BASE },
+    headers: { referer: BASE },
   });
-  const c1 = readSetCookies(pre);
+  const c1 = readNativeSetCookies(pre.headers);
   const jar1 = mergeCookies(c1);
 
   const body = new URLSearchParams({ Usuphp: USER, Passphp: PASS, SocaaID: ID });
-  const res = await fetch(`${BASE}Page Main 4.php`, {
+  const res = await cpiRequest("Page Main 4.php", {
     method: "POST",
     headers: {
-      ...BROWSER_HEADERS,
       "content-type": "application/x-www-form-urlencoded",
       origin: new URL(BASE).origin,
       referer: `${BASE}Enter.php`,
       ...(jar1 ? { cookie: jar1 } : {}),
     },
     body: body.toString(),
-    redirect: "manual",
   });
-  const loginHtml = await res.text();
-  const c2 = readSetCookies(res);
+  const loginHtml = res.body;
+  const c2 = readNativeSetCookies(res.headers);
   const cookie = mergeCookies(c1, c2);
-  const loginLooksOk = /Aplicaciones|Facturacion|Facturaci[oÃ³]n|EXIT|Cerrar/i.test(
+  const loginLooksOk = /Aplicaciones|Facturacion|Facturaci\S*n|EXIT|Cerrar/i.test(
     loginHtml
   );
+  if (/AVISO DE BLOQUEO/i.test(loginHtml)) {
+    throw new Error(
+      `CPI: login bloqueado (HTTP ${res.status}). El sitio devolvio AVISO DE BLOQUEO.`
+    );
+  }
   if (!cookie && !loginLooksOk) {
     let hint = "";
     try {
       const t = loginHtml.replace(/\s+/g, " ").slice(0, 160);
-      hint = ` — ${t}`;
+      hint = ` - ${t}`;
     } catch {
       /* ignore */
     }
@@ -165,12 +227,11 @@ export async function cpiFetchCompletadasHtml(cookie?: string): Promise<string> 
     d: "",
     str3: "",
     SocaaID: ID,
-    idiomasistema: "Español",
+    idiomasistema: "Espa\u00f1ol",
   });
-  const res = await fetch(`${BASE}ControlFacturacion - Consultas.php`, {
+  const res = await cpiRequest("ControlFacturacion - Consultas.php", {
     method: "POST",
     headers: {
-      ...BROWSER_HEADERS,
       "content-type": "application/x-www-form-urlencoded",
       "x-requested-with": "XMLHttpRequest",
       origin: new URL(BASE).origin,
@@ -179,18 +240,16 @@ export async function cpiFetchCompletadasHtml(cookie?: string): Promise<string> 
     },
     body: body.toString(),
   });
-  if (!res.ok) {
-    const t = (await res.text()).replace(/\s+/g, " ").slice(0, 160);
-    throw new Error(`CPI: consulta fallo (HTTP ${res.status}) — ${t}`);
-  }
-  return res.text();
+  ensureCpiOk(res, "consulta de facturas");
+  return res.body;
 }
 
 // --- Parser tolerante del HTML a filas de factura ---
 const MONEDA_MAP: Record<string, string> = {
   Colones: "CRC",
   Dolares: "USD",
-  Dólares: "USD",
+  "D\u00f3lares": "USD",
+  "DÃ³lares": "USD",
   Euros: "EUR",
 };
 
@@ -310,11 +369,11 @@ export function parseCompletadas(html: string): CpiInvoice[] {
   const rows = html.match(rowRe) || [];
   for (const row of rows) {
     if (!/(ACEPTADA|RECHAZADA|PROCESANDO|PENDIENTE)/i.test(row)) continue;
-    if (!/(Colones|Dolares|Dólares|Euros)/.test(row)) continue;
+    if (!/(Colones|Dolares|D\u00f3lares|DÃ³lares|Euros)/.test(row)) continue;
 
     const fecha = row.match(/(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})/);
-    const moneda = row.match(/\b(Colones|Dolares|Dólares|Euros)\b/);
-    const monto = row.match(/[¢$₡]\s?[\d][\d.,]*/);
+    const moneda = row.match(/\b(Colones|Dolares|D\u00f3lares|DÃ³lares|Euros)\b/);
+    const monto = row.match(/(?:\u00a2|\$|\u20a1|Â¢|â‚¡)\s?[\d][\d.,]*/);
     const estado = row.match(/\b(ACEPTADA|RECHAZADA|PROCESANDO|PENDIENTE)\b/i);
     const clave = row.match(/\b(\d{40,60})\b/);
 
@@ -387,10 +446,9 @@ export async function cpiFetchCotizacionesListHtml(
     SocaaID: ID,
     idiomasistema: "Espa\u00f1ol",
   });
-  const res = await fetch(`${BASE}ControlSpecFactCotizaciones.php`, {
+  const res = await cpiRequest("ControlSpecFactCotizaciones.php", {
     method: "POST",
     headers: {
-      ...BROWSER_HEADERS,
       "content-type": "application/x-www-form-urlencoded",
       "x-requested-with": "XMLHttpRequest",
       origin: new URL(BASE).origin,
@@ -399,11 +457,8 @@ export async function cpiFetchCotizacionesListHtml(
     },
     body: body.toString(),
   });
-  if (!res.ok) {
-    const t = (await res.text()).replace(/\s+/g, " ").slice(0, 160);
-    throw new Error(`CPI: consulta de cotizaciones fallo (HTTP ${res.status}) â€” ${t}`);
-  }
-  return res.text();
+  ensureCpiOk(res, "consulta de cotizaciones");
+  return res.body;
 }
 
 export function parseCotizacionesList(html: string): CpiQuote[] {
@@ -411,10 +466,12 @@ export function parseCotizacionesList(html: string): CpiQuote[] {
   const out: CpiQuote[] = [];
 
   for (const row of rows) {
-    if (!/numeroclickctrlfactCotizaciones/i.test(row)) continue;
+    if (!/numeroidctrlfacturacion/i.test(row) || !/COT-\d+/i.test(row)) continue;
     const cells = cellsOfRow(row);
     const quoteNumber =
       inputValueByName(row, "numeroclickctrlfactCotizaciones") ||
+      inputValues(cells[2] ?? "").find((value) => /^COT-\d+/i.test(value)) ||
+      inputValues(row).find((value) => /^COT-\d+/i.test(value)) ||
       lastInputValue(cells[2] ?? "");
     if (!quoteNumber) continue;
 
@@ -471,10 +528,9 @@ export async function cpiFetchCotizacionDetailHtml(
     str12: quote.sucursalCode,
     str13: quote.puntoVentaCode,
   });
-  const res = await fetch(`${BASE}Gene New FactCotizaciones.php`, {
+  const res = await cpiRequest("Gene New FactCotizaciones.php", {
     method: "POST",
     headers: {
-      ...BROWSER_HEADERS,
       "content-type": "application/x-www-form-urlencoded",
       "x-requested-with": "XMLHttpRequest",
       origin: new URL(BASE).origin,
@@ -483,11 +539,8 @@ export async function cpiFetchCotizacionDetailHtml(
     },
     body: body.toString(),
   });
-  if (!res.ok) {
-    const t = (await res.text()).replace(/\s+/g, " ").slice(0, 160);
-    throw new Error(`CPI: detalle de cotizacion fallo (HTTP ${res.status}) â€” ${t}`);
-  }
-  return res.text();
+  ensureCpiOk(res, "detalle de cotizacion");
+  return res.body;
 }
 
 export function parseCotizacionLines(html: string, quote: CpiQuote): CpiQuoteLine[] {
@@ -581,7 +634,7 @@ export async function cpiGetCotizacionesWithLines(
 export function normalizeName(s: string): string {
   return s
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9 ]/g, " ")
     .replace(/\s+/g, " ")
