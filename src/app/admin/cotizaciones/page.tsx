@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   BadgeDollarSign,
+  Building2,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
@@ -8,12 +9,12 @@ import {
   FileText,
   PackageSearch,
   ReceiptText,
+  ShoppingBasket,
   TrendingUp,
   Users,
 } from "lucide-react";
 import { getQuoteAnalytics } from "@/lib/cpi-quotes";
 import { BarList, DayBars, StatCard, type BarItem } from "@/components/admin/SalesCharts";
-import { SyncQuotesButton } from "@/components/admin/SyncQuotesButton";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Cotizaciones CPI - ICB Admin" };
@@ -56,15 +57,6 @@ function shift(year: number, month1: number, delta: number) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-function monthBounds(year: number, month1: number) {
-  const days = new Date(year, month1, 0).getDate();
-  const mm = String(month1).padStart(2, "0");
-  return {
-    from: `${year}-${mm}-01`,
-    to: `${year}-${mm}-${String(days).padStart(2, "0")}`,
-  };
-}
-
 function money(crc: number, usd: number) {
   return usd > 0 ? `${formatCRC(crc)} / ${fmtUSD(usd)}` : formatCRC(crc);
 }
@@ -94,9 +86,9 @@ export default async function CotizacionesPage({
     }
   }
 
-  const bounds = monthBounds(year, month1);
   const analytics = await getQuoteAnalytics(year, month1);
-  const diasConCotizaciones = analytics.porDia.filter((d) => d.count > 0).length;
+  const dailyRows = analytics.porDia.filter((day) => day.count > 0);
+  const diasConCotizaciones = dailyRows.length;
   const promedioDiario = diasConCotizaciones
     ? Math.round(analytics.count / diasConCotizaciones)
     : 0;
@@ -104,13 +96,11 @@ export default async function CotizacionesPage({
     (best, day) => (day.count > best.count ? day : best),
     { day: "", count: 0, crc: 0, usd: 0 }
   );
+  const mejorMonto = analytics.porDia.reduce(
+    (best, day) => (day.crc > best.crc ? day : best),
+    { day: "", count: 0, crc: 0, usd: 0 }
+  );
 
-  const vendedorItems: BarItem[] = analytics.porVendedor.map((bucket) => ({
-    label: bucket.key,
-    value: bucket.count,
-    display: `${bucket.count}`,
-    sub: money(bucket.crc, bucket.usd),
-  }));
   const sucursalItems: BarItem[] = analytics.porSucursal.map((bucket) => ({
     label: bucket.key,
     value: bucket.count,
@@ -132,28 +122,25 @@ export default async function CotizacionesPage({
             <ClipboardList className="size-6 text-brand-600" /> Cotizaciones CPI
           </h1>
           <p className="mt-1 text-sm text-ink-600">
-            Reporte diario de cotizaciones y productos mas cotizados desde CPI.
+            Movimiento diario de cotizaciones, clientes, sucursales y productos cotizados.
           </p>
         </div>
-        <div className="flex flex-wrap items-end gap-2">
-          <SyncQuotesButton from={bounds.from} to={bounds.to} />
-          <div className="inline-flex items-center gap-1 rounded-full border border-ink-200 bg-white p-1">
-            <Link
-              href={`?mes=${shift(year, month1, -1)}`}
-              className="inline-flex size-8 items-center justify-center rounded-full text-ink-600 hover:bg-ink-100"
-            >
-              <ChevronLeft className="size-4" />
-            </Link>
-            <span className="min-w-32 px-2 text-center text-sm font-bold capitalize text-ink-900">
-              {monthLabel(year, month1)}
-            </span>
-            <Link
-              href={`?mes=${shift(year, month1, 1)}`}
-              className="inline-flex size-8 items-center justify-center rounded-full text-ink-600 hover:bg-ink-100"
-            >
-              <ChevronRight className="size-4" />
-            </Link>
-          </div>
+        <div className="inline-flex items-center gap-1 rounded-full border border-ink-200 bg-white p-1">
+          <Link
+            href={`?mes=${shift(year, month1, -1)}`}
+            className="inline-flex size-8 items-center justify-center rounded-full text-ink-600 hover:bg-ink-100"
+          >
+            <ChevronLeft className="size-4" />
+          </Link>
+          <span className="min-w-32 px-2 text-center text-sm font-bold capitalize text-ink-900">
+            {monthLabel(year, month1)}
+          </span>
+          <Link
+            href={`?mes=${shift(year, month1, 1)}`}
+            className="inline-flex size-8 items-center justify-center rounded-full text-ink-600 hover:bg-ink-100"
+          >
+            <ChevronRight className="size-4" />
+          </Link>
         </div>
       </div>
 
@@ -164,7 +151,7 @@ export default async function CotizacionesPage({
           </span>
           <h2 className="mt-4 text-lg font-black text-ink-900">Sin cotizaciones este mes</h2>
           <p className="mx-auto mt-1.5 max-w-sm text-sm text-ink-600">
-            Sincroniza CPI para cargar las cotizaciones de {monthLabel(year, month1)}.
+            No hay cotizaciones sincronizadas para {monthLabel(year, month1)}.
           </p>
         </div>
       ) : (
@@ -198,21 +185,16 @@ export default async function CotizacionesPage({
             <StatCard
               label="Promedio diario"
               value={String(promedioDiario)}
+              sub="cotizaciones por dia activo"
               Icon={CalendarDays}
               accent="brand"
             />
             <StatCard
-              label="Mejor dia"
+              label="Dia con mas COTs"
               value={mejorDia.count ? String(mejorDia.count) : "0"}
               sub={mejorDia.day ? shortDate(mejorDia.day) : undefined}
               Icon={TrendingUp}
               accent="accent"
-            />
-            <StatCard
-              label="Vendedores"
-              value={String(analytics.vendedores)}
-              Icon={Users}
-              accent="brand"
             />
             <StatCard
               label="Clientes"
@@ -220,7 +202,54 @@ export default async function CotizacionesPage({
               Icon={Users}
               accent="accent"
             />
+            <StatCard
+              label="Productos cotizados"
+              value={String(analytics.productos)}
+              Icon={ShoppingBasket}
+              accent="brand"
+            />
           </div>
+
+          <section className="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink-100 px-5 py-3.5">
+              <h2 className="text-sm font-bold text-ink-900">Resumen por dia</h2>
+              <span className="text-xs font-semibold text-ink-500">
+                Mejor monto: {mejorMonto.day ? `${shortDate(mejorMonto.day)} - ${formatCRC(mejorMonto.crc)}` : "-"}
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-ink-100 text-left text-xs uppercase tracking-wider text-ink-500">
+                    <th className="px-4 py-2.5 font-bold">Dia</th>
+                    <th className="px-3 py-2.5 text-right font-bold">COTs</th>
+                    <th className="px-3 py-2.5 text-right font-bold">CRC</th>
+                    <th className="px-3 py-2.5 text-right font-bold">USD</th>
+                    <th className="px-3 py-2.5 text-right font-bold">Ticket CRC</th>
+                    <th className="px-3 py-2.5 text-right font-bold">% COTs</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dailyRows.map((day) => {
+                    const share = analytics.count ? (day.count / analytics.count) * 100 : 0;
+                    const ticket = day.count ? day.crc / day.count : 0;
+                    return (
+                      <tr key={day.day} className="border-b border-ink-50 last:border-0">
+                        <td className="px-4 py-2.5 font-semibold text-ink-800">{shortDate(day.day)}</td>
+                        <td className="px-3 py-2.5 text-right font-bold text-brand-600">{day.count}</td>
+                        <td className="px-3 py-2.5 text-right font-bold text-ink-900">{formatCRC(day.crc)}</td>
+                        <td className="px-3 py-2.5 text-right text-ink-700">{fmtUSD(day.usd)}</td>
+                        <td className="px-3 py-2.5 text-right text-ink-700">{formatCRC(ticket)}</td>
+                        <td className="px-3 py-2.5 text-right text-ink-700">
+                          {share.toLocaleString("es-CR", { maximumFractionDigits: 1 })}%
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
 
           <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft">
             <h2 className="mb-4 text-sm font-bold text-ink-900">Cotizaciones por dia</h2>
@@ -230,18 +259,18 @@ export default async function CotizacionesPage({
             />
           </section>
 
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid gap-6 lg:grid-cols-2">
             <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft">
-              <h2 className="mb-4 text-sm font-bold text-ink-900">Por vendedor</h2>
-              <BarList items={vendedorItems} accent="brand" />
+              <h2 className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-ink-900">
+                <Building2 className="size-4 text-brand-600" /> Por sucursal
+              </h2>
+              <BarList items={sucursalItems} accent="brand" />
             </section>
             <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft">
-              <h2 className="mb-4 text-sm font-bold text-ink-900">Por sucursal</h2>
-              <BarList items={sucursalItems} accent="accent" />
-            </section>
-            <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft">
-              <h2 className="mb-4 text-sm font-bold text-ink-900">Mejores clientes</h2>
-              <BarList items={clienteItems} accent="warn" />
+              <h2 className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-ink-900">
+                <Users className="size-4 text-brand-600" /> Clientes con mas cotizaciones
+              </h2>
+              <BarList items={clienteItems} accent="accent" />
             </section>
           </div>
 
@@ -274,40 +303,6 @@ export default async function CotizacionesPage({
                       </td>
                       <td className="px-3 py-2.5 text-right font-bold text-ink-900">
                         {money(product.crc, product.usd)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <section className="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft">
-            <h2 className="border-b border-ink-100 px-5 py-3.5 text-sm font-bold text-ink-900">
-              Ultimas cotizaciones sincronizadas
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-ink-100 text-left text-xs uppercase tracking-wider text-ink-500">
-                    <th className="px-4 py-2.5 font-bold">COT</th>
-                    <th className="px-3 py-2.5 font-bold">Fecha</th>
-                    <th className="px-3 py-2.5 font-bold">Cliente</th>
-                    <th className="px-3 py-2.5 font-bold">Vendedor</th>
-                    <th className="px-3 py-2.5 text-right font-bold">Lineas</th>
-                    <th className="px-3 py-2.5 text-right font-bold">Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {analytics.recentQuotes.map((quote) => (
-                    <tr key={quote.quoteNumber} className="border-b border-ink-50 last:border-0">
-                      <td className="px-4 py-2.5 font-black text-brand-600">{quote.quoteNumber}</td>
-                      <td className="px-3 py-2.5 text-ink-600">{shortDate(quote.fecha)}</td>
-                      <td className="px-3 py-2.5 font-semibold text-ink-800">{quote.cliente || "-"}</td>
-                      <td className="px-3 py-2.5 text-ink-600">{quote.vendedor || "-"}</td>
-                      <td className="px-3 py-2.5 text-right text-ink-700">{quote.lineCount}</td>
-                      <td className="px-3 py-2.5 text-right font-bold text-ink-900">
-                        {quote.moneda === "USD" ? fmtUSD(quote.subtotal) : formatCRC(quote.subtotal)}
                       </td>
                     </tr>
                   ))}

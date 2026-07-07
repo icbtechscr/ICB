@@ -50,6 +50,7 @@ export type QuoteAnalytics = {
   totalUSD: number;
   count: number;
   ticketPromedioCRC: number;
+  productos: number;
   vendedores: number;
   clientes: number;
   porDia: { day: string; count: number; crc: number; usd: number }[];
@@ -338,6 +339,7 @@ export async function getQuoteAnalytics(
     totalUSD: 0,
     count: 0,
     ticketPromedioCRC: 0,
+    productos: 0,
     vendedores: 0,
     clientes: 0,
     porDia: [],
@@ -465,6 +467,7 @@ export async function getQuoteAnalytics(
     totalUSD,
     count: quotes.length,
     ticketPromedioCRC: crcCount ? Math.round(totalCRC / crcCount) : 0,
+    productos: products.size,
     vendedores: vendors.size,
     clientes: clients.size,
     porDia,
