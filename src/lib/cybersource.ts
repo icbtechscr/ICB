@@ -180,7 +180,10 @@ export async function createSession(input: CreateSessionInput): Promise<string> 
           firstName,
           lastName,
           email: input.customer.email,
-          phoneNumber: input.customer.phone ?? "",
+          // CyberSource exige phoneNumber >= 6 caracteres; si no es valido, se omite.
+          ...(((input.customer.phone ?? "").replace(/\D/g, "").length >= 6)
+            ? { phoneNumber: (input.customer.phone ?? "").replace(/\D/g, "") }
+            : {}),
           country: "CR",
           address1: input.customer.address ?? "S/N",
           buildingNumber: "S/N",
