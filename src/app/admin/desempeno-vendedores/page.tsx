@@ -1,38 +1,27 @@
-import Link from "next/link";
 import {
   Trophy, Users, Wallet, Receipt, TrendingUp,
-  ChevronLeft, ChevronRight,
 } from "lucide-react";
-import { getVendorPerformance } from "@/lib/cpi-analytics";
+import { getVendorPerformance, periodRange, type Period } from "@/lib/cpi-analytics";
+import { PeriodNav } from "@/components/PeriodNav";
 import { formatCRC } from "@/lib/utils";
 import { StatCard, BarList, type BarItem } from "@/components/admin/SalesCharts";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Desempeño de vendedores — ICB Admin" };
 
-function crYearMonth() {
-  const s = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Costa_Rica", year: "numeric", month: "2-digit" }).format(new Date());
-  const [y, m] = s.split("-").map(Number);
-  return { year: y, month1: m };
-}
 function fmtUSD(n: number) { return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
-function monthLabel(y: number, m: number) { return new Intl.DateTimeFormat("es-CR", { month: "long", year: "numeric" }).format(new Date(y, m - 1, 1)); }
-function shift(y: number, m: number, d: number) { const x = new Date(y, m - 1 + d, 1); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}`; }
 
 export default async function DesempenoVendedoresPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mes?: string }>;
+  searchParams: Promise<{ period?: string; ref?: string }>;
 }) {
   const sp = await searchParams;
-  const now = crYearMonth();
-  let year = now.year, month1 = now.month1;
-  if (sp.mes && /^\d{4}-\d{2}$/.test(sp.mes)) {
-    const [y, m] = sp.mes.split("-").map(Number);
-    if (m >= 1 && m <= 12) { year = y; month1 = m; }
-  }
+  const period: Period = sp.period === "month" ? "month" : "day";
+  const range = periodRange(period, sp.ref);
+  const isMonth = period === "month";
 
-  const a = await getVendorPerformance(year, month1);
+  const a = await getVendorPerformance(range);
   const leader = a.vendors[0];
 
   const rankItems: BarItem[] = a.vendors.slice(0, 15).map((v) => ({
@@ -51,24 +40,20 @@ export default async function DesempenoVendedoresPage({
           </h1>
           <p className="mt-1 text-sm text-ink-600">Ranking y métricas por vendedor. Los excluidos no aparecen aquí.</p>
         </div>
-        <div className="inline-flex items-center gap-1 rounded-full border border-ink-200 bg-white p-1">
-          <Link href={`?mes=${shift(year, month1, -1)}`} className="inline-flex size-8 items-center justify-center rounded-full text-ink-600 hover:bg-ink-100"><ChevronLeft className="size-4" /></Link>
-          <span className="min-w-32 px-2 text-center text-sm font-bold capitalize text-ink-900">{monthLabel(year, month1)}</span>
-          <Link href={`?mes=${shift(year, month1, 1)}`} className="inline-flex size-8 items-center justify-center rounded-full text-ink-600 hover:bg-ink-100"><ChevronRight className="size-4" /></Link>
-        </div>
+        <PeriodNav period={period} refValue={range.ref} label={range.label} />
       </div>
 
       {!a.hasData ? (
         <div className="rounded-2xl border border-ink-200 bg-white p-10 text-center shadow-soft">
           <span className="mx-auto inline-flex size-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600"><TrendingUp className="size-7" /></span>
-          <h2 className="mt-4 text-lg font-black text-ink-900">Sin ventas este mes</h2>
-          <p className="mx-auto mt-1.5 max-w-sm text-sm text-ink-600">No hay facturas de vendedores para {monthLabel(year, month1)}.</p>
+          <h2 className="mt-4 text-lg font-black text-ink-900">Sin ventas en este periodo</h2>
+          <p className="mx-auto mt-1.5 max-w-sm text-sm text-ink-600 first-letter:uppercase">No hay facturas de vendedores para {range.label}.</p>
         </div>
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatCard label="Vendedores activos" value={String(a.vendors.length)} Icon={Users} accent="brand" />
-            <StatCard label="Líder del mes" value={leader ? leader.vendedor.split(" ").slice(0, 2).join(" ") : "—"} sub={leader ? formatCRC(leader.crc) : undefined} Icon={Trophy} accent="accent" />
+            <StatCard label={isMonth ? "Líder del mes" : "Líder del día"} value={leader ? leader.vendedor.split(" ").slice(0, 2).join(" ") : "—"} sub={leader ? formatCRC(leader.crc) : undefined} Icon={Trophy} accent="accent" />
             <StatCard label="Total vendido (₡)" value={formatCRC(a.totalCRC)} Icon={Wallet} accent="brand" />
             <StatCard label="Facturas" value={String(a.count)} Icon={Receipt} accent="warn" />
           </div>

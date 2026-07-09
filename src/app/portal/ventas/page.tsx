@@ -2,15 +2,12 @@ import { redirect } from "next/navigation";
 import { ShoppingBag, Wallet, DollarSign, TrendingUp } from "lucide-react";
 import { getCurrentUser } from "@/lib/supabase-server";
 import { getUserRole, isAdminLike } from "@/lib/roles";
-import {
-  getMyMonthlyMetrics,
-  currentMonthLabel,
-  crYearMonth,
-} from "@/lib/portal-metrics";
+import { getUserSalesAnalytics, periodRange, type Period } from "@/lib/cpi-analytics";
 import { listSalesForUser, type SaleRow } from "@/lib/cpi-sales";
 import { formatCRC } from "@/lib/utils";
 import { MetricCard } from "@/components/portal/MetricCard";
 import { SyncSalesButton } from "@/components/portal/SyncSalesButton";
+import { PeriodNav } from "@/components/PeriodNav";
 
 export const dynamic = "force-dynamic";
 
@@ -25,65 +22,70 @@ function fmtUSD(n: number): string {
 function fmtFecha(iso: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso.slice(0, 16).replace("T", " ");
+  if (isNaN(d.getTime())) return iso.slice(0, 10);
   return new Intl.DateTimeFormat("es-CR", {
     day: "2-digit",
     month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
     timeZone: "America/Costa_Rica",
   }).format(d);
 }
 
-export default async function VentasPage() {
+export default async function VentasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string; ref?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user) redirect("/ingresar");
 
+  const sp = await searchParams;
+  const period: Period = sp.period === "month" ? "month" : "day";
+  const range = periodRange(period, sp.ref);
+
   const canSync = isAdminLike(getUserRole(user));
-  const m = await getMyMonthlyMetrics(user.id);
-  const { year, month1 } = crYearMonth();
+  const a = await getUserSalesAnalytics(user.id, range);
   let sales: SaleRow[] = [];
   try {
-    sales = await listSalesForUser(user.id, { year, month1, limit: 100 });
+    sales = await listSalesForUser(user.id, { from: range.from, to: range.to, limit: 100 });
   } catch {
     sales = [];
   }
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-5 flex items-start justify-between gap-3">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-ink-900">
             Ventas
           </h1>
           <p className="mt-1 text-sm text-ink-600">
             Tus facturas y el monto vendido de{" "}
-            <span className="capitalize">{currentMonthLabel()}</span>.
+            <span className="capitalize">{range.label}</span>.
           </p>
         </div>
         {canSync && <SyncSalesButton />}
       </div>
 
+      <div className="mb-5">
+        <PeriodNav period={period} refValue={range.ref} label={range.label} />
+      </div>
+
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <MetricCard
-          label="Facturas del mes"
-          value={m.salesCount == null ? "—" : String(m.salesCount)}
+          label={period === "month" ? "Facturas del mes" : "Facturas de hoy"}
+          value={String(a.count)}
           Icon={ShoppingBag}
           accent="brand"
         />
         <MetricCard
           label="Vendido (colones)"
-          value={m.salesAmountCRC == null ? "—" : formatCRC(m.salesAmountCRC)}
+          value={formatCRC(a.amountCRC)}
           Icon={Wallet}
           accent="accent"
         />
         <MetricCard
           label="Vendido (dólares)"
-          value={
-            m.salesAmountUSD == null || m.salesAmountUSD === 0
-              ? "$0.00"
-              : fmtUSD(m.salesAmountUSD)
-          }
+          value={a.amountUSD === 0 ? "$0.00" : fmtUSD(a.amountUSD)}
           Icon={DollarSign}
           accent="brand"
         />
@@ -100,7 +102,7 @@ export default async function VentasPage() {
               <TrendingUp className="size-6" />
             </span>
             <p className="mx-auto mt-3 max-w-sm text-sm text-ink-600">
-              Todavía no hay facturas para este mes. En cuanto se sincronice CPI
+              No hay facturas en este periodo. En cuanto se sincronice CPI
               aparecerán aquí.
             </p>
           </div>

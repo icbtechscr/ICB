@@ -18,7 +18,7 @@ export type SalesAnalytics = {
   porTipo: Bucket[];
   porCliente: Bucket[];
   porDia: { day: string; crc: number; usd: number; count: number }[];
-  prevMonthCRC: number;
+  prevMonthCRC: number; // total del periodo anterior comparable (para el crecimiento)
   hasData: boolean;
 };
 
@@ -34,11 +34,78 @@ type Row = {
   tipo: string | null;
 };
 
-function monthRange(year: number, month1: number): { from: string; to: string; days: number } {
-  const from = new Date(Date.UTC(year, month1 - 1, 1));
-  const to = new Date(Date.UTC(year, month1, 1));
-  const days = new Date(year, month1, 0).getDate();
-  return { from: from.toISOString(), to: to.toISOString(), days };
+// --- Periodo (diario / mensual) ---------------------------------------------
+
+export type Period = "day" | "month";
+
+export type PeriodRange = {
+  period: Period;
+  from: string; // ISO inclusive
+  to: string; // ISO exclusivo
+  buckets: string[]; // dias YYYY-MM-DD para rellenar la serie
+  prevFrom: string; // periodo anterior comparable (crecimiento)
+  prevTo: string;
+  label: string; // etiqueta legible
+  ref: string; // dia YYYY-MM-DD (day) o mes YYYY-MM (month)
+};
+
+/** Fecha "hoy" en Costa Rica como YYYY-MM-DD. */
+export function crToday(ref: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Costa_Rica",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(ref);
+}
+
+/** Construye el rango para un periodo diario o mensual a partir de una referencia. */
+export function periodRange(period: Period, ref?: string): PeriodRange {
+  if (period === "day") {
+    const day = ref && /^\d{4}-\d{2}-\d{2}$/.test(ref) ? ref : crToday();
+    const start = new Date(`${day}T00:00:00.000Z`);
+    const next = new Date(start.getTime() + 86400000);
+    const prev = new Date(start.getTime() - 86400000);
+    const label = new Intl.DateTimeFormat("es-CR", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    }).format(new Date(`${day}T12:00:00.000Z`));
+    return {
+      period,
+      from: start.toISOString(),
+      to: next.toISOString(),
+      buckets: [day],
+      prevFrom: prev.toISOString(),
+      prevTo: start.toISOString(),
+      label,
+      ref: day,
+    };
+  }
+  const ym = ref && /^\d{4}-\d{2}$/.test(ref) ? ref : crToday().slice(0, 7);
+  const [y, m] = ym.split("-").map(Number);
+  const from = new Date(Date.UTC(y, m - 1, 1)).toISOString();
+  const to = new Date(Date.UTC(y, m, 1)).toISOString();
+  const days = new Date(y, m, 0).getDate();
+  const buckets: string[] = [];
+  for (let d = 1; d <= days; d++) {
+    buckets.push(`${ym}-${String(d).padStart(2, "0")}`);
+  }
+  const pm = m === 1 ? { y: y - 1, m: 12 } : { y, m: m - 1 };
+  const label = new Intl.DateTimeFormat("es-CR", {
+    month: "long",
+    year: "numeric",
+  }).format(new Date(y, m - 1, 1));
+  return {
+    period,
+    from,
+    to,
+    buckets,
+    prevFrom: new Date(Date.UTC(pm.y, pm.m - 1, 1)).toISOString(),
+    prevTo: from,
+    label,
+    ref: ym,
+  };
 }
 
 function bump(map: Map<string, Bucket>, key: string, crc: number, usd: number) {
@@ -62,10 +129,7 @@ async function fetchIgnored(): Promise<Set<string>> {
   }
 }
 
-export async function getSalesAnalytics(
-  year: number,
-  month1: number
-): Promise<SalesAnalytics> {
+export async function getSalesAnalytics(r: PeriodRange): Promise<SalesAnalytics> {
   const empty: SalesAnalytics = {
     totalCRC: 0, totalUSD: 0, count: 0, aceptadas: 0, rechazadas: 0,
     ticketPromedioCRC: 0, vendedores: 0, sucursales: 0,
@@ -76,12 +140,11 @@ export async function getSalesAnalytics(
   let rows: Row[] = [];
   try {
     const sb = createAdminClient();
-    const { from, to } = monthRange(year, month1);
     const { data } = await sb
       .from("cpi_sales")
       .select("fecha, origen, sucursal, vendedor, cliente, moneda, subtotal, estado, tipo")
-      .gte("fecha", from)
-      .lt("fecha", to)
+      .gte("fecha", r.from)
+      .lt("fecha", r.to)
       .limit(20000);
     rows = (data ?? []) as Row[];
   } catch {
@@ -90,7 +153,6 @@ export async function getSalesAnalytics(
   if (rows.length === 0) return empty;
 
   const ignored = await fetchIgnored();
-  const { days } = monthRange(year, month1);
   const suc = new Map<string, Bucket>();
   const ven = new Map<string, Bucket>();
   const pv = new Map<string, Bucket>();
@@ -101,24 +163,24 @@ export async function getSalesAnalytics(
   let totalCRC = 0, totalUSD = 0, aceptadas = 0, rechazadas = 0;
   let crcCount = 0;
 
-  for (const r of rows) {
-    const val = Number(r.subtotal) || 0;
-    const isUSD = r.moneda === "USD";
+  for (const row of rows) {
+    const val = Number(row.subtotal) || 0;
+    const isUSD = row.moneda === "USD";
     const crc = isUSD ? 0 : val;
     const usd = isUSD ? val : 0;
     totalCRC += crc;
     totalUSD += usd;
     if (!isUSD) crcCount += 1;
-    if ((r.estado || "").toUpperCase() === "ACEPTADA") aceptadas += 1;
-    else if ((r.estado || "").toUpperCase() === "RECHAZADA") rechazadas += 1;
+    if ((row.estado || "").toUpperCase() === "ACEPTADA") aceptadas += 1;
+    else if ((row.estado || "").toUpperCase() === "RECHAZADA") rechazadas += 1;
 
-    bump(suc, r.origen || "—", crc, usd);
-    if (!ignored.has(r.vendedor || "—")) bump(ven, r.vendedor || "—", crc, usd);
-    bump(pv, r.sucursal || "—", crc, usd);
-    bump(tipo, r.tipo || "Factura", crc, usd);
-    if (r.cliente) bump(cli, r.cliente, crc, usd);
+    bump(suc, row.origen || "—", crc, usd);
+    if (!ignored.has(row.vendedor || "—")) bump(ven, row.vendedor || "—", crc, usd);
+    bump(pv, row.sucursal || "—", crc, usd);
+    bump(tipo, row.tipo || "Factura", crc, usd);
+    if (row.cliente) bump(cli, row.cliente, crc, usd);
 
-    const dkey = (r.fecha || "").slice(0, 10);
+    const dkey = (row.fecha || "").slice(0, 10);
     if (dkey) {
       const d = dia.get(dkey) ?? { day: dkey, crc: 0, usd: 0, count: 0 };
       d.crc += crc; d.usd += usd; d.count += 1;
@@ -126,22 +188,19 @@ export async function getSalesAnalytics(
     }
   }
 
-  // Serie diaria completa del mes (rellena días sin ventas con 0).
+  // Serie diaria del periodo (rellena dias sin ventas con 0).
   const porDia: SalesAnalytics["porDia"] = [];
-  for (let d = 1; d <= days; d++) {
-    const key = `${year}-${String(month1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  for (const key of r.buckets) {
     porDia.push(dia.get(key) ?? { day: key, crc: 0, usd: 0, count: 0 });
   }
 
-  // Total del mes anterior (para el crecimiento).
+  // Total del periodo anterior comparable (para el crecimiento).
   let prevMonthCRC = 0;
   try {
     const sb = createAdminClient();
-    const pm = month1 === 1 ? { y: year - 1, m: 12 } : { y: year, m: month1 - 1 };
-    const pr = monthRange(pm.y, pm.m);
-    const { data } = await sb.from("cpi_sales").select("moneda, subtotal").gte("fecha", pr.from).lt("fecha", pr.to).limit(50000);
-    for (const r of (data ?? []) as { moneda: string; subtotal: number }[]) {
-      if (r.moneda !== "USD") prevMonthCRC += Number(r.subtotal) || 0;
+    const { data } = await sb.from("cpi_sales").select("moneda, subtotal").gte("fecha", r.prevFrom).lt("fecha", r.prevTo).limit(50000);
+    for (const p of (data ?? []) as { moneda: string; subtotal: number }[]) {
+      if (p.moneda !== "USD") prevMonthCRC += Number(p.subtotal) || 0;
     }
   } catch { /* ignore */ }
 
@@ -185,8 +244,7 @@ const USD_RATE = 520; // solo para ordenar el ranking mezclando monedas
 
 export async function getUserSalesAnalytics(
   userId: string,
-  year: number,
-  month1: number
+  r: PeriodRange
 ): Promise<UserSalesAnalytics> {
   const empty: UserSalesAnalytics = {
     count: 0, amountCRC: 0, amountUSD: 0, ticketPromedioCRC: 0,
@@ -197,12 +255,11 @@ export async function getUserSalesAnalytics(
   let rows: (Row & { user_id: string | null })[] = [];
   try {
     const sb = createAdminClient();
-    const { from, to } = monthRange(year, month1);
     const { data } = await sb
       .from("cpi_sales")
       .select("fecha, origen, sucursal, vendedor, cliente, moneda, subtotal, estado, tipo, user_id")
-      .gte("fecha", from)
-      .lt("fecha", to)
+      .gte("fecha", r.from)
+      .lt("fecha", r.to)
       .limit(50000);
     rows = (data ?? []) as (Row & { user_id: string | null })[];
   } catch {
@@ -211,15 +268,14 @@ export async function getUserSalesAnalytics(
   if (rows.length === 0) return empty;
 
   const ignored = await fetchIgnored();
-  const { days } = monthRange(year, month1);
   // Valor por vendedor (para ranking) — solo filas con user_id y no excluidas.
   const valorByUser = new Map<string, number>();
-  for (const r of rows) {
-    if (!r.user_id) continue;
-    if (ignored.has(r.vendedor || "")) continue;
-    const v = Number(r.subtotal) || 0;
-    const valor = r.moneda === "USD" ? v * USD_RATE : v;
-    valorByUser.set(r.user_id, (valorByUser.get(r.user_id) ?? 0) + valor);
+  for (const row of rows) {
+    if (!row.user_id) continue;
+    if (ignored.has(row.vendedor || "")) continue;
+    const v = Number(row.subtotal) || 0;
+    const valor = row.moneda === "USD" ? v * USD_RATE : v;
+    valorByUser.set(row.user_id, (valorByUser.get(row.user_id) ?? 0) + valor);
   }
   const ranking = [...valorByUser.entries()].sort((a, b) => b[1] - a[1]);
   const totalVendedores = ranking.length;
@@ -230,24 +286,23 @@ export async function getUserSalesAnalytics(
   const rank = rankIdx >= 0 ? rankIdx + 1 : null;
 
   // Metricas propias.
-  const mine = rows.filter((r) => r.user_id === userId);
+  const mine = rows.filter((row) => row.user_id === userId);
   let amountCRC = 0, amountUSD = 0, aceptadas = 0, rechazadas = 0, crcCount = 0;
   const suc = new Map<string, Bucket>();
   const dia = new Map<string, number>();
-  for (const r of mine) {
-    const v = Number(r.subtotal) || 0;
-    const isUSD = r.moneda === "USD";
+  for (const row of mine) {
+    const v = Number(row.subtotal) || 0;
+    const isUSD = row.moneda === "USD";
     if (isUSD) amountUSD += v; else { amountCRC += v; crcCount += 1; }
-    const est = (r.estado || "").toUpperCase();
+    const est = (row.estado || "").toUpperCase();
     if (est === "ACEPTADA") aceptadas += 1;
     else if (est === "RECHAZADA") rechazadas += 1;
-    bump(suc, r.origen || "—", isUSD ? 0 : v, isUSD ? v : 0);
-    const dk = (r.fecha || "").slice(0, 10);
+    bump(suc, row.origen || "—", isUSD ? 0 : v, isUSD ? v : 0);
+    const dk = (row.fecha || "").slice(0, 10);
     if (dk) dia.set(dk, (dia.get(dk) ?? 0) + (isUSD ? 0 : v));
   }
   const porDia: { day: string; crc: number }[] = [];
-  for (let d = 1; d <= days; d++) {
-    const key = `${year}-${String(month1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  for (const key of r.buckets) {
     porDia.push({ day: key, crc: dia.get(key) ?? 0 });
   }
 
@@ -336,10 +391,7 @@ export type VendorPerformance = {
   hasData: boolean;
 };
 
-export async function getVendorPerformance(
-  year: number,
-  month1: number
-): Promise<VendorPerformance> {
+export async function getVendorPerformance(r: PeriodRange): Promise<VendorPerformance> {
   const empty: VendorPerformance = {
     vendors: [], totalCRC: 0, totalUSD: 0, count: 0,
     companyValor: 0, leaderValor: 0, hasData: false,
@@ -347,35 +399,33 @@ export async function getVendorPerformance(
   let rows: Row[] = [];
   try {
     const sb = createAdminClient();
-    const { from, to } = monthRange(year, month1);
     const { data } = await sb
       .from("cpi_sales")
       .select("vendedor, moneda, subtotal, estado")
-      .gte("fecha", from)
-      .lt("fecha", to)
+      .gte("fecha", r.from)
+      .lt("fecha", r.to)
       .limit(50000);
     rows = (data ?? []) as Row[];
   } catch {
     return empty;
   }
   if (rows.length === 0) return empty;
-
   const ignored = await fetchIgnored();
   type Agg = { crc: number; usd: number; count: number; crcCount: number; aceptadas: number; rechazadas: number };
   const map = new Map<string, Agg>();
   let totalCRC = 0, totalUSD = 0, counted = 0;
-  for (const r of rows) {
-    const vend = r.vendedor || "—";
+  for (const row of rows) {
+    const vend = row.vendedor || "—";
     if (ignored.has(vend)) continue;
-    const v = Number(r.subtotal) || 0;
-    const isUSD = r.moneda === "USD";
+    const v = Number(row.subtotal) || 0;
+    const isUSD = row.moneda === "USD";
     totalCRC += isUSD ? 0 : v;
     totalUSD += isUSD ? v : 0;
     counted += 1;
     const a = map.get(vend) ?? { crc: 0, usd: 0, count: 0, crcCount: 0, aceptadas: 0, rechazadas: 0 };
     if (isUSD) a.usd += v; else { a.crc += v; a.crcCount += 1; }
     a.count += 1;
-    const est = (r.estado || "").toUpperCase();
+    const est = (row.estado || "").toUpperCase();
     if (est === "ACEPTADA") a.aceptadas += 1;
     else if (est === "RECHAZADA") a.rechazadas += 1;
     map.set(vend, a);

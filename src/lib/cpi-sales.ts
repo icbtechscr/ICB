@@ -142,10 +142,10 @@ export async function getMonthlySalesForUser(
 /** Facturas de un usuario en un rango (para el detalle de Ventas). */
 export async function listSalesForUser(
   userId: string,
-  opts: { year: number; month1: number; limit?: number }
+  opts: { from: string; to: string; limit?: number }
 ): Promise<SaleRow[]> {
   const sb = createAdminClient();
-  const { from, to } = monthRange(opts.year, opts.month1);
+  const { from, to } = opts;
   const { data } = await sb
     .from("cpi_sales")
     .select("*")

@@ -27,6 +27,7 @@ import {
   getUserSalesAnalytics,
   getUserMonthlyEvolution,
   getVendorPerformance as getSalesVendorPerformance,
+  periodRange,
 } from "@/lib/cpi-analytics";
 import {
   getQuoteVendorDayPerformance,
@@ -293,10 +294,11 @@ async function SalesPerformance({
   month1: number;
   myVendors: Set<string>;
 }) {
+  const rango = periodRange("month", `${year}-${String(month1).padStart(2, "0")}`);
   const [a, evo, perf] = await Promise.all([
-    getUserSalesAnalytics(userId, year, month1),
+    getUserSalesAnalytics(userId, rango),
     getUserMonthlyEvolution(userId, 6),
-    getSalesVendorPerformance(year, month1),
+    getSalesVendorPerformance(rango),
   ]);
   const evoItems: BarItem[] = evo.map((p) => ({
     label: p.label,
