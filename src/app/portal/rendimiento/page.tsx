@@ -28,7 +28,10 @@ import {
   getUserMonthlyEvolution,
   getVendorPerformance as getSalesVendorPerformance,
   periodRange,
+  type Period,
+  type PeriodRange,
 } from "@/lib/cpi-analytics";
+import { PeriodNav } from "@/components/PeriodNav";
 import {
   getQuoteVendorDayPerformance,
   getUserQuoteDayAnalytics,
@@ -190,23 +193,25 @@ function PageHeader({
             : "Tus ventas y tu posicion del mes."}
         </p>
       </div>
-      <div className="inline-flex w-full items-center gap-1 rounded-full border border-ink-200 bg-white p-1 sm:w-auto">
-        <Link
-          href={monthHref(activeView, year, month1, -1)}
-          className="inline-flex size-8 items-center justify-center rounded-full text-ink-600 hover:bg-ink-100"
-        >
-          <ChevronLeft className="size-4" />
-        </Link>
-        <span className="min-w-0 flex-1 px-2 text-center text-sm font-bold capitalize text-ink-900 sm:min-w-32">
-          {monthLabel(year, month1)}
-        </span>
-        <Link
-          href={monthHref(activeView, year, month1, 1)}
-          className="inline-flex size-8 items-center justify-center rounded-full text-ink-600 hover:bg-ink-100"
-        >
-          <ChevronRight className="size-4" />
-        </Link>
-      </div>
+      {activeView === "cotizaciones" && (
+        <div className="inline-flex w-full items-center gap-1 rounded-full border border-ink-200 bg-white p-1 sm:w-auto">
+          <Link
+            href={monthHref(activeView, year, month1, -1)}
+            className="inline-flex size-8 items-center justify-center rounded-full text-ink-600 hover:bg-ink-100"
+          >
+            <ChevronLeft className="size-4" />
+          </Link>
+          <span className="min-w-0 flex-1 px-2 text-center text-sm font-bold capitalize text-ink-900 sm:min-w-32">
+            {monthLabel(year, month1)}
+          </span>
+          <Link
+            href={monthHref(activeView, year, month1, 1)}
+            className="inline-flex size-8 items-center justify-center rounded-full text-ink-600 hover:bg-ink-100"
+          >
+            <ChevronRight className="size-4" />
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
@@ -284,21 +289,20 @@ function QuoteSubTabs({
 async function SalesPerformance({
   userId,
   firstName,
-  year,
-  month1,
+  period,
+  range,
   myVendors,
 }: {
   userId: string;
   firstName: string;
-  year: number;
-  month1: number;
+  period: Period;
+  range: PeriodRange;
   myVendors: Set<string>;
 }) {
-  const rango = periodRange("month", `${year}-${String(month1).padStart(2, "0")}`);
   const [a, evo, perf] = await Promise.all([
-    getUserSalesAnalytics(userId, rango),
+    getUserSalesAnalytics(userId, range),
     getUserMonthlyEvolution(userId, 6),
-    getSalesVendorPerformance(rango),
+    getSalesVendorPerformance(range),
   ]);
   const evoItems: BarItem[] = evo.map((p) => ({
     label: p.label,
@@ -316,12 +320,15 @@ async function SalesPerformance({
 
   return (
     <>
+      <div className="mb-4">
+        <PeriodNav period={period} refValue={range.ref} label={range.label} extra="&vista=ventas" />
+      </div>
       {!a.hasData ? (
         <div className="rounded-2xl border border-ink-200 bg-white p-10 text-center shadow-soft">
           <span className="mx-auto inline-flex size-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600"><TrendingUp className="size-7" /></span>
-          <h2 className="mt-4 text-lg font-black text-ink-900">Sin ventas este mes</h2>
-          <p className="mx-auto mt-1.5 max-w-sm text-sm text-ink-600">
-            No hay facturas tuyas en {monthLabel(year, month1)}. Si crees que es un error,
+          <h2 className="mt-4 text-lg font-black text-ink-900">Sin ventas en este periodo</h2>
+          <p className="mx-auto mt-1.5 max-w-sm text-sm text-ink-600 first-letter:uppercase">
+            No hay facturas tuyas en {range.label}. Si crees que es un error,
             puede ser que tu nombre de vendedor no este enlazado; avisa a RRHH.
           </p>
         </div>
@@ -354,12 +361,14 @@ async function SalesPerformance({
             <MetricCard label="Ticket promedio" value={formatCRC(a.ticketPromedioCRC)} Icon={Receipt} accent="warn" />
           </div>
 
-          <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft">
-            <h2 className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-ink-900">
-              <TrendingUp className="size-4 text-brand-600" /> Tus ventas por dia (CRC)
-            </h2>
-            <DayBars data={a.porDia.map((d) => ({ day: d.day, value: d.crc }))} fmt={formatCRC} />
-          </section>
+          {period === "month" && (
+            <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft">
+              <h2 className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-ink-900">
+                <TrendingUp className="size-4 text-brand-600" /> Tus ventas por dia (CRC)
+              </h2>
+              <DayBars data={a.porDia.map((d) => ({ day: d.day, value: d.crc }))} fmt={formatCRC} />
+            </section>
+          )}
 
           <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft">
             <h2 className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-ink-900">
@@ -685,7 +694,7 @@ async function QuotePerformance({
 export default async function RendimientoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mes?: string; vista?: string; dia?: string; sub?: string }>;
+  searchParams: Promise<{ mes?: string; vista?: string; dia?: string; sub?: string; period?: string; ref?: string }>;
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/ingresar");
@@ -702,6 +711,8 @@ export default async function RendimientoPage({
     }
   }
 
+  const salesPeriod: Period = sp.period === "month" ? "month" : "day";
+  const salesRange = periodRange(salesPeriod, sp.ref);
   const quoteDay = selectedQuoteDay(sp.dia, year, month1);
   const quoteSubTab = sp.sub === "historial" ? "historial" : "dia";
   const myVendors = new Set(await getVendorsForUser(user.id));
@@ -725,8 +736,8 @@ export default async function RendimientoPage({
         <SalesPerformance
           userId={user.id}
           firstName={firstName}
-          year={year}
-          month1={month1}
+          period={salesPeriod}
+          range={salesRange}
           myVendors={myVendors}
         />
       )}

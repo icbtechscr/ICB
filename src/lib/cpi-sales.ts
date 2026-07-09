@@ -125,18 +125,21 @@ export async function getMonthlySalesForUser(
   const { from, to } = monthRange(year, month1);
   const { data } = await sb
     .from("cpi_sales")
-    .select("moneda, subtotal")
+    .select("moneda, subtotal, estado")
     .eq("user_id", userId)
     .gte("fecha", from)
     .lt("fecha", to);
   let amountCRC = 0;
   let amountUSD = 0;
-  const rows = (data ?? []) as { moneda: string; subtotal: number }[];
+  let count = 0;
+  const rows = (data ?? []) as { moneda: string; subtotal: number; estado: string | null }[];
   for (const r of rows) {
+    if (/ANULAD/i.test(r.estado || "")) continue; // anuladas no cuentan como venta
+    count += 1;
     if (r.moneda === "USD") amountUSD += Number(r.subtotal) || 0;
     else amountCRC += Number(r.subtotal) || 0;
   }
-  return { count: rows.length, amountCRC, amountUSD };
+  return { count, amountCRC, amountUSD };
 }
 
 /** Facturas de un usuario en un rango (para el detalle de Ventas). */
@@ -173,7 +176,7 @@ export async function listVendorsWithStats(): Promise<VendorStat[]> {
   const sb = createAdminClient();
   const [{ data: mapRows }, { data: sales }] = await Promise.all([
     sb.from("cpi_vendor_map").select("cpi_vendor, user_id, ignored"),
-    sb.from("cpi_sales").select("vendedor, moneda, subtotal").limit(50000),
+    sb.from("cpi_sales").select("vendedor, moneda, subtotal, estado").limit(50000),
   ]);
 
   const stats = new Map<string, VendorStat>();
@@ -185,7 +188,8 @@ export async function listVendorsWithStats(): Promise<VendorStat[]> {
   for (const r of (mapRows ?? []) as { cpi_vendor: string; user_id: string | null }[]) {
     ensure(r.cpi_vendor).user_id = r.user_id;
   }
-  for (const s of (sales ?? []) as { vendedor: string; moneda: string; subtotal: number }[]) {
+  for (const s of (sales ?? []) as { vendedor: string; moneda: string; subtotal: number; estado: string | null }[]) {
+    if (/ANULAD/i.test(s.estado || "")) continue; // anuladas no cuentan
     const st = ensure(s.vendedor);
     st.count += 1;
     if (s.moneda === "USD") st.usd += Number(s.subtotal) || 0;

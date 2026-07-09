@@ -119,6 +119,9 @@ function bump(map: Map<string, Bucket>, key: string, crc: number, usd: number) {
 
 const bySortCrc = (a: Bucket, b: Bucket) => b.crc - a.crc || b.count - a.count;
 
+// Las facturas anuladas se muestran pero NO cuentan como venta.
+const isAnulada = (estado: string | null): boolean => /ANULAD/i.test(estado || "");
+
 async function fetchIgnored(): Promise<Set<string>> {
   try {
     const sb = createAdminClient();
@@ -161,9 +164,11 @@ export async function getSalesAnalytics(r: PeriodRange): Promise<SalesAnalytics>
   const dia = new Map<string, { day: string; crc: number; usd: number; count: number }>();
 
   let totalCRC = 0, totalUSD = 0, aceptadas = 0, rechazadas = 0;
-  let crcCount = 0;
+  let crcCount = 0, counted = 0;
 
   for (const row of rows) {
+    if (isAnulada(row.estado)) continue;
+    counted += 1;
     const val = Number(row.subtotal) || 0;
     const isUSD = row.moneda === "USD";
     const crc = isUSD ? 0 : val;
@@ -198,14 +203,15 @@ export async function getSalesAnalytics(r: PeriodRange): Promise<SalesAnalytics>
   let prevMonthCRC = 0;
   try {
     const sb = createAdminClient();
-    const { data } = await sb.from("cpi_sales").select("moneda, subtotal").gte("fecha", r.prevFrom).lt("fecha", r.prevTo).limit(50000);
-    for (const p of (data ?? []) as { moneda: string; subtotal: number }[]) {
+    const { data } = await sb.from("cpi_sales").select("moneda, subtotal, estado").gte("fecha", r.prevFrom).lt("fecha", r.prevTo).limit(50000);
+    for (const p of (data ?? []) as { moneda: string; subtotal: number; estado: string | null }[]) {
+      if (isAnulada(p.estado)) continue;
       if (p.moneda !== "USD") prevMonthCRC += Number(p.subtotal) || 0;
     }
   } catch { /* ignore */ }
 
   return {
-    totalCRC, totalUSD, count: rows.length, aceptadas, rechazadas,
+    totalCRC, totalUSD, count: counted, aceptadas, rechazadas,
     ticketPromedioCRC: crcCount ? Math.round(totalCRC / crcCount) : 0,
     vendedores: ven.size,
     sucursales: suc.size,
@@ -273,6 +279,7 @@ export async function getUserSalesAnalytics(
   for (const row of rows) {
     if (!row.user_id) continue;
     if (ignored.has(row.vendedor || "")) continue;
+    if (isAnulada(row.estado)) continue;
     const v = Number(row.subtotal) || 0;
     const valor = row.moneda === "USD" ? v * USD_RATE : v;
     valorByUser.set(row.user_id, (valorByUser.get(row.user_id) ?? 0) + valor);
@@ -286,7 +293,7 @@ export async function getUserSalesAnalytics(
   const rank = rankIdx >= 0 ? rankIdx + 1 : null;
 
   // Metricas propias.
-  const mine = rows.filter((row) => row.user_id === userId);
+  const mine = rows.filter((row) => row.user_id === userId && !isAnulada(row.estado));
   let amountCRC = 0, amountUSD = 0, aceptadas = 0, rechazadas = 0, crcCount = 0;
   const suc = new Map<string, Bucket>();
   const dia = new Map<string, number>();
@@ -337,14 +344,15 @@ export async function getUserMonthlyEvolution(
     const from = new Date(Date.UTC(base[0].year, base[0].month1 - 1, 1)).toISOString();
     const { data } = await sb
       .from("cpi_sales")
-      .select("fecha, moneda, subtotal")
+      .select("fecha, moneda, subtotal, estado")
       .eq("user_id", userId)
       .gte("fecha", from)
       .limit(50000);
     const byMonth = new Map<string, { crc: number; count: number }>();
-    for (const r of (data ?? []) as { fecha: string | null; moneda: string; subtotal: number }[]) {
+    for (const r of (data ?? []) as { fecha: string | null; moneda: string; subtotal: number; estado: string | null }[]) {
       const ym = (r.fecha || "").slice(0, 7);
       if (!ym) continue;
+      if (isAnulada(r.estado)) continue;
       const m = byMonth.get(ym) ?? { crc: 0, count: 0 };
       if (r.moneda !== "USD") m.crc += Number(r.subtotal) || 0;
       m.count += 1;
@@ -417,6 +425,7 @@ export async function getVendorPerformance(r: PeriodRange): Promise<VendorPerfor
   for (const row of rows) {
     const vend = row.vendedor || "—";
     if (ignored.has(vend)) continue;
+    if (isAnulada(row.estado)) continue;
     const v = Number(row.subtotal) || 0;
     const isUSD = row.moneda === "USD";
     totalCRC += isUSD ? 0 : v;
