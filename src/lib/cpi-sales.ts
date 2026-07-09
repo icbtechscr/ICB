@@ -134,7 +134,7 @@ export async function getMonthlySalesForUser(
   let count = 0;
   const rows = (data ?? []) as { moneda: string; subtotal: number; estado: string | null }[];
   for (const r of rows) {
-    if (/ANULAD/i.test(r.estado || "")) continue; // anuladas no cuentan como venta
+    if (/ANULA/i.test(r.estado || "")) continue; // anuladas no cuentan como venta
     count += 1;
     if (r.moneda === "USD") amountUSD += Number(r.subtotal) || 0;
     else amountCRC += Number(r.subtotal) || 0;
@@ -189,7 +189,7 @@ export async function listVendorsWithStats(): Promise<VendorStat[]> {
     ensure(r.cpi_vendor).user_id = r.user_id;
   }
   for (const s of (sales ?? []) as { vendedor: string; moneda: string; subtotal: number; estado: string | null }[]) {
-    if (/ANULAD/i.test(s.estado || "")) continue; // anuladas no cuentan
+    if (/ANULA/i.test(s.estado || "")) continue; // anuladas no cuentan
     const st = ensure(s.vendedor);
     st.count += 1;
     if (s.moneda === "USD") st.usd += Number(s.subtotal) || 0;

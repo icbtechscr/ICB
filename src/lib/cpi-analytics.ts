@@ -120,7 +120,7 @@ function bump(map: Map<string, Bucket>, key: string, crc: number, usd: number) {
 const bySortCrc = (a: Bucket, b: Bucket) => b.crc - a.crc || b.count - a.count;
 
 // Las facturas anuladas se muestran pero NO cuentan como venta.
-const isAnulada = (estado: string | null): boolean => /ANULAD/i.test(estado || "");
+const isAnulada = (estado: string | null): boolean => /ANULA/i.test(estado || "");
 
 async function fetchIgnored(): Promise<Set<string>> {
   try {
