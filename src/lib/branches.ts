@@ -54,8 +54,7 @@ export const BRANCHES: Branch[] = [
     id: "alajuela",
     city: "Alajuela",
     name: "ICB Technologies Alajuela",
-    address:
-      "Rio Segundo, Alajuela, Avenida 8. 100 metros al norte del KFC de la radial.",
+    address: "Alajuela centro",
     phone: "+506 4000 0865",
     lat: 10.0127018,
     lng: -84.2129397,
