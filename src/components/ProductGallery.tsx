@@ -45,6 +45,10 @@ export function ProductGallery({
         )}
       </div>
 
+      <p className="mt-3 text-center text-[11px] italic text-ink-400">
+        Imagen con fines ilustrativos
+      </p>
+
       {images.length > 1 && (
         <div className="mt-4 grid grid-cols-5 gap-2">
           {images.slice(0, 5).map((img, i) => (

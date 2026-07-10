@@ -60,12 +60,6 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
             </div>
           )}
 
-          {img && (
-            <span className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-black/25 py-0.5 text-center text-[8px] font-medium uppercase tracking-wide text-white/90 backdrop-blur-[1px]">
-              Imagen con fines ilustrativos
-            </span>
-          )}
-
           <div className="absolute left-3 top-3 flex flex-col gap-1.5">
             {discountPct && discountPct > 0 && (
               <span className="rounded-md bg-danger px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
