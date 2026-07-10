@@ -10,6 +10,7 @@ import {
   MapPin,
   CreditCard,
   Truck,
+  Trash2,
 } from "lucide-react";
 import {
   ORDER_STATUSES,
@@ -42,23 +43,27 @@ function fmtDate(d: string) {
 
 export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
-  const [filter, setFilter] = useState<"todos" | OrderStatus>("todos");
+  const [bucket, setBucket] = useState<"activos" | "completados">("activos");
   const [query, setQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const counts = useMemo(() => {
-    const c: Record<string, number> = { todos: orders.length };
-    for (const s of ORDER_STATUSES) c[s] = 0;
-    for (const o of orders) c[o.status] = (c[o.status] ?? 0) + 1;
-    return c;
+    let activos = 0;
+    let completados = 0;
+    for (const o of orders) {
+      if (o.status === "entregado") completados += 1;
+      else activos += 1;
+    }
+    return { activos, completados };
   }, [orders]);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     return orders.filter((o) => {
-      if (filter !== "todos" && o.status !== filter) return false;
+      const isCompleted = o.status === "entregado";
+      if (bucket === "completados" ? !isCompleted : isCompleted) return false;
       if (!q) return true;
       return (
         o.orderNumber.toLowerCase().includes(q) ||
@@ -67,7 +72,7 @@ export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
         o.customerPhone.toLowerCase().includes(q)
       );
     });
-  }, [orders, filter, query]);
+  }, [orders, bucket, query]);
 
   async function changeStatus(o: Order, status: OrderStatus) {
     setSavingId(o.id);
@@ -92,6 +97,30 @@ export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
     }
   }
 
+  async function deleteOrder(o: Order) {
+    if (
+      !window.confirm(
+        `¿Borrar el pedido ${o.orderNumber}? Esta acción es permanente y no se puede deshacer.`
+      )
+    )
+      return;
+    setSavingId(o.id);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/orders/${o.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        setError(await res.text());
+        return;
+      }
+      setOrders((prev) => prev.filter((x) => x.id !== o.id));
+      setExpandedId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSavingId(null);
+    }
+  }
+
   return (
     <div>
       {error && (
@@ -100,33 +129,30 @@ export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
         </div>
       )}
 
-      {/* Filtros */}
+      {/* Pestanas: Activos / Completados */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <button
           type="button"
-          onClick={() => setFilter("todos")}
-          className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
-            filter === "todos"
+          onClick={() => setBucket("activos")}
+          className={`rounded-full border px-4 py-1.5 text-xs font-bold transition ${
+            bucket === "activos"
               ? "border-brand-600 bg-brand-600 text-white"
               : "border-ink-200 text-ink-600 hover:bg-ink-100"
           }`}
         >
-          Todos ({counts.todos})
+          Activos ({counts.activos})
         </button>
-        {ORDER_STATUSES.map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => setFilter(s)}
-            className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
-              filter === s
-                ? "border-brand-600 bg-brand-600 text-white"
-                : "border-ink-200 text-ink-600 hover:bg-ink-100"
-            }`}
-          >
-            {STATUS_LABEL[s]} ({counts[s] ?? 0})
-          </button>
-        ))}
+        <button
+          type="button"
+          onClick={() => setBucket("completados")}
+          className={`rounded-full border px-4 py-1.5 text-xs font-bold transition ${
+            bucket === "completados"
+              ? "border-emerald-600 bg-emerald-600 text-white"
+              : "border-ink-200 text-ink-600 hover:bg-ink-100"
+          }`}
+        >
+          Completados ({counts.completados})
+        </button>
         <div className="relative ml-auto">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
           <input
@@ -316,6 +342,16 @@ export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
                               <Loader2 className="size-4 animate-spin text-brand-600" />
                             )}
                           </div>
+                        </div>
+                        <div>
+                          <button
+                            type="button"
+                            onClick={() => deleteOrder(o)}
+                            disabled={savingId === o.id}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-60"
+                          >
+                            <Trash2 className="size-3.5" /> Borrar pedido
+                          </button>
                         </div>
                       </div>
                     </div>
