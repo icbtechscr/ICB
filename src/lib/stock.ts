@@ -8,6 +8,8 @@ export const STOCK_LABELS: Record<StockStatus, string> = {
   out_of_stock: "Agotado",
 };
 
+export const STOCK_STATUS_ATTRIBUTE = "icb_stock_status";
+
 export function normalizeStockStatus(
   value: string | null | undefined,
   legacyInStock = true
@@ -16,6 +18,27 @@ export function normalizeStockStatus(
     return value;
   }
   return legacyInStock ? "in_stock" : "out_of_stock";
+}
+
+export function readStockStatusAttribute(attributes: unknown): StockStatus | null {
+  if (!attributes || typeof attributes !== "object") return null;
+  const value = (attributes as Record<string, unknown>)[STOCK_STATUS_ATTRIBUTE];
+  return typeof value === "string" &&
+    (value === "in_stock" || value === "backorder" || value === "out_of_stock")
+    ? value
+    : null;
+}
+
+export function writeStockStatusAttribute(
+  attributes: unknown,
+  status: StockStatus
+): Record<string, unknown> {
+  const current =
+    attributes && typeof attributes === "object" && !Array.isArray(attributes)
+      ? { ...(attributes as Record<string, unknown>) }
+      : {};
+  current[STOCK_STATUS_ATTRIBUTE] = status;
+  return current;
 }
 
 export function stockStatusToLegacyInStock(status: StockStatus): boolean {

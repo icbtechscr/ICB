@@ -3,6 +3,8 @@ alter table public.products
 
 update public.products
 set stock_status = case
+  when attributes->>'icb_stock_status' in ('in_stock', 'backorder', 'out_of_stock')
+    then attributes->>'icb_stock_status'
   when in_stock then 'in_stock'
   else 'out_of_stock'
 end

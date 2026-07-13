@@ -4,6 +4,7 @@ import {
   isPurchasableStock,
   isMissingStockStatusError,
   normalizeStockStatus,
+  readStockStatusAttribute,
   type StockStatus,
 } from "./stock";
 
@@ -38,6 +39,7 @@ type Row = {
   in_stock: boolean;
   stock_status?: string | null;
   stock_qty: number | null;
+  attributes?: Record<string, unknown> | null;
   price_crc: number;
   sale_price_crc: number | null;
   brand: { name: string } | null;
@@ -47,7 +49,7 @@ type Row = {
 
 const SELECT_WITH_STOCK_STATUS = `
   id, woo_id, name, slug, sku, short_description, description,
-  on_sale, in_stock, stock_status, stock_qty, price_crc, sale_price_crc,
+  on_sale, in_stock, stock_status, stock_qty, attributes, price_crc, sale_price_crc,
   brand:brands ( name ),
   product_images ( url, alt, position ),
   product_categories ( category:categories ( id, name, slug ) )
@@ -55,7 +57,7 @@ const SELECT_WITH_STOCK_STATUS = `
 
 const SELECT_LEGACY_STOCK = `
   id, woo_id, name, slug, sku, short_description, description,
-  on_sale, in_stock, stock_qty, price_crc, sale_price_crc,
+  on_sale, in_stock, stock_qty, attributes, price_crc, sale_price_crc,
   brand:brands ( name ),
   product_images ( url, alt, position ),
   product_categories ( category:categories ( id, name, slug ) )
@@ -78,7 +80,10 @@ async function withStockStatusFallback<T>(
 }
 
 function rowToProduct(r: Row): Product {
-  const stockStatus = normalizeStockStatus(r.stock_status, r.in_stock);
+  const stockStatus = normalizeStockStatus(
+    r.stock_status ?? readStockStatusAttribute(r.attributes),
+    r.in_stock
+  );
   const images = [...(r.product_images ?? [])]
     .sort((a, b) => a.position - b.position)
     .map((i) => ({
@@ -664,7 +669,7 @@ export async function getCatalogProducts(params: CatalogParams): Promise<{
   const brandInner = params.brand ? "!inner" : "";
   const selectWithStockStatus = `
     id, woo_id, name, slug, sku, short_description, description,
-    on_sale, in_stock, stock_status, stock_qty, price_crc, sale_price_crc,
+    on_sale, in_stock, stock_status, stock_qty, attributes, price_crc, sale_price_crc,
     brand:brands${brandInner} ( name ),
     product_images ( url, alt, position ),
     product_categories${catInner} ( category:categories${catInner} ( id, name, slug ) )
@@ -672,7 +677,7 @@ export async function getCatalogProducts(params: CatalogParams): Promise<{
 
   const selectLegacyStock = `
     id, woo_id, name, slug, sku, short_description, description,
-    on_sale, in_stock, stock_qty, price_crc, sale_price_crc,
+    on_sale, in_stock, stock_qty, attributes, price_crc, sale_price_crc,
     brand:brands${brandInner} ( name ),
     product_images ( url, alt, position ),
     product_categories${catInner} ( category:categories${catInner} ( id, name, slug ) )
@@ -746,7 +751,7 @@ export async function getCatalogProducts(params: CatalogParams): Promise<{
       legacyQuery = legacyQuery.eq("in_stock", false);
     }
     if (params.stock === "backorder") {
-      legacyQuery = legacyQuery.eq("slug", "__stock_status_not_migrated__");
+      legacyQuery = legacyQuery.eq("attributes->>icb_stock_status", "backorder");
     }
     if (needle) {
       const words = needle

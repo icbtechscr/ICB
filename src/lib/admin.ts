@@ -3,8 +3,10 @@ import { rewriteMediaUrl } from "./image-url";
 import {
   isMissingStockStatusError,
   normalizeStockStatus,
+  readStockStatusAttribute,
   stockStatusToLegacyInStock,
   type StockStatus,
+  writeStockStatusAttribute,
 } from "./stock";
 
 function rewriteProductImages<T extends { product_images?: { url: string }[] }>(
@@ -30,6 +32,7 @@ export type AdminProduct = {
   in_stock: boolean;
   stock_status: StockStatus;
   stock_qty: number | null;
+  attributes?: Record<string, unknown> | null;
   brand_id: string | null;
   brand?: { id: string; name: string } | null;
   product_images: { id: string; url: string; alt: string | null; position: number }[];
@@ -40,7 +43,7 @@ export type AdminProduct = {
 
 const SELECT_WITH_STOCK_STATUS = `
   id, woo_id, name, slug, sku, short_description, description,
-  price_crc, sale_price_crc, on_sale, in_stock, stock_status, stock_qty, brand_id, created_at, updated_at,
+  price_crc, sale_price_crc, on_sale, in_stock, stock_status, stock_qty, attributes, brand_id, created_at, updated_at,
   brand:brands ( id, name ),
   product_images ( id, url, alt, position ),
   product_categories ( category:categories ( id, name, slug ) )
@@ -48,7 +51,7 @@ const SELECT_WITH_STOCK_STATUS = `
 
 const SELECT_LEGACY_STOCK = `
   id, woo_id, name, slug, sku, short_description, description,
-  price_crc, sale_price_crc, on_sale, in_stock, stock_qty, brand_id, created_at, updated_at,
+  price_crc, sale_price_crc, on_sale, in_stock, stock_qty, attributes, brand_id, created_at, updated_at,
   brand:brands ( id, name ),
   product_images ( id, url, alt, position ),
   product_categories ( category:categories ( id, name, slug ) )
@@ -102,7 +105,7 @@ export async function adminListProducts(opts: {
           ? query.eq("in_stock", false)
           : opts.stockStatus === "in_stock"
             ? query.eq("in_stock", true)
-            : query.eq("slug", "__stock_status_not_migrated__");
+            : query.eq("attributes->>icb_stock_status", "backorder");
     } else if (opts.outOfStock) {
       query = hasStockStatus
         ? query.eq("stock_status", "out_of_stock")
@@ -114,7 +117,10 @@ export async function adminListProducts(opts: {
   const products = ((data ?? []) as unknown as AdminProduct[])
     .map((p) => ({
       ...p,
-      stock_status: normalizeStockStatus(p.stock_status, p.in_stock),
+      stock_status: normalizeStockStatus(
+        p.stock_status ?? readStockStatusAttribute(p.attributes),
+        p.in_stock
+      ),
     }))
     .map(rewriteProductImages);
   return { products, total: count ?? 0 };
@@ -130,7 +136,8 @@ export async function adminGetProduct(id: string): Promise<AdminProduct | null> 
     ? rewriteProductImages({
         ...(data as unknown as AdminProduct),
         stock_status: normalizeStockStatus(
-          (data as unknown as AdminProduct).stock_status,
+          (data as unknown as AdminProduct).stock_status ??
+            readStockStatusAttribute((data as unknown as AdminProduct).attributes),
           (data as unknown as AdminProduct).in_stock
         ),
       })
@@ -356,6 +363,7 @@ export async function adminCreateProduct(payload: ProductWritePayload): Promise<
     on_sale: row.on_sale ?? false,
     stock_status: stockStatus,
     in_stock: stockStatusToLegacyInStock(stockStatus),
+    attributes: writeStockStatusAttribute(null, stockStatus),
     sale_price_crc: row.sale_price_crc || null,
   };
   let insertResult = await sb.from("products").insert(insertRow).select("id").single();
@@ -397,8 +405,17 @@ export async function adminUpdateProduct(
   const updateRow: Record<string, unknown> = { ...row, updated_at: new Date().toISOString() };
   if ("stock_status" in row || "in_stock" in row) {
     const stockStatus = normalizeStockStatus(row.stock_status, row.in_stock ?? true);
+    const { data: currentProduct } = await sb
+      .from("products")
+      .select("attributes")
+      .eq("id", id)
+      .maybeSingle();
     updateRow.stock_status = stockStatus;
     updateRow.in_stock = stockStatusToLegacyInStock(stockStatus);
+    updateRow.attributes = writeStockStatusAttribute(
+      (currentProduct as { attributes?: unknown } | null)?.attributes,
+      stockStatus
+    );
   }
   if ("sale_price_crc" in row) {
     updateRow.sale_price_crc = row.sale_price_crc || null;
