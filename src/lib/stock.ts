@@ -55,3 +55,13 @@ export function isPurchasableStock(
 ): boolean {
   return effectiveStockStatus(status, stockQty) !== "out_of_stock";
 }
+
+export function isMissingStockStatusError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const record = error as { code?: unknown; message?: unknown; details?: unknown };
+  const text = [record.code, record.message, record.details]
+    .filter((part): part is string => typeof part === "string")
+    .join(" ")
+    .toLowerCase();
+  return text.includes("stock_status") && text.includes("products");
+}

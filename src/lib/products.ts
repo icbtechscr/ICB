@@ -2,6 +2,7 @@ import { supabase } from "./supabase";
 import { rewriteMediaUrl } from "./image-url";
 import {
   isPurchasableStock,
+  isMissingStockStatusError,
   normalizeStockStatus,
   type StockStatus,
 } from "./stock";
@@ -35,7 +36,7 @@ type Row = {
   description: string | null;
   on_sale: boolean;
   in_stock: boolean;
-  stock_status: string | null;
+  stock_status?: string | null;
   stock_qty: number | null;
   price_crc: number;
   sale_price_crc: number | null;
@@ -44,13 +45,37 @@ type Row = {
   product_categories: { category: { id: string; name: string; slug: string } | null }[];
 };
 
-const SELECT = `
+const SELECT_WITH_STOCK_STATUS = `
   id, woo_id, name, slug, sku, short_description, description,
   on_sale, in_stock, stock_status, stock_qty, price_crc, sale_price_crc,
   brand:brands ( name ),
   product_images ( url, alt, position ),
   product_categories ( category:categories ( id, name, slug ) )
 `;
+
+const SELECT_LEGACY_STOCK = `
+  id, woo_id, name, slug, sku, short_description, description,
+  on_sale, in_stock, stock_qty, price_crc, sale_price_crc,
+  brand:brands ( name ),
+  product_images ( url, alt, position ),
+  product_categories ( category:categories ( id, name, slug ) )
+`;
+
+type ProductQueryResult<T> = {
+  data: T | null;
+  error: unknown;
+  count?: number | null;
+};
+
+async function withStockStatusFallback<T>(
+  build: (select: string) => PromiseLike<ProductQueryResult<T>>,
+  primarySelect = SELECT_WITH_STOCK_STATUS,
+  fallbackSelect = SELECT_LEGACY_STOCK
+): Promise<ProductQueryResult<T>> {
+  const result = await build(primarySelect);
+  if (!result.error || !isMissingStockStatusError(result.error)) return result;
+  return build(fallbackSelect);
+}
 
 function rowToProduct(r: Row): Product {
   const stockStatus = normalizeStockStatus(r.stock_status, r.in_stock);
@@ -93,55 +118,57 @@ export async function getAllProducts(opts?: { page?: number; perPage?: number })
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
 
-  const { data, count, error } = await supabase
-    .from("products")
-    .select(SELECT, { count: "exact" })
-    .order("name")
-    .range(from, to);
+  const { data, count, error } = await withStockStatusFallback((select) =>
+    supabase
+      .from("products")
+      .select(select, { count: "exact" })
+      .order("name")
+      .range(from, to)
+  );
 
   if (error) throw error;
   return { products: (data as unknown as Row[]).map(rowToProduct), total: count ?? 0 };
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
-  const { data, error } = await supabase
-    .from("products")
-    .select(SELECT)
-    .eq("slug", slug)
-    .maybeSingle();
+  const { data, error } = await withStockStatusFallback((select) =>
+    supabase.from("products").select(select).eq("slug", slug).maybeSingle()
+  );
   if (error) throw error;
   if (!data) return null;
   return rowToProduct(data as unknown as Row);
 }
 
 export async function getFeaturedProducts(limit = 10): Promise<Product[]> {
-  const { data, error } = await supabase
-    .from("products")
-    .select(SELECT)
-    .neq("stock_status", "out_of_stock")
-    .gt("price_crc", 0)
-    .order("created_at", { ascending: false })
-    .limit(limit);
+  const { data, error } = await withStockStatusFallback((select) => {
+    let query = supabase
+      .from("products")
+      .select(select)
+      .gt("price_crc", 0)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    query =
+      select === SELECT_WITH_STOCK_STATUS
+        ? query.neq("stock_status", "out_of_stock")
+        : query.eq("in_stock", true);
+    return query;
+  });
   if (error) throw error;
   return (data as unknown as Row[]).map(rowToProduct);
 }
 
 export async function getOnSaleProducts(limit = 8): Promise<Product[]> {
-  const { data, error } = await supabase
-    .from("products")
-    .select(SELECT)
-    .eq("on_sale", true)
-    .limit(limit);
+  const { data, error } = await withStockStatusFallback((select) =>
+    supabase.from("products").select(select).eq("on_sale", true).limit(limit)
+  );
   if (error) throw error;
   return (data as unknown as Row[]).map(rowToProduct);
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
-  const { data, error } = await supabase
-    .from("products")
-    .select(SELECT)
-    .eq("id", id)
-    .maybeSingle();
+  const { data, error } = await withStockStatusFallback((select) =>
+    supabase.from("products").select(select).eq("id", id).maybeSingle()
+  );
   if (error) throw error;
   if (!data) return null;
   return rowToProduct(data as unknown as Row);
@@ -149,10 +176,9 @@ export async function getProductById(id: string): Promise<Product | null> {
 
 export async function getProductsByIds(ids: string[]): Promise<Product[]> {
   if (ids.length === 0) return [];
-  const { data, error } = await supabase
-    .from("products")
-    .select(SELECT)
-    .in("id", ids);
+  const { data, error } = await withStockStatusFallback((select) =>
+    supabase.from("products").select(select).in("id", ids)
+  );
   if (error) throw error;
   const map = new Map(
     (data as unknown as Row[]).map((r) => [r.id, rowToProduct(r)])
@@ -311,10 +337,12 @@ export async function getProductsByCategory(slug: string): Promise<Product[]> {
   if (e1) throw e1;
   if (!cat) return [];
 
-  const { data: pcs, error: e2 } = await supabase
-    .from("product_categories")
-    .select("product:products(" + SELECT + ")")
-    .eq("category_id", cat.id);
+  const { data: pcs, error: e2 } = await withStockStatusFallback((select) =>
+    supabase
+      .from("product_categories")
+      .select("product:products(" + select + ")")
+      .eq("category_id", cat.id)
+  );
   if (e2) throw e2;
 
   return ((pcs ?? []) as unknown as { product: Row | null }[])
@@ -353,10 +381,12 @@ export async function getProductsByCategoryDeep(slug: string): Promise<Product[]
     for (const ch of childrenMap.get(id) ?? []) stack.push(ch);
   }
 
-  const { data: pcs, error } = await supabase
-    .from("product_categories")
-    .select("product:products(" + SELECT + ")")
-    .in("category_id", ids);
+  const { data: pcs, error } = await withStockStatusFallback((select) =>
+    supabase
+      .from("product_categories")
+      .select("product:products(" + select + ")")
+      .in("category_id", ids)
+  );
   if (error) throw error;
 
   const map = new Map<string, Product>();
@@ -407,10 +437,12 @@ export async function getProductsByCategorySlugs(
     .in("slug", slugs);
   const ids = (cats ?? []).map((c) => c.id);
   if (!ids.length) return [];
-  const { data: pcs, error } = await supabase
-    .from("product_categories")
-    .select("product:products(" + SELECT + ")")
-    .in("category_id", ids);
+  const { data: pcs, error } = await withStockStatusFallback((select) =>
+    supabase
+      .from("product_categories")
+      .select("product:products(" + select + ")")
+      .in("category_id", ids)
+  );
   if (error) throw error;
   const map = new Map<string, Product>();
   for (const r of (pcs ?? []) as unknown as { product: Row | null }[]) {
@@ -441,13 +473,15 @@ export async function searchProducts(q: string, limit = 50): Promise<Product[]> 
     .map((w) => w.split('"').join("").trim())
     .filter(Boolean)
     .slice(0, 6);
-  let query = supabase.from("products").select(SELECT).limit(limit);
-  for (const w of words) {
-    query = query.or(
-      `name.ilike."%${w}%",sku.ilike."%${w}%",short_description.ilike."%${w}%"`
-    );
-  }
-  const { data, error } = await query;
+  const { data, error } = await withStockStatusFallback((select) => {
+    let stockQuery = supabase.from("products").select(select).limit(limit);
+    for (const w of words) {
+      stockQuery = stockQuery.or(
+        `name.ilike."%${w}%",sku.ilike."%${w}%",short_description.ilike."%${w}%"`
+      );
+    }
+    return stockQuery;
+  });
   if (error) throw error;
   return (data as unknown as Row[]).map(rowToProduct);
 }
@@ -516,20 +550,26 @@ export async function searchProductsLoose(
   const fetchLimit = Math.max(limit * 4, 40);
 
   async function fetchBy(useLoose: boolean): Promise<Product[]> {
-    let query = supabase.from("products").select(SELECT).limit(fetchLimit);
-    if (needle) {
-      const words = needle
-        .split(/\s+/)
-        .map((w) => (useLoose ? toAccentInsensitivePattern(w) : w.split('"').join("").trim()))
-        .filter(Boolean)
-        .slice(0, 6);
-      for (const w of words) {
-        query = useLoose
-          ? query.or(`name.imatch.${w},sku.imatch.${w},short_description.imatch.${w}`)
-          : query.or(`name.ilike."%${w}%",sku.ilike."%${w}%",short_description.ilike."%${w}%"`);
+    const { data, error } = await withStockStatusFallback((select) => {
+      let query = supabase.from("products").select(select).limit(fetchLimit);
+      if (needle) {
+        const words = needle
+          .split(/\s+/)
+          .map((w) =>
+            useLoose ? toAccentInsensitivePattern(w) : w.split('"').join("").trim()
+          )
+          .filter(Boolean)
+          .slice(0, 6);
+        for (const w of words) {
+          query = useLoose
+            ? query.or(`name.imatch.${w},sku.imatch.${w},short_description.imatch.${w}`)
+            : query.or(
+                `name.ilike."%${w}%",sku.ilike."%${w}%",short_description.ilike."%${w}%"`
+              );
+        }
       }
-    }
-    const { data, error } = await query;
+      return query;
+    });
     if (error) throw error;
     return (data as unknown as Row[]).map(rowToProduct);
   }
@@ -622,7 +662,7 @@ export async function getCatalogProducts(params: CatalogParams): Promise<{
   // SELECT con inner joins solo cuando se filtra, para que el filtro recorte filas
   const catInner = params.category ? "!inner" : "";
   const brandInner = params.brand ? "!inner" : "";
-  const select = `
+  const selectWithStockStatus = `
     id, woo_id, name, slug, sku, short_description, description,
     on_sale, in_stock, stock_status, stock_qty, price_crc, sale_price_crc,
     brand:brands${brandInner} ( name ),
@@ -630,7 +670,15 @@ export async function getCatalogProducts(params: CatalogParams): Promise<{
     product_categories${catInner} ( category:categories${catInner} ( id, name, slug ) )
   `;
 
-  let query = supabase.from("products").select(select, { count: "exact" });
+  const selectLegacyStock = `
+    id, woo_id, name, slug, sku, short_description, description,
+    on_sale, in_stock, stock_qty, price_crc, sale_price_crc,
+    brand:brands${brandInner} ( name ),
+    product_images ( url, alt, position ),
+    product_categories${catInner} ( category:categories${catInner} ( id, name, slug ) )
+  `;
+
+  let query = supabase.from("products").select(selectWithStockStatus, { count: "exact" });
 
   if (params.category) {
     query = query.eq("product_categories.category.slug", params.category);
@@ -679,7 +727,56 @@ export async function getCatalogProducts(params: CatalogParams): Promise<{
       query = query.order("name", { ascending: true });
   }
 
-  const { data, count, error } = await query.range(from, to);
+  let result = await query.range(from, to);
+  if (result.error && isMissingStockStatusError(result.error)) {
+    let legacyQuery = supabase
+      .from("products")
+      .select(selectLegacyStock, { count: "exact" });
+
+    if (params.category) {
+      legacyQuery = legacyQuery.eq("product_categories.category.slug", params.category);
+    }
+    if (params.brand) {
+      legacyQuery = legacyQuery.eq("brand.name", params.brand);
+    }
+    if (params.stock === "in") {
+      legacyQuery = legacyQuery.eq("in_stock", true);
+    }
+    if (params.stock === "out") {
+      legacyQuery = legacyQuery.eq("in_stock", false);
+    }
+    if (params.stock === "backorder") {
+      legacyQuery = legacyQuery.eq("slug", "__stock_status_not_migrated__");
+    }
+    if (needle) {
+      const words = needle
+        .split(/\s+/)
+        .map((w) => w.split('"').join("").trim())
+        .filter(Boolean)
+        .slice(0, 6);
+      for (const w of words) {
+        legacyQuery = legacyQuery.or(
+          `name.ilike."%${w}%",sku.ilike."%${w}%",short_description.ilike."%${w}%"`
+        );
+      }
+    }
+
+    switch (params.sort) {
+      case "precio-asc":
+        legacyQuery = legacyQuery.order("price_crc", { ascending: true });
+        break;
+      case "precio-desc":
+        legacyQuery = legacyQuery.order("price_crc", { ascending: false });
+        break;
+      case "nuevos":
+        legacyQuery = legacyQuery.order("created_at", { ascending: false });
+        break;
+      default:
+        legacyQuery = legacyQuery.order("name", { ascending: true });
+    }
+    result = await legacyQuery.range(from, to);
+  }
+  const { data, count, error } = result;
   if (error) throw error;
   return {
     products: (data as unknown as Row[]).map(rowToProduct),

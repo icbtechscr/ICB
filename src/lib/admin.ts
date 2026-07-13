@@ -1,6 +1,7 @@
 import { createAdminClient } from "./supabase";
 import { rewriteMediaUrl } from "./image-url";
 import {
+  isMissingStockStatusError,
   normalizeStockStatus,
   stockStatusToLegacyInStock,
   type StockStatus,
@@ -37,13 +38,35 @@ export type AdminProduct = {
   updated_at?: string;
 };
 
-const SELECT = `
+const SELECT_WITH_STOCK_STATUS = `
   id, woo_id, name, slug, sku, short_description, description,
   price_crc, sale_price_crc, on_sale, in_stock, stock_status, stock_qty, brand_id, created_at, updated_at,
   brand:brands ( id, name ),
   product_images ( id, url, alt, position ),
   product_categories ( category:categories ( id, name, slug ) )
 `;
+
+const SELECT_LEGACY_STOCK = `
+  id, woo_id, name, slug, sku, short_description, description,
+  price_crc, sale_price_crc, on_sale, in_stock, stock_qty, brand_id, created_at, updated_at,
+  brand:brands ( id, name ),
+  product_images ( id, url, alt, position ),
+  product_categories ( category:categories ( id, name, slug ) )
+`;
+
+type AdminQueryResult<T> = {
+  data: T | null;
+  error: unknown;
+  count?: number | null;
+};
+
+async function withAdminStockStatusFallback<T>(
+  build: (select: string) => PromiseLike<AdminQueryResult<T>>
+): Promise<AdminQueryResult<T>> {
+  const result = await build(SELECT_WITH_STOCK_STATUS);
+  if (!result.error || !isMissingStockStatusError(result.error)) return result;
+  return build(SELECT_LEGACY_STOCK);
+}
 
 export async function adminListProducts(opts: {
   page?: number;
@@ -59,21 +82,34 @@ export async function adminListProducts(opts: {
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
 
-  let query = sb
-    .from("products")
-    .select(SELECT, { count: "exact" })
-    .order("updated_at", { ascending: false })
-    .range(from, to);
-
   const q = opts.q?.trim();
-  if (q) {
-    query = query.or(`name.ilike.%${q}%,sku.ilike.%${q}%,slug.ilike.%${q}%`);
-  }
-  if (opts.onSale) query = query.eq("on_sale", true);
-  if (opts.stockStatus) query = query.eq("stock_status", opts.stockStatus);
-  else if (opts.outOfStock) query = query.eq("stock_status", "out_of_stock");
+  const { data, error, count } = await withAdminStockStatusFallback((select) => {
+    const hasStockStatus = select.includes("stock_status");
+    let query = sb
+      .from("products")
+      .select(select, { count: "exact" })
+      .order("updated_at", { ascending: false })
+      .range(from, to);
 
-  const { data, error, count } = await query;
+    if (q) {
+      query = query.or(`name.ilike.%${q}%,sku.ilike.%${q}%,slug.ilike.%${q}%`);
+    }
+    if (opts.onSale) query = query.eq("on_sale", true);
+    if (opts.stockStatus) {
+      query = hasStockStatus
+        ? query.eq("stock_status", opts.stockStatus)
+        : opts.stockStatus === "out_of_stock"
+          ? query.eq("in_stock", false)
+          : opts.stockStatus === "in_stock"
+            ? query.eq("in_stock", true)
+            : query.eq("slug", "__stock_status_not_migrated__");
+    } else if (opts.outOfStock) {
+      query = hasStockStatus
+        ? query.eq("stock_status", "out_of_stock")
+        : query.eq("in_stock", false);
+    }
+    return query;
+  });
   if (error) throw error;
   const products = ((data ?? []) as unknown as AdminProduct[])
     .map((p) => ({
@@ -86,11 +122,9 @@ export async function adminListProducts(opts: {
 
 export async function adminGetProduct(id: string): Promise<AdminProduct | null> {
   const sb = createAdminClient();
-  const { data, error } = await sb
-    .from("products")
-    .select(SELECT)
-    .eq("id", id)
-    .maybeSingle();
+  const { data, error } = await withAdminStockStatusFallback((select) =>
+    sb.from("products").select(select).eq("id", id).maybeSingle()
+  );
   if (error) throw error;
   return data
     ? rewriteProductImages({
@@ -267,18 +301,28 @@ export async function adminStats(): Promise<{
   outOfStockCount: number;
 }> {
   const sb = createAdminClient();
-  const [{ count: productCount }, { count: onSaleCount }, { count: outOfStockCount }] =
-    await Promise.all([
-      sb.from("products").select("id", { count: "exact", head: true }),
-      sb.from("products").select("id", { count: "exact", head: true }).eq("on_sale", true),
-      sb
-        .from("products")
-        .select("id", { count: "exact", head: true })
-        .eq("stock_status", "out_of_stock"),
-    ]);
+  const [productResult, onSaleResult, outOfStockResult] = await Promise.all([
+    sb.from("products").select("id", { count: "exact", head: true }),
+    sb.from("products").select("id", { count: "exact", head: true }).eq("on_sale", true),
+    sb
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("stock_status", "out_of_stock"),
+  ]);
+  let outOfStockCount = outOfStockResult.count;
+  if (
+    outOfStockResult.error &&
+    isMissingStockStatusError(outOfStockResult.error)
+  ) {
+    const legacyOutOfStock = await sb
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("in_stock", false);
+    outOfStockCount = legacyOutOfStock.count;
+  }
   return {
-    productCount: productCount ?? 0,
-    onSaleCount: onSaleCount ?? 0,
+    productCount: productResult.count ?? 0,
+    onSaleCount: onSaleResult.count ?? 0,
     outOfStockCount: outOfStockCount ?? 0,
   };
 }
@@ -314,9 +358,17 @@ export async function adminCreateProduct(payload: ProductWritePayload): Promise<
     in_stock: stockStatusToLegacyInStock(stockStatus),
     sale_price_crc: row.sale_price_crc || null,
   };
-  const { data, error } = await sb.from("products").insert(insertRow).select("id").single();
-  if (error) throw error;
-  const id = data.id as string;
+  let insertResult = await sb.from("products").insert(insertRow).select("id").single();
+  if (insertResult.error && isMissingStockStatusError(insertResult.error)) {
+    const { stock_status: _stockStatus, ...legacyInsertRow } = insertRow;
+    insertResult = await sb
+      .from("products")
+      .insert(legacyInsertRow)
+      .select("id")
+      .single();
+  }
+  if (insertResult.error) throw insertResult.error;
+  const id = insertResult.data.id as string;
 
   if (category_ids?.length) {
     const rows = category_ids.map((cid) => ({ product_id: id, category_id: cid }));
@@ -357,8 +409,12 @@ export async function adminUpdateProduct(
     if (cleaned) updateRow.slug = cleaned;
     else delete updateRow.slug; // si quedara vacío, no tocar el slug actual
   }
-  const { error } = await sb.from("products").update(updateRow).eq("id", id);
-  if (error) throw error;
+  let updateResult = await sb.from("products").update(updateRow).eq("id", id);
+  if (updateResult.error && isMissingStockStatusError(updateResult.error)) {
+    const { stock_status: _stockStatus, ...legacyUpdateRow } = updateRow;
+    updateResult = await sb.from("products").update(legacyUpdateRow).eq("id", id);
+  }
+  if (updateResult.error) throw updateResult.error;
 
   if (category_ids) {
     await sb.from("product_categories").delete().eq("product_id", id);
