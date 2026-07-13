@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase";
 import { getProductsByIds } from "@/lib/products";
 import { computeShippingCost, generateOrderNumber } from "@/lib/orders";
 import { distanceKm, ORIGIN, getZone } from "@/lib/shipping";
+import { stockOrderLimit } from "@/lib/stock";
 
 type Body = {
   items?: { id: string; qty: number }[];
@@ -74,6 +75,25 @@ export async function POST(req: Request) {
     // Recalcular precios desde la base de datos (no confiar en el cliente)
     const products = await getProductsByIds(items.map((i) => i.id));
     const priceMap = new Map(products.map((p) => [p.id, p]));
+
+    for (const item of items) {
+      const p = priceMap.get(item.id);
+      if (!p) continue;
+      const qty = Math.min(99, Math.max(1, Math.floor(item.qty)));
+      const stockLimit = stockOrderLimit(p.stockStatus, p.stockQty);
+      if (stockLimit === 0) {
+        return new NextResponse(
+          `No hay unidades disponibles de ${p.name}.`,
+          { status: 409 }
+        );
+      }
+      if (stockLimit !== null && qty > stockLimit) {
+        return new NextResponse(
+          `Solo hay ${stockLimit} unidad${stockLimit === 1 ? "" : "es"} disponible${stockLimit === 1 ? "" : "s"} de ${p.name}.`,
+          { status: 409 }
+        );
+      }
+    }
 
     const lineItems = items
       .map((i) => {

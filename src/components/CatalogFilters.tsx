@@ -171,6 +171,7 @@ export function CatalogFilters({
           >
             <option value="">Toda disponibilidad</option>
             <option value="in">En stock</option>
+            <option value="backorder">Contrapedido</option>
             <option value="out">Agotados</option>
           </select>
 

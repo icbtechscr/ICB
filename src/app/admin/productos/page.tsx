@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import { adminListProducts } from "@/lib/admin";
+import { STOCK_LABELS, type StockStatus } from "@/lib/stock";
 import { formatCRC } from "@/lib/utils";
 import { ProductRowActions } from "@/components/admin/ProductRowActions";
 
@@ -9,12 +10,20 @@ export const dynamic = "force-dynamic";
 export default async function AdminProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; q?: string; on_sale?: string; out?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    q?: string;
+    on_sale?: string;
+    out?: string;
+    stock?: string;
+  }>;
 }) {
   const params = await searchParams;
   const q = params.q ?? "";
   const onSale = params.on_sale === "1";
-  const outOfStock = params.out === "1";
+  const stockStatus: StockStatus | undefined =
+    params.stock === "backorder" ? "backorder" : undefined;
+  const outOfStock = params.out === "1" && !stockStatus;
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
   const perPage = 25;
   const { products, total } = await adminListProducts({
@@ -23,6 +32,7 @@ export default async function AdminProductsPage({
     q,
     onSale,
     outOfStock,
+    stockStatus,
   });
   const totalPages = Math.max(1, Math.ceil(total / perPage));
   const queryStr = (extra: Record<string, string | number>) => {
@@ -30,13 +40,15 @@ export default async function AdminProductsPage({
     if (q) sp.set("q", q);
     if (onSale) sp.set("on_sale", "1");
     if (outOfStock) sp.set("out", "1");
+    if (stockStatus) sp.set("stock", stockStatus);
     for (const [k, v] of Object.entries(extra)) sp.set(k, String(v));
     return sp.toString();
   };
-  const filterHref = (filter: "all" | "onSale" | "outOfStock") => {
+  const filterHref = (filter: "all" | "onSale" | "backorder" | "outOfStock") => {
     const sp = new URLSearchParams();
     if (q) sp.set("q", q);
     if (filter === "onSale") sp.set("on_sale", "1");
+    if (filter === "backorder") sp.set("stock", "backorder");
     if (filter === "outOfStock") sp.set("out", "1");
     const s = sp.toString();
     return s ? `/admin/productos?${s}` : "/admin/productos";
@@ -47,7 +59,13 @@ export default async function AdminProductsPage({
         ? "border-brand-600 bg-brand-600 text-white"
         : "border-ink-200 bg-white text-ink-600 hover:bg-ink-50"
     }`;
-  const activeFilter = onSale ? "Ofertas" : outOfStock ? "Agotados" : null;
+  const activeFilter = onSale
+    ? "Ofertas"
+    : stockStatus === "backorder"
+      ? "Contrapedido"
+      : outOfStock
+        ? "Agotados"
+        : null;
 
   return (
     <div>
@@ -80,15 +98,25 @@ export default async function AdminProductsPage({
         </label>
         {onSale && <input type="hidden" name="on_sale" value="1" />}
         {outOfStock && <input type="hidden" name="out" value="1" />}
+        {stockStatus && <input type="hidden" name="stock" value={stockStatus} />}
       </form>
 
       <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
         <span className="text-ink-500">Ver:</span>
-        <Link href={filterHref("all")} className={filterLinkClass(!onSale && !outOfStock)}>
+        <Link
+          href={filterHref("all")}
+          className={filterLinkClass(!onSale && !outOfStock && !stockStatus)}
+        >
           Todos
         </Link>
         <Link href={filterHref("onSale")} className={filterLinkClass(onSale)}>
           Ofertas
+        </Link>
+        <Link
+          href={filterHref("backorder")}
+          className={filterLinkClass(stockStatus === "backorder")}
+        >
+          Contrapedido
         </Link>
         <Link href={filterHref("outOfStock")} className={filterLinkClass(outOfStock)}>
           Agotados
@@ -186,16 +214,20 @@ export default async function AdminProductsPage({
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      {p.in_stock ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-                          En stock
-                          {typeof p.stock_qty === "number" && ` · ${p.stock_qty}`}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-[11px] font-bold text-red-700 ring-1 ring-red-200">
-                          Agotado
-                        </span>
-                      )}
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ring-1 ${
+                          p.stock_status === "out_of_stock"
+                            ? "bg-red-50 text-red-700 ring-red-200"
+                            : p.stock_status === "backorder"
+                              ? "bg-sky-50 text-sky-700 ring-sky-200"
+                              : "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                        }`}
+                      >
+                        {STOCK_LABELS[p.stock_status]}
+                        {p.stock_status === "in_stock" &&
+                          typeof p.stock_qty === "number" &&
+                          ` · ${p.stock_qty}`}
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       {p.on_sale ? (

@@ -97,6 +97,11 @@ const prodRows = products.map((p) => {
     sale_price_crc: p.on_sale ? parseInt(p.prices?.sale_price ?? "0", 10) || null : null,
     on_sale: !!p.on_sale,
     in_stock: !!p.is_in_stock,
+    stock_status: p.is_in_stock ? "in_stock" : "out_of_stock",
+    stock_qty:
+      typeof p.low_stock_remaining === "number" && Number.isFinite(p.low_stock_remaining)
+        ? p.low_stock_remaining
+        : null,
     brand_id: brandName ? brandIdByName.get(brandName) ?? null : null,
     weight: p.weight ? parseFloat(p.weight) || null : null,
     attributes: {},

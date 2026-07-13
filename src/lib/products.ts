@@ -1,5 +1,10 @@
 import { supabase } from "./supabase";
 import { rewriteMediaUrl } from "./image-url";
+import {
+  isPurchasableStock,
+  normalizeStockStatus,
+  type StockStatus,
+} from "./stock";
 
 export type Product = {
   id: string;
@@ -11,6 +16,8 @@ export type Product = {
   description: string;
   onSale: boolean;
   inStock: boolean;
+  stockStatus: StockStatus;
+  stockQty: number | null;
   priceCRC: number;
   salePriceCRC: number | null;
   images: { src: string; alt: string; position: number }[];
@@ -28,6 +35,8 @@ type Row = {
   description: string | null;
   on_sale: boolean;
   in_stock: boolean;
+  stock_status: string | null;
+  stock_qty: number | null;
   price_crc: number;
   sale_price_crc: number | null;
   brand: { name: string } | null;
@@ -37,13 +46,14 @@ type Row = {
 
 const SELECT = `
   id, woo_id, name, slug, sku, short_description, description,
-  on_sale, in_stock, price_crc, sale_price_crc,
+  on_sale, in_stock, stock_status, stock_qty, price_crc, sale_price_crc,
   brand:brands ( name ),
   product_images ( url, alt, position ),
   product_categories ( category:categories ( id, name, slug ) )
 `;
 
 function rowToProduct(r: Row): Product {
+  const stockStatus = normalizeStockStatus(r.stock_status, r.in_stock);
   const images = [...(r.product_images ?? [])]
     .sort((a, b) => a.position - b.position)
     .map((i) => ({
@@ -63,7 +73,9 @@ function rowToProduct(r: Row): Product {
     shortDescription: r.short_description ?? "",
     description: r.description ?? "",
     onSale: r.on_sale,
-    inStock: r.in_stock,
+    inStock: isPurchasableStock(stockStatus, r.stock_qty),
+    stockStatus,
+    stockQty: r.stock_qty,
     priceCRC: r.price_crc,
     salePriceCRC: r.sale_price_crc,
     images,
@@ -106,7 +118,7 @@ export async function getFeaturedProducts(limit = 10): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
     .select(SELECT)
-    .eq("in_stock", true)
+    .neq("stock_status", "out_of_stock")
     .gt("price_crc", 0)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -586,7 +598,7 @@ export async function getBrands(): Promise<string[]> {
 }
 
 export type CatalogSort = "relevancia" | "precio-asc" | "precio-desc" | "nombre" | "nuevos";
-export type CatalogStock = "in" | "out";
+export type CatalogStock = "in" | "out" | "backorder";
 
 export type CatalogParams = {
   page?: number;
@@ -612,7 +624,7 @@ export async function getCatalogProducts(params: CatalogParams): Promise<{
   const brandInner = params.brand ? "!inner" : "";
   const select = `
     id, woo_id, name, slug, sku, short_description, description,
-    on_sale, in_stock, price_crc, sale_price_crc,
+    on_sale, in_stock, stock_status, stock_qty, price_crc, sale_price_crc,
     brand:brands${brandInner} ( name ),
     product_images ( url, alt, position ),
     product_categories${catInner} ( category:categories${catInner} ( id, name, slug ) )
@@ -627,10 +639,13 @@ export async function getCatalogProducts(params: CatalogParams): Promise<{
     query = query.eq("brand.name", params.brand);
   }
   if (params.stock === "in") {
-    query = query.eq("in_stock", true);
+    query = query.eq("stock_status", "in_stock");
   }
   if (params.stock === "out") {
-    query = query.eq("in_stock", false);
+    query = query.eq("stock_status", "out_of_stock");
+  }
+  if (params.stock === "backorder") {
+    query = query.eq("stock_status", "backorder");
   }
   const needle = params.q?.trim();
   if (needle) {

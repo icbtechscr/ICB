@@ -3,6 +3,12 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { ArrowLeft, Loader2, Plus, Trash2, Upload } from "lucide-react";
+import {
+  STOCK_LABELS,
+  STOCK_STATUSES,
+  stockStatusToLegacyInStock,
+  type StockStatus,
+} from "@/lib/stock";
 
 export type ProductFormInitial = {
   id?: string;
@@ -15,6 +21,7 @@ export type ProductFormInitial = {
   sale_price_crc: number | null;
   on_sale: boolean;
   in_stock: boolean;
+  stock_status: StockStatus;
   stock_qty: number | null;
   brand_id: string | null;
   category_ids: string[];
@@ -171,6 +178,17 @@ export function ProductForm({
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  function setStockStatus(value: string) {
+    const stockStatus: StockStatus = STOCK_STATUSES.includes(value as StockStatus)
+      ? (value as StockStatus)
+      : "in_stock";
+    setForm((f) => ({
+      ...f,
+      stock_status: stockStatus,
+      in_stock: stockStatusToLegacyInStock(stockStatus),
+    }));
+  }
+
   function addImage() {
     set("images", [
       ...form.images,
@@ -214,7 +232,8 @@ export function ProductForm({
       price_crc: Number(form.price_crc) || 0,
       sale_price_crc: form.sale_price_crc ? Number(form.sale_price_crc) : null,
       on_sale: form.on_sale,
-      in_stock: form.in_stock,
+      stock_status: form.stock_status,
+      in_stock: stockStatusToLegacyInStock(form.stock_status),
       stock_qty:
         form.stock_qty === null || Number.isNaN(form.stock_qty)
           ? null
@@ -463,17 +482,21 @@ export function ProductForm({
                 value={form.on_sale}
                 onChange={(v) => set("on_sale", v)}
               />
-              <Toggle
-                label="En stock"
-                value={form.in_stock}
-                onChange={(v) => set("in_stock", v)}
+              <Select
+                label="Estado de inventario"
+                value={form.stock_status}
+                onChange={setStockStatus}
+                options={STOCK_STATUSES.map((status) => ({
+                  value: status,
+                  label: STOCK_LABELS[status],
+                }))}
               />
               <Field
                 label="Cantidad en stock"
                 type="number"
                 value={form.stock_qty === null ? "" : String(form.stock_qty)}
                 onChange={(v) => set("stock_qty", v === "" ? null : Number(v))}
-                hint="Opcional"
+                hint="Si se indica, el carrito no permite pedir más de esta cantidad."
               />
             </div>
           </Section>

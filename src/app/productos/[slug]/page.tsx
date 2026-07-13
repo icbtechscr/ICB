@@ -9,6 +9,7 @@ import { formatCRC, decodeHtml, stripHtml } from "@/lib/utils";
 import { parseKitDescription } from "@/lib/parseKit";
 import { ProductTabs } from "@/components/ProductTabs";
 import { SITE_NAME, absoluteUrl } from "@/lib/site";
+import { STOCK_LABELS, effectiveStockStatus } from "@/lib/stock";
 
 // El layout raíz lee cookies() (modo noche + sesión), lo que vuelve dinámica
 // toda la app. Por eso esta página NO puede prerenderizarse de forma estática.
@@ -76,6 +77,8 @@ export default async function ProductPage({
   const visibleCategories = product.categories.filter(
     (c) => c.name !== "Todas las Categorías"
   );
+  const displayStockStatus = effectiveStockStatus(product.stockStatus, product.stockQty);
+  const canAddToCart = displayStockStatus !== "out_of_stock";
 
   const price = product.salePriceCRC ?? product.priceCRC;
   const jsonLd = {
@@ -95,9 +98,12 @@ export default async function ProductPage({
       url: absoluteUrl(`/productos/${product.slug}`),
       priceCurrency: "CRC",
       price: price > 0 ? price : undefined,
-      availability: product.inStock
-        ? "https://schema.org/InStock"
-        : "https://schema.org/OutOfStock",
+      availability:
+        displayStockStatus === "out_of_stock"
+          ? "https://schema.org/OutOfStock"
+          : displayStockStatus === "backorder"
+            ? "https://schema.org/BackOrder"
+            : "https://schema.org/InStock",
       seller: { "@type": "Organization", name: SITE_NAME },
     },
   };
@@ -164,14 +170,19 @@ export default async function ProductPage({
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              {product.inStock ? (
+              {displayStockStatus === "in_stock" ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200">
                   <Check className="size-3.5" />
-                  En stock
+                  {STOCK_LABELS[displayStockStatus]}
+                  {typeof product.stockQty === "number" && ` · ${product.stockQty}`}
+                </span>
+              ) : displayStockStatus === "backorder" ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-1 text-sm font-semibold text-sky-700 ring-1 ring-sky-200">
+                  {STOCK_LABELS[displayStockStatus]}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-ink-100 px-3 py-1 text-sm font-semibold text-ink-500 ring-1 ring-ink-200">
-                  Agotado
+                  {STOCK_LABELS[displayStockStatus]}
                 </span>
               )}
             </div>
@@ -191,8 +202,10 @@ export default async function ProductPage({
                   image: product.images[0]?.src ?? null,
                   brand: product.brand,
                   unitPrice: product.salePriceCRC ?? product.priceCRC,
+                  stockStatus: product.stockStatus,
+                  stockQty: product.stockQty,
                 }}
-                disabled={!product.inStock}
+                disabled={!canAddToCart}
                 className="flex-1"
               />
               <button
@@ -321,7 +334,10 @@ function SpecsBlock({
   const rows: [string, string | null][] = [
     ["Marca", product.brand],
     ["SKU", product.sku],
-    ["Disponibilidad", product.inStock ? "En stock" : "Agotado"],
+    [
+      "Disponibilidad",
+      STOCK_LABELS[effectiveStockStatus(product.stockStatus, product.stockQty)],
+    ],
     [
       "Precio regular",
       product.priceCRC ? formatCRC(product.priceCRC) : null,

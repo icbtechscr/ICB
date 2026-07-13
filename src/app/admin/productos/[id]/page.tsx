@@ -39,6 +39,7 @@ export default async function EditProductPage({
     sale_price_crc: product.sale_price_crc,
     on_sale: product.on_sale,
     in_stock: product.in_stock,
+    stock_status: product.stock_status,
     stock_qty: product.stock_qty,
     brand_id: product.brand_id,
     category_ids: (product.product_categories ?? [])

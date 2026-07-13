@@ -9,6 +9,7 @@ import {
 } from "@/components/ProductImage";
 import type { Product } from "@/lib/products";
 import { useCart } from "@/lib/cart";
+import { STOCK_LABELS, effectiveStockStatus } from "@/lib/stock";
 import { formatCRC } from "@/lib/utils";
 
 export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
@@ -23,6 +24,8 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
     product.salePriceCRC && product.priceCRC
       ? Math.round((1 - product.salePriceCRC / product.priceCRC) * 100)
       : null;
+  const displayStockStatus = effectiveStockStatus(product.stockStatus, product.stockQty);
+  const canAddToCart = displayStockStatus !== "out_of_stock";
 
   function markUnavailable(src: string) {
     setFailedImages((currentFailed) => {
@@ -36,7 +39,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
   function addToCart(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (!product.inStock) return;
+    if (!canAddToCart) return;
     add(
       {
         id: product.id,
@@ -45,6 +48,8 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
         image: img?.src ?? null,
         brand: product.brand,
         unitPrice: product.salePriceCRC ?? product.priceCRC,
+        stockStatus: product.stockStatus,
+        stockQty: product.stockQty,
       },
       1
     );
@@ -76,9 +81,13 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
                 -{discountPct}%
               </span>
             )}
-            {!product.inStock && (
-              <span className="rounded-md bg-ink-800 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-                Agotado
+            {displayStockStatus !== "in_stock" && (
+              <span
+                className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white ${
+                  displayStockStatus === "backorder" ? "bg-sky-600" : "bg-ink-800"
+                }`}
+              >
+                {STOCK_LABELS[displayStockStatus]}
               </span>
             )}
           </div>
@@ -131,7 +140,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
               type="button"
               aria-label="Agregar al carrito"
               onClick={addToCart}
-              disabled={!product.inStock}
+              disabled={!canAddToCart}
               className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-sm transition-all duration-200 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:bg-ink-200 disabled:text-ink-400 ${
                 added ? "bg-accent-600" : "bg-brand-600 hover:bg-brand-700"
               }`}

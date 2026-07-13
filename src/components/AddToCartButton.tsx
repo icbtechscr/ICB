@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShoppingCart, Check } from "lucide-react";
 import { useCart, type CartItem } from "@/lib/cart";
+import { stockOrderLimit } from "@/lib/stock";
 
 type Props = {
   product: Omit<CartItem, "qty">;
@@ -14,9 +15,11 @@ export function AddToCartButton({ product, disabled, className = "" }: Props) {
   const { add } = useCart();
   const router = useRouter();
   const [added, setAdded] = useState(false);
+  const unavailable = stockOrderLimit(product.stockStatus, product.stockQty) === 0;
+  const isDisabled = disabled || unavailable;
 
   function onClick() {
-    if (disabled) return;
+    if (isDisabled) return;
     add(product, 1);
     setAdded(true);
     setTimeout(() => setAdded(false), 1400);
@@ -27,7 +30,7 @@ export function AddToCartButton({ product, disabled, className = "" }: Props) {
       <button
         type="button"
         onClick={onClick}
-        disabled={disabled}
+        disabled={isDisabled}
         className="group inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-accent-500 px-6 py-3 text-sm font-bold text-ink-900 shadow-lg shadow-accent-500/30 transition-all hover:bg-accent-400 hover:shadow-accent-500/50 active:scale-95 disabled:cursor-not-allowed disabled:bg-ink-200 disabled:text-ink-400 disabled:shadow-none"
       >
         {added ? (
@@ -45,11 +48,11 @@ export function AddToCartButton({ product, disabled, className = "" }: Props) {
       <button
         type="button"
         onClick={() => {
-          if (disabled) return;
+          if (isDisabled) return;
           add(product, 1);
           router.push("/carrito");
         }}
-        disabled={disabled}
+        disabled={isDisabled}
         className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-ink-200 bg-white px-6 py-3 text-sm font-bold text-ink-700 transition-colors hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Comprar ahora

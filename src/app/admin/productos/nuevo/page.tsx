@@ -37,6 +37,7 @@ export default async function NewProductPage() {
           sale_price_crc: null,
           on_sale: false,
           in_stock: true,
+          stock_status: "in_stock",
           stock_qty: null,
           brand_id: null,
           category_ids: [],

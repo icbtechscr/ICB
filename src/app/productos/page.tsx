@@ -41,7 +41,7 @@ export default async function ProductsPage({
   const brand = params.brand || undefined;
   const q = params.q?.trim() || undefined;
   const stock: CatalogStock | undefined =
-    params.stock === "out" || params.stock === "in"
+    params.stock === "out" || params.stock === "in" || params.stock === "backorder"
       ? params.stock
       : undefined;
   const sort: CatalogSort = SORTS.includes(params.sort as CatalogSort)

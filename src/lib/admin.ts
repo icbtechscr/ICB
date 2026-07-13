@@ -1,5 +1,10 @@
 import { createAdminClient } from "./supabase";
 import { rewriteMediaUrl } from "./image-url";
+import {
+  normalizeStockStatus,
+  stockStatusToLegacyInStock,
+  type StockStatus,
+} from "./stock";
 
 function rewriteProductImages<T extends { product_images?: { url: string }[] }>(
   p: T
@@ -22,6 +27,7 @@ export type AdminProduct = {
   sale_price_crc: number | null;
   on_sale: boolean;
   in_stock: boolean;
+  stock_status: StockStatus;
   stock_qty: number | null;
   brand_id: string | null;
   brand?: { id: string; name: string } | null;
@@ -33,7 +39,7 @@ export type AdminProduct = {
 
 const SELECT = `
   id, woo_id, name, slug, sku, short_description, description,
-  price_crc, sale_price_crc, on_sale, in_stock, stock_qty, brand_id, created_at, updated_at,
+  price_crc, sale_price_crc, on_sale, in_stock, stock_status, stock_qty, brand_id, created_at, updated_at,
   brand:brands ( id, name ),
   product_images ( id, url, alt, position ),
   product_categories ( category:categories ( id, name, slug ) )
@@ -45,6 +51,7 @@ export async function adminListProducts(opts: {
   q?: string;
   onSale?: boolean;
   outOfStock?: boolean;
+  stockStatus?: StockStatus;
 }): Promise<{ products: AdminProduct[]; total: number }> {
   const sb = createAdminClient();
   const page = opts.page ?? 1;
@@ -63,13 +70,17 @@ export async function adminListProducts(opts: {
     query = query.or(`name.ilike.%${q}%,sku.ilike.%${q}%,slug.ilike.%${q}%`);
   }
   if (opts.onSale) query = query.eq("on_sale", true);
-  if (opts.outOfStock) query = query.eq("in_stock", false);
+  if (opts.stockStatus) query = query.eq("stock_status", opts.stockStatus);
+  else if (opts.outOfStock) query = query.eq("stock_status", "out_of_stock");
 
   const { data, error, count } = await query;
   if (error) throw error;
-  const products = ((data ?? []) as unknown as AdminProduct[]).map(
-    rewriteProductImages
-  );
+  const products = ((data ?? []) as unknown as AdminProduct[])
+    .map((p) => ({
+      ...p,
+      stock_status: normalizeStockStatus(p.stock_status, p.in_stock),
+    }))
+    .map(rewriteProductImages);
   return { products, total: count ?? 0 };
 }
 
@@ -81,7 +92,15 @@ export async function adminGetProduct(id: string): Promise<AdminProduct | null> 
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
-  return data ? rewriteProductImages(data as unknown as AdminProduct) : null;
+  return data
+    ? rewriteProductImages({
+        ...(data as unknown as AdminProduct),
+        stock_status: normalizeStockStatus(
+          (data as unknown as AdminProduct).stock_status,
+          (data as unknown as AdminProduct).in_stock
+        ),
+      })
+    : null;
 }
 
 export type AdminBrand = { id: string; name: string; slug: string };
@@ -252,7 +271,10 @@ export async function adminStats(): Promise<{
     await Promise.all([
       sb.from("products").select("id", { count: "exact", head: true }),
       sb.from("products").select("id", { count: "exact", head: true }).eq("on_sale", true),
-      sb.from("products").select("id", { count: "exact", head: true }).eq("in_stock", false),
+      sb
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("stock_status", "out_of_stock"),
     ]);
   return {
     productCount: productCount ?? 0,
@@ -271,6 +293,7 @@ export type ProductWritePayload = {
   sale_price_crc?: number | null;
   on_sale?: boolean;
   in_stock?: boolean;
+  stock_status?: StockStatus;
   stock_qty?: number | null;
   brand_id?: string | null;
   category_ids?: string[];
@@ -282,11 +305,13 @@ export async function adminCreateProduct(payload: ProductWritePayload): Promise<
   const { category_ids, images, ...row } = payload;
   // El slug SIEMPRE se normaliza (sin mayúsculas, espacios ni caracteres raros)
   // para que la URL /productos/<slug> nunca dé 404.
+  const stockStatus = normalizeStockStatus(row.stock_status, row.in_stock ?? true);
   const insertRow = {
     ...row,
     slug: slugify(row.slug || "") || slugify(row.name) || `producto-${Date.now()}`,
     on_sale: row.on_sale ?? false,
-    in_stock: row.in_stock ?? true,
+    stock_status: stockStatus,
+    in_stock: stockStatusToLegacyInStock(stockStatus),
     sale_price_crc: row.sale_price_crc || null,
   };
   const { data, error } = await sb.from("products").insert(insertRow).select("id").single();
@@ -318,6 +343,11 @@ export async function adminUpdateProduct(
   const sb = createAdminClient();
   const { category_ids, images, ...row } = payload;
   const updateRow: Record<string, unknown> = { ...row, updated_at: new Date().toISOString() };
+  if ("stock_status" in row || "in_stock" in row) {
+    const stockStatus = normalizeStockStatus(row.stock_status, row.in_stock ?? true);
+    updateRow.stock_status = stockStatus;
+    updateRow.in_stock = stockStatusToLegacyInStock(stockStatus);
+  }
   if ("sale_price_crc" in row) {
     updateRow.sale_price_crc = row.sale_price_crc || null;
   }
