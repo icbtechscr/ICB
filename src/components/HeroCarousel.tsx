@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
+import { ProductImage } from "@/components/ProductImage";
 
 export type HeroSlide = {
   slug: string;
@@ -43,12 +43,11 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
               className="group block w-full shrink-0 p-4"
             >
               <div className="relative aspect-[16/10] w-full">
-                <Image
+                <ProductImage
                   src={s.image}
                   alt={s.name}
-                  fill
                   sizes="(max-width: 768px) 90vw, 640px"
-                  className="object-contain transition-transform duration-500 group-hover:scale-105"
+                  className="transition-transform duration-500 group-hover:scale-105"
                   priority={idx === 0}
                 />
               </div>

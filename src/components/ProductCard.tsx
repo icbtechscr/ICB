@@ -1,21 +1,37 @@
 "use client";
 import Link from "next/link";
-import Image from "next/image";
 import { useState } from "react";
 import { Heart, ShoppingCart, Check } from "lucide-react";
 import { motion } from "framer-motion";
+import {
+  ProductImage,
+  normalizeProductImageSrc,
+} from "@/components/ProductImage";
 import type { Product } from "@/lib/products";
 import { useCart } from "@/lib/cart";
 import { formatCRC } from "@/lib/utils";
 
 export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
-  const img = product.images[0];
   const { add } = useCart();
   const [added, setAdded] = useState(false);
+  const [failedImages, setFailedImages] = useState<Set<string>>(() => new Set());
+  const img = product.images.find((image) => {
+    const src = normalizeProductImageSrc(image.src);
+    return src && !failedImages.has(src);
+  });
   const discountPct =
     product.salePriceCRC && product.priceCRC
       ? Math.round((1 - product.salePriceCRC / product.priceCRC) * 100)
       : null;
+
+  function markUnavailable(src: string) {
+    setFailedImages((currentFailed) => {
+      if (currentFailed.has(src)) return currentFailed;
+      const nextFailed = new Set(currentFailed);
+      nextFailed.add(src);
+      return nextFailed;
+    });
+  }
 
   function addToCart(e: React.MouseEvent) {
     e.preventDefault();
@@ -46,19 +62,13 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
     >
       <Link href={`/productos/${product.slug}`} className="flex h-full flex-col" prefetch={false}>
         <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-ink-50 to-[var(--surface)]">
-          {img ? (
-            <Image
-              src={img.src}
-              alt={img.alt || product.name}
-              fill
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-              className="object-contain p-4 transition-transform duration-500 ease-out group-hover:scale-110"
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center text-xs text-ink-400">
-              Sin imagen
-            </div>
-          )}
+          <ProductImage
+            src={img?.src}
+            alt={img?.alt || product.name}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            className="p-4 transition-transform duration-500 ease-out group-hover:scale-110"
+            onUnavailable={markUnavailable}
+          />
 
           <div className="absolute left-3 top-3 flex flex-col gap-1.5">
             {discountPct && discountPct > 0 && (

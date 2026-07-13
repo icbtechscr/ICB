@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import { Trash2, Minus, Plus, ArrowRight, ShoppingBag, ChevronRight } from "lucide-react";
+import { ProductImage } from "@/components/ProductImage";
 import { useCart } from "@/lib/cart";
 import { formatCRC } from "@/lib/utils";
 
@@ -54,19 +54,12 @@ export default function CartPage() {
                     href={`/productos/${it.slug}`}
                     className="relative aspect-square w-full overflow-hidden rounded-2xl bg-white sm:size-28 sm:shrink-0"
                   >
-                    {it.image ? (
-                      <Image
-                        src={it.image}
-                        alt={it.name}
-                        fill
-                        sizes="(max-width: 640px) 100vw, 112px"
-                        className="object-contain p-3"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-xs text-ink-400">
-                        Sin imagen
-                      </div>
-                    )}
+                    <ProductImage
+                      src={it.image}
+                      alt={it.name}
+                      sizes="(max-width: 640px) 100vw, 112px"
+                      className="p-3"
+                    />
                   </Link>
 
                   <div className="min-w-0 flex-1">

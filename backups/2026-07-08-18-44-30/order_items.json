@@ -1,0 +1,82 @@
+[
+  {
+    "id": "5218b72d-fa17-4820-861d-36d17513e2f1",
+    "order_id": "915794f8-48a9-4e0b-9911-9a6c0f091886",
+    "product_id": "a99d9393-47d3-4ff6-8073-158bf1f95f40",
+    "product_name": "BATERIA TEKLINK PL17 12V 17AH UPS/ALARMAS RECARGABLE",
+    "product_slug": "bateria-teklink-pl17-12v-17ah-ups-alarmas-recargable",
+    "unit_price_crc": 24000,
+    "qty": 1,
+    "line_total_crc": 24000
+  },
+  {
+    "id": "f603b425-bea2-4484-88d6-90112cead4db",
+    "order_id": "c0c661ac-94a2-49d3-844a-b6b54e03eebf",
+    "product_id": "3412831c-8ebf-488c-b8d7-83b92bbff64a",
+    "product_name": "DISCO DURO SEAGATE ST3500414CS 500GB 3.5&#8243; SATA PULLS",
+    "product_slug": "disco-duro-seagate-st3500414cs-500gb-sata",
+    "unit_price_crc": 13000,
+    "qty": 1,
+    "line_total_crc": 13000
+  },
+  {
+    "id": "e19a1a0b-49ef-485a-9977-37831c7bda80",
+    "order_id": "4d116ef3-8cc7-49e7-b3e3-f88294491503",
+    "product_id": "6e23844a-ae02-4607-a46e-564feee2f895",
+    "product_name": "CAMARA WIFI TP-LINK TAPO C320WS 2K FIJA/AUDIO/IP66",
+    "product_slug": "camara-wifi-tp-link-tapo-c320ws-2k-ip66-con-audio",
+    "unit_price_crc": 26000,
+    "qty": 2,
+    "line_total_crc": 52000
+  },
+  {
+    "id": "5c0924ac-31c8-4d14-a14f-b992116d5273",
+    "order_id": "4d116ef3-8cc7-49e7-b3e3-f88294491503",
+    "product_id": "6705d5bf-791a-496c-bb20-8427d107f852",
+    "product_name": "CAMARA WIFI TP-LINK TAPO C510W 2K OUTDOOR PAN/TILT CON MICROFONO",
+    "product_slug": "camara-wifi-tp-link-tapo-c510w-2k-pt-fc-con-audio-e-ip65",
+    "unit_price_crc": 27000,
+    "qty": 1,
+    "line_total_crc": 27000
+  },
+  {
+    "id": "88e8d6a8-b2da-41ab-8ed5-bb87a37b8024",
+    "order_id": "f53f77f3-cc03-48f7-bab4-d1519ca7d91a",
+    "product_id": "6e23844a-ae02-4607-a46e-564feee2f895",
+    "product_name": "CAMARA WIFI TP-LINK TAPO C320WS 2K FIJA/AUDIO/IP66",
+    "product_slug": "camara-wifi-tp-link-tapo-c320ws-2k-ip66-con-audio",
+    "unit_price_crc": 26000,
+    "qty": 2,
+    "line_total_crc": 52000
+  },
+  {
+    "id": "ca6a99e9-ad6f-43a7-9724-eba2ebbf8785",
+    "order_id": "f53f77f3-cc03-48f7-bab4-d1519ca7d91a",
+    "product_id": "6705d5bf-791a-496c-bb20-8427d107f852",
+    "product_name": "CAMARA WIFI TP-LINK TAPO C510W 2K OUTDOOR PAN/TILT CON MICROFONO",
+    "product_slug": "camara-wifi-tp-link-tapo-c510w-2k-pt-fc-con-audio-e-ip65",
+    "unit_price_crc": 27000,
+    "qty": 1,
+    "line_total_crc": 27000
+  },
+  {
+    "id": "836deeee-7248-42cf-aeed-5c524577d50e",
+    "order_id": "60f7b68e-6c67-4a33-8b37-082cdad43ebf",
+    "product_id": "6e23844a-ae02-4607-a46e-564feee2f895",
+    "product_name": "CAMARA WIFI TP-LINK TAPO C320WS 2K FIJA/AUDIO/IP66",
+    "product_slug": "camara-wifi-tp-link-tapo-c320ws-2k-ip66-con-audio",
+    "unit_price_crc": 26000,
+    "qty": 2,
+    "line_total_crc": 52000
+  },
+  {
+    "id": "3bbaa1e2-261a-424b-b5f4-180fcc9f5a9f",
+    "order_id": "60f7b68e-6c67-4a33-8b37-082cdad43ebf",
+    "product_id": "6705d5bf-791a-496c-bb20-8427d107f852",
+    "product_name": "CAMARA WIFI TP-LINK TAPO C510W 2K OUTDOOR PAN/TILT CON MICROFONO",
+    "product_slug": "camara-wifi-tp-link-tapo-c510w-2k-pt-fc-con-audio-e-ip65",
+    "unit_price_crc": 27000,
+    "qty": 1,
+    "line_total_crc": 27000
+  }
+]

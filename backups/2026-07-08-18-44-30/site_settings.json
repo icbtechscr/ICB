@@ -1,0 +1,194 @@
+[
+  {
+    "key": "navbar",
+    "value": {
+      "items": [
+        {
+          "id": "inicio",
+          "href": "/",
+          "label": "Inicio",
+          "categorySlug": null,
+          "categorySlugs": []
+        },
+        {
+          "id": "computadoras",
+          "href": null,
+          "label": "Computacion",
+          "categorySlug": "computadoras",
+          "categorySlugs": []
+        },
+        {
+          "id": "seguridad",
+          "href": null,
+          "label": "Seguridad",
+          "categorySlug": "argom-soportes-tv",
+          "categorySlugs": [
+            "camaras-de-vigilancia",
+            "accesorios-de-seguridad",
+            "vigilancia-movil",
+            "grabadores",
+            "kit-de-camaras-de-vigilancia",
+            "kits-de-camaras-wifi-inalambricas-con-microsd"
+          ]
+        },
+        {
+          "id": "redes",
+          "href": null,
+          "label": "Redes",
+          "categorySlug": "redes",
+          "categorySlugs": []
+        },
+        {
+          "id": "pos",
+          "href": null,
+          "label": "POS",
+          "categorySlug": "punto-de-venta-pos",
+          "categorySlugs": []
+        },
+        {
+          "id": "c928fc65-2956-4ceb-bc74-aa97c67ab2b2",
+          "href": null,
+          "label": "HOGAR",
+          "categorySlug": "hogar",
+          "categorySlugs": []
+        },
+        {
+          "id": "fe2e5d14-95a8-4b28-8e5a-f0920eddb217",
+          "href": null,
+          "label": "PROMOCIONES",
+          "categorySlug": "promociones",
+          "categorySlugs": []
+        },
+        {
+          "id": "4f548c72-41a0-4c42-9a19-a636f02fde70",
+          "href": null,
+          "label": "TELEFONIA",
+          "categorySlug": "telefonia",
+          "categorySlugs": []
+        }
+      ]
+    },
+    "updated_at": "2026-06-18T14:36:42.356+00:00"
+  },
+  {
+    "key": "hero",
+    "value": {
+      "badge": "Puede apersonarse a alguno de nuestros puntos físicos, o bien, le cotizamos con envío GAM o encomiendas al resto del país. Consulte.",
+      "bullets": [
+        "Garantía real",
+        "Envíos a todo CR",
+        "Excelentes precios"
+      ],
+      "subtitle": "Somos ICB Technologies Costa Rica. Contamos con cinco puntos físicos en el país: San José - Alajuela - Cartago - Ciudad Quesada y Heredia. Además, contamos con un CEDI en Barreal de Heredia.",
+      "titleLine1": "ICB Technologies de Costa Rica",
+      "titleLine2": "El mundo de la tecnología a su alcance",
+      "primaryCtaHref": "/productos",
+      "primaryCtaLabel": "Ver catálogo",
+      "secondaryCtaHref": "/ofertas",
+      "featuredProductId": "99d552d8-073b-4f92-b596-924abd99637d",
+      "secondaryCtaLabel": "Consulte nuestras ofertas"
+    },
+    "updated_at": "2026-05-27T22:07:13.43+00:00"
+  },
+  {
+    "key": "ofertas",
+    "value": {
+      "title": "Ofertas activas",
+      "eyebrow": "Tiempo limitado",
+      "subtitle": "Precios rebajados mientras dure el stock",
+      "productIds": [
+        "09124714-408a-4dca-8f34-58c72cd0e20f",
+        "b15bac19-1e33-4edc-af10-3ddef87603c8",
+        "99d552d8-073b-4f92-b596-924abd99637d",
+        "14d964cd-b5e5-4e82-814f-a9402a77d990",
+        "56c7923e-4845-474f-9c97-ce3a420e00f1"
+      ]
+    },
+    "updated_at": "2026-05-21T22:48:17.756+00:00"
+  },
+  {
+    "key": "footer",
+    "value": {
+      "email": "info@icbtechscr.com",
+      "phone": "+506 4001 6421",
+      "columns": [
+        {
+          "items": [
+            {
+              "href": "/categoria/computadoras",
+              "label": "Computadoras"
+            },
+            {
+              "href": "/categoria/componentes",
+              "label": "Componentes"
+            },
+            {
+              "href": "/categoria/camaras-de-vigilancia",
+              "label": "Cámaras de seguridad"
+            },
+            {
+              "href": "/categoria/redes",
+              "label": "Redes"
+            },
+            {
+              "href": "/categoria/punto-de-venta",
+              "label": "POS"
+            },
+            {
+              "href": "/ofertas",
+              "label": "Ofertas"
+            }
+          ],
+          "title": "Catálogo"
+        },
+        {
+          "items": [
+            {
+              "href": "/sobre-nosotros",
+              "label": "Sobre ICB"
+            },
+            {
+              "href": "/sucursales",
+              "label": "Sucursales y contacto"
+            }
+          ],
+          "title": "Compañía"
+        },
+        {
+          "items": [
+            {
+              "href": "/garantia",
+              "label": "Garantía"
+            },
+            {
+              "href": "/envios",
+              "label": "Política de envíos"
+            }
+          ],
+          "title": "Soporte"
+        }
+      ],
+      "youtube": "",
+      "facebook": "https://www.facebook.com/ICBTECHSCR",
+      "instagram": "https://www.instagram.com/icbtechnologies_cr/",
+      "description": "Somos un negocio 100% costarricense que tiene su génesis hace más de 20 años. Nuestro cometido es comercializar tecnología a los mejores precios del mercado.",
+      "locationsText": "San José · Alajuela · Heredia · Cartago · Ciudad Quesada",
+      "newsletterTitle": "Mantente al día",
+      "newsletterSubtitle": "Encontrá soluciones en seguridad, redes, impresión, punto de venta y accesorios tecnológicos para tu empresa."
+    },
+    "updated_at": "2026-05-27T22:14:28.981+00:00"
+  },
+  {
+    "key": "cta",
+    "value": {
+      "title": "Tecnología, seguridad y conectividad en un solo lugar.",
+      "eyebrow": "¿Necesitás una solución para tu empresa?",
+      "subtitle": "Equipamos comercios, oficinas y proyectos con soluciones en videovigilancia, redes, punto de venta y tecnología empresarial en Costa Rica.",
+      "primaryCtaHref": "/contacto",
+      "primaryCtaLabel": "Contáctenos",
+      "secondaryCtaHref": "/productos",
+      "secondaryCtaLabel": "Ver catálogo"
+    },
+    "updated_at": "2026-05-27T22:09:58.341+00:00"
+  }
+]

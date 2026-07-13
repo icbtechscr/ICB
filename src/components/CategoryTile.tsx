@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { ProductImage } from "@/components/ProductImage";
 
 const GRADIENTS: Record<string, string> = {
   computadoras: "from-blue-600/90 to-brand-700/90",
@@ -46,15 +46,13 @@ export function CategoryTile({
         href={`/categoria/${slug}`}
         className="group relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-2xl bg-ink-200 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-lift sm:aspect-[5/6]"
       >
-        {imageUrl && (
-          <Image
-            src={imageUrl}
-            alt={name}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-110"
-          />
-        )}
+        <ProductImage
+          src={imageUrl}
+          alt={name}
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-110"
+          placeholderLabel={name}
+        />
         <div
           className={`absolute inset-0 bg-gradient-to-t ${gradient} mix-blend-multiply`}
         />

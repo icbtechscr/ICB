@@ -1,0 +1,2102 @@
+[
+  {
+    "id": "1d3c29c8-31a8-4c1e-9cf5-c19b5d7dca66",
+    "woo_id": null,
+    "name": "HERRAMIENTAS",
+    "slug": "herramientas",
+    "parent_id": "3fdaf06e-9741-4a7f-b700-8c6ad9237d5d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T15:16:31.01245+00:00"
+  },
+  {
+    "id": "84c3fa33-bbee-4336-8dd9-190571246a22",
+    "woo_id": null,
+    "name": "CUDY",
+    "slug": "cudy",
+    "parent_id": "c1dd85bf-fb2d-4872-8e14-051f523b4e54",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-15T16:40:30.953637+00:00"
+  },
+  {
+    "id": "f900628e-8ee2-426e-9f37-773b3da68221",
+    "woo_id": null,
+    "name": "ROUTERS",
+    "slug": "routers",
+    "parent_id": "3fdaf06e-9741-4a7f-b700-8c6ad9237d5d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-07T17:47:12.93426+00:00"
+  },
+  {
+    "id": "1bfdf25c-cdb3-429d-91c3-1e5606b1c355",
+    "woo_id": null,
+    "name": "APC",
+    "slug": "apc",
+    "parent_id": "d86cf659-fe20-4d39-9651-58f1e3e75fba",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T18:53:21.289358+00:00"
+  },
+  {
+    "id": "56d408e7-b4c7-4489-a7e7-366c0d59dd92",
+    "woo_id": null,
+    "name": "INYECTORES POE",
+    "slug": "inyectores-poe",
+    "parent_id": "3fdaf06e-9741-4a7f-b700-8c6ad9237d5d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-10T14:33:06.330825+00:00"
+  },
+  {
+    "id": "b60f76cc-a7ed-4851-a77f-f4248ef596eb",
+    "woo_id": null,
+    "name": "AMPLIFICADORES",
+    "slug": "amplificadores",
+    "parent_id": "3fdaf06e-9741-4a7f-b700-8c6ad9237d5d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-10T20:18:25.901626+00:00"
+  },
+  {
+    "id": "022e2306-dfe0-46e7-a5b4-f6ce6e1aed4a",
+    "woo_id": 171,
+    "name": "SEGURIDAD",
+    "slug": "argom-soportes-tv",
+    "parent_id": null,
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "7da4e347-122c-4c6b-bc21-62361ac1ad96",
+    "woo_id": null,
+    "name": "CAJAS DE DINERO",
+    "slug": "cajas-de-dinero",
+    "parent_id": "2c224ebc-86aa-4dd5-a6d6-a5586213f23d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-11T12:43:10.66787+00:00"
+  },
+  {
+    "id": "a22ef17a-cfb8-475c-949d-b76932333ab9",
+    "woo_id": null,
+    "name": "FORZA",
+    "slug": "forza",
+    "parent_id": "d86cf659-fe20-4d39-9651-58f1e3e75fba",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T18:53:38.806239+00:00"
+  },
+  {
+    "id": "e513f279-4ade-466e-a4a1-5505c617972f",
+    "woo_id": null,
+    "name": "CAJAS CAT5E",
+    "slug": "cajas-cat5e",
+    "parent_id": "40b7af21-2e04-4884-82b1-98f3429aa3fc",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T21:36:03.624143+00:00"
+  },
+  {
+    "id": "3b85b7e1-5933-468f-bc6d-e58956cb9c86",
+    "woo_id": null,
+    "name": "TEKLINK",
+    "slug": "teklink",
+    "parent_id": "e513f279-4ade-466e-a4a1-5505c617972f",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T21:47:06.67039+00:00"
+  },
+  {
+    "id": "cfe033d4-ba9b-4a70-ae3d-bef6b5871d86",
+    "woo_id": null,
+    "name": "SISTEMAS MESH",
+    "slug": "sistemas-mesh",
+    "parent_id": "f900628e-8ee2-426e-9f37-773b3da68221",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-16T23:28:51.189643+00:00"
+  },
+  {
+    "id": "c6245f0e-7709-41ec-91b1-ef30ee77683a",
+    "woo_id": 51,
+    "name": "COMPUTACION",
+    "slug": "computadoras",
+    "parent_id": null,
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "a9ba8a0e-ac1d-4d80-a2f2-f7022c5c13f6",
+    "woo_id": 44,
+    "name": "COMPONENTES",
+    "slug": "componentes",
+    "parent_id": "c6245f0e-7709-41ec-91b1-ef30ee77683a",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "c7431573-6164-457e-980c-ee666249d89f",
+    "woo_id": null,
+    "name": "ACCESORIOS SEGURIDAD",
+    "slug": "accesorios-seguridad",
+    "parent_id": "022e2306-dfe0-46e7-a5b4-f6ce6e1aed4a",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-18T18:07:35.980584+00:00"
+  },
+  {
+    "id": "57f261f2-fd0c-4005-b9ee-bd1b11a440f6",
+    "woo_id": null,
+    "name": "TECLADOS USB",
+    "slug": "teclados-usb",
+    "parent_id": "120ebe8d-c097-45b5-9cbb-b77beedc5f25",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-19T15:51:52.151871+00:00"
+  },
+  {
+    "id": "b0cb56d2-8eb1-4575-b4aa-51362dfc65c1",
+    "woo_id": null,
+    "name": "TP-LINK",
+    "slug": "tp-link",
+    "parent_id": "456b2206-f558-4bb7-9a1e-f55b34e65484",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T22:34:58.160764+00:00"
+  },
+  {
+    "id": "3319a833-5249-44d4-ae1a-d36a2d5d175f",
+    "woo_id": null,
+    "name": "CAT5E",
+    "slug": "cat5e",
+    "parent_id": "3731e4db-9973-4d83-beb4-b21b4979fe74",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-21T16:14:53.908004+00:00"
+  },
+  {
+    "id": "801c7c86-3e26-4080-988d-2227c6bf342d",
+    "woo_id": null,
+    "name": "INVERSORES",
+    "slug": "inversores",
+    "parent_id": "d86cf659-fe20-4d39-9651-58f1e3e75fba",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-22T21:15:46.97995+00:00"
+  },
+  {
+    "id": "8e11291d-9dbf-435d-8b1d-6a7639d8cb03",
+    "woo_id": null,
+    "name": "UNV ANALOGOS",
+    "slug": "unv-analogos",
+    "parent_id": "0b964a30-11cb-4960-a478-d7f11c777970",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-14T20:25:56.110134+00:00"
+  },
+  {
+    "id": "a7a3d04a-1729-45c8-81b6-23dc6e1cae73",
+    "woo_id": 98,
+    "name": "CONTROLES DE ACCESO",
+    "slug": "control-de-acceso",
+    "parent_id": "022e2306-dfe0-46e7-a5b4-f6ce6e1aed4a",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "e62fd08b-8bcb-414f-8efb-9f0ca38646af",
+    "woo_id": 440,
+    "name": "CAMARAS VEHICULOS",
+    "slug": "vigilancia-movil",
+    "parent_id": "022e2306-dfe0-46e7-a5b4-f6ce6e1aed4a",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "b3627765-0ebd-45af-9f50-1049514a3892",
+    "woo_id": 80,
+    "name": "CAMARAS DE VIGILANCIA",
+    "slug": "camaras-de-vigilancia",
+    "parent_id": "022e2306-dfe0-46e7-a5b4-f6ce6e1aed4a",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "85695d5a-b242-42e9-81b9-b4c0753281b3",
+    "woo_id": null,
+    "name": "MIKROTIK",
+    "slug": "mikrotik",
+    "parent_id": "f900628e-8ee2-426e-9f37-773b3da68221",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-24T22:18:20.001087+00:00"
+  },
+  {
+    "id": "10f7153d-c495-4e82-9f3b-004644b54138",
+    "woo_id": 116,
+    "name": "¡Promociones!",
+    "slug": "promociones",
+    "parent_id": null,
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "ec29bbae-1184-4686-b300-6622296ea872",
+    "woo_id": 616,
+    "name": "UNV 5MP COLORHUNTER C/AUDIO",
+    "slug": "5mp-colorhunter-y-audio",
+    "parent_id": "8e11291d-9dbf-435d-8b1d-6a7639d8cb03",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "b073a06c-b6db-4957-b763-05a0ea0b5ce3",
+    "woo_id": null,
+    "name": "DAHUA",
+    "slug": "dahua123",
+    "parent_id": "f900628e-8ee2-426e-9f37-773b3da68221",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-24T22:19:30.076839+00:00"
+  },
+  {
+    "id": "359c1958-4d11-4026-ba08-2ab6a7b4b14b",
+    "woo_id": null,
+    "name": "IMPRESORA DE ETIQUETAS",
+    "slug": "impresora-de-etiquetas",
+    "parent_id": "2c224ebc-86aa-4dd5-a6d6-a5586213f23d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-07-02T17:11:07.193059+00:00"
+  },
+  {
+    "id": "4bb1377d-a868-4a58-9ac7-eb44ac5055a3",
+    "woo_id": null,
+    "name": "GABINETES",
+    "slug": "gabinetes",
+    "parent_id": "3fdaf06e-9741-4a7f-b700-8c6ad9237d5d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-10T14:19:11.061655+00:00"
+  },
+  {
+    "id": "29416368-2c6a-40cf-801f-4b23be16ffda",
+    "woo_id": null,
+    "name": "ANTENAS-ENLACES",
+    "slug": "antenas-enlaces",
+    "parent_id": "3fdaf06e-9741-4a7f-b700-8c6ad9237d5d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-10T14:33:25.790566+00:00"
+  },
+  {
+    "id": "70587ddb-ab1d-459d-8b5c-e2aead46b268",
+    "woo_id": null,
+    "name": "LINKSYS",
+    "slug": "linksys",
+    "parent_id": "c1dd85bf-fb2d-4872-8e14-051f523b4e54",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-15T16:41:39.267666+00:00"
+  },
+  {
+    "id": "d86cf659-fe20-4d39-9651-58f1e3e75fba",
+    "woo_id": null,
+    "name": "UPS",
+    "slug": "ups",
+    "parent_id": "b235aee5-095c-4d22-aead-ab754818ccc4",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T17:55:12.510964+00:00"
+  },
+  {
+    "id": "2949826c-8e9b-4853-91b4-11f38162fd32",
+    "woo_id": 46,
+    "name": "HOGAR",
+    "slug": "hogar",
+    "parent_id": null,
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "74856a66-17c5-4bc4-b0ce-853ddcea8fe3",
+    "woo_id": null,
+    "name": "CDP",
+    "slug": "cdp",
+    "parent_id": "d86cf659-fe20-4d39-9651-58f1e3e75fba",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T18:53:32.542615+00:00"
+  },
+  {
+    "id": "064dc9b3-6358-4d80-9a0f-0d811bb9efe6",
+    "woo_id": null,
+    "name": "CAJAS CAT6",
+    "slug": "cajas-cat6",
+    "parent_id": "40b7af21-2e04-4884-82b1-98f3429aa3fc",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T21:36:15.296803+00:00"
+  },
+  {
+    "id": "1302edfa-c22c-4b71-aded-f7bf94fac3df",
+    "woo_id": null,
+    "name": "TELEFONIA",
+    "slug": "telefonia",
+    "parent_id": null,
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-18T14:35:06.849206+00:00"
+  },
+  {
+    "id": "dccaceea-dada-4d1b-bbaf-5a0da1ab016f",
+    "woo_id": null,
+    "name": "TEKLINK",
+    "slug": "teklink-cat6",
+    "parent_id": "064dc9b3-6358-4d80-9a0f-0d811bb9efe6",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T21:54:27.057851+00:00"
+  },
+  {
+    "id": "80f50889-927f-41b9-9bee-c8e5c9f8c7a7",
+    "woo_id": null,
+    "name": "DAHUA",
+    "slug": "dahua-1",
+    "parent_id": "456b2206-f558-4bb7-9a1e-f55b34e65484",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T22:35:15.386731+00:00"
+  },
+  {
+    "id": "0b964a30-11cb-4960-a478-d7f11c777970",
+    "woo_id": 101,
+    "name": "KITS DE CAMARAS DE VIGILANCIA",
+    "slug": "kit-de-camaras-de-vigilancia",
+    "parent_id": "b3627765-0ebd-45af-9f50-1049514a3892",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "de177617-033e-4e32-88aa-60951aeab75e",
+    "woo_id": 99,
+    "name": "KITS DE ALARMAS",
+    "slug": "kits-de-alarmas",
+    "parent_id": "022e2306-dfe0-46e7-a5b4-f6ce6e1aed4a",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "dbdcb267-1608-4666-90bc-6b0107b851cf",
+    "woo_id": 63,
+    "name": "GRABADORES DVR-NVR",
+    "slug": "grabadores",
+    "parent_id": "022e2306-dfe0-46e7-a5b4-f6ce6e1aed4a",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "c308052a-596a-4d14-b345-f028849309ee",
+    "woo_id": 631,
+    "name": "DISPOSITIVOS POWERLINE",
+    "slug": "powerline",
+    "parent_id": "3fdaf06e-9741-4a7f-b700-8c6ad9237d5d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "6e4e3830-28ef-4d23-a646-790f9180969f",
+    "woo_id": null,
+    "name": "TELEVISORES",
+    "slug": "televisores",
+    "parent_id": "a7edd5ee-a099-4207-bdd7-cb42ca1bb5ea",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-19T14:28:58.424352+00:00"
+  },
+  {
+    "id": "438cba11-ccce-4e82-891b-166828846f78",
+    "woo_id": 626,
+    "name": "KITS CAMARAS WIFI C/MICRO SD",
+    "slug": "kits-de-camaras-wifi-inalambricas-con-microsd",
+    "parent_id": "022e2306-dfe0-46e7-a5b4-f6ce6e1aed4a",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "cbc50612-9a4d-48d4-bc65-68d8137f1c21",
+    "woo_id": null,
+    "name": "TARJETAS DE VIDEO",
+    "slug": "tarjetas-de-video",
+    "parent_id": "5f52b38c-783c-4e06-aa81-0c31cb9b732d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-19T17:45:17.589605+00:00"
+  },
+  {
+    "id": "efa89b44-2c2e-414c-8dbc-f54cf4eb8725",
+    "woo_id": null,
+    "name": "ALEXA",
+    "slug": "alexa",
+    "parent_id": "a7edd5ee-a099-4207-bdd7-cb42ca1bb5ea",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-21T17:15:34.896145+00:00"
+  },
+  {
+    "id": "494e4144-3728-4298-a375-c6fc44ef2a35",
+    "woo_id": null,
+    "name": "SILLAS",
+    "slug": "sillas",
+    "parent_id": "7244c657-17b5-4155-9bf4-d784fb9e443f",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-24T20:33:19.411545+00:00"
+  },
+  {
+    "id": "7a42701b-602f-4b9e-babb-9029aef8a373",
+    "woo_id": null,
+    "name": "CUDY",
+    "slug": "cudy1",
+    "parent_id": "f900628e-8ee2-426e-9f37-773b3da68221",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-24T22:18:42.889479+00:00"
+  },
+  {
+    "id": "1e0bf3b4-85b8-4e21-9bc3-a36ec72b54c7",
+    "woo_id": null,
+    "name": "TP-LINK",
+    "slug": "tp-link12",
+    "parent_id": "f900628e-8ee2-426e-9f37-773b3da68221",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-24T22:17:18.80048+00:00"
+  },
+  {
+    "id": "68619d6e-65b5-4e6c-8350-895c53743c5d",
+    "woo_id": null,
+    "name": "UBIQUITI",
+    "slug": "ubiquiti",
+    "parent_id": "c1dd85bf-fb2d-4872-8e14-051f523b4e54",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-15T16:41:54.927881+00:00"
+  },
+  {
+    "id": "c1dd85bf-fb2d-4872-8e14-051f523b4e54",
+    "woo_id": null,
+    "name": "SWITCHS",
+    "slug": "switchs",
+    "parent_id": "3fdaf06e-9741-4a7f-b700-8c6ad9237d5d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-11T12:42:01.434193+00:00"
+  },
+  {
+    "id": "c1df02bb-0ddd-42cf-af6f-9c3c13dcda87",
+    "woo_id": 339,
+    "name": "ADAPTADORES DE RED",
+    "slug": "adaptadores-de-red",
+    "parent_id": "3fdaf06e-9741-4a7f-b700-8c6ad9237d5d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "aa99aa16-5434-45cd-909b-b81954fba5b9",
+    "woo_id": null,
+    "name": "BATERIAS P/UPS",
+    "slug": "baterias-p-ups",
+    "parent_id": "d86cf659-fe20-4d39-9651-58f1e3e75fba",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T17:55:57.608884+00:00"
+  },
+  {
+    "id": "f1e2a226-df11-44c4-8380-6aeb896c4948",
+    "woo_id": 84,
+    "name": "ACCESORIOS POS",
+    "slug": "accesorios-pos",
+    "parent_id": "2c224ebc-86aa-4dd5-a6d6-a5586213f23d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "5f52b38c-783c-4e06-aa81-0c31cb9b732d",
+    "woo_id": 79,
+    "name": "COMPONENTES DE VIDEO",
+    "slug": "componentes-de-video",
+    "parent_id": "a9ba8a0e-ac1d-4d80-a2f2-f7022c5c13f6",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "d7084131-088a-4fc7-91ca-9ecde22bf77a",
+    "woo_id": 150,
+    "name": "ACCESORIOS",
+    "slug": "accesorios",
+    "parent_id": "5f52b38c-783c-4e06-aa81-0c31cb9b732d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "3fdaf06e-9741-4a7f-b700-8c6ad9237d5d",
+    "woo_id": 283,
+    "name": "REDES",
+    "slug": "redes",
+    "parent_id": null,
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "2c224ebc-86aa-4dd5-a6d6-a5586213f23d",
+    "woo_id": 55,
+    "name": "PUNTO DE VENTA",
+    "slug": "punto-de-venta-pos",
+    "parent_id": null,
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "707a49d7-a176-49f7-9f4c-c0f2b4742fcb",
+    "woo_id": 636,
+    "name": "CUIDADO PERSONAL",
+    "slug": "cuidado-personal",
+    "parent_id": "2949826c-8e9b-4853-91b4-11f38162fd32",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "0f6d4a7c-a657-46c9-b6dc-a00823ac8890",
+    "woo_id": 56,
+    "name": "(AIO) TODO EN UNO",
+    "slug": "aio-todo-en-uno",
+    "parent_id": "c6245f0e-7709-41ec-91b1-ef30ee77683a",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "b203b5f5-f9cf-40fa-97b6-cb40b8e4069a",
+    "woo_id": 71,
+    "name": "BAREBONES",
+    "slug": "barebones",
+    "parent_id": "c6245f0e-7709-41ec-91b1-ef30ee77683a",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "e3564021-9a6c-4d5b-ab67-f4906505a459",
+    "woo_id": 151,
+    "name": "CABLES DE VIDEO",
+    "slug": "cables-video",
+    "parent_id": "5f52b38c-783c-4e06-aa81-0c31cb9b732d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "b235aee5-095c-4d22-aead-ab754818ccc4",
+    "woo_id": 206,
+    "name": "COMPONENTES PERIFERICOS",
+    "slug": "componentes-perifericos",
+    "parent_id": "a9ba8a0e-ac1d-4d80-a2f2-f7022c5c13f6",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "2d73ebb3-0719-4f32-92d4-f402a5a63595",
+    "woo_id": null,
+    "name": "RUIJIE-REYEE",
+    "slug": "ruijie-reyee",
+    "parent_id": "c1dd85bf-fb2d-4872-8e14-051f523b4e54",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-15T16:42:12.753765+00:00"
+  },
+  {
+    "id": "212ea895-c134-463e-b92f-23631cb37271",
+    "woo_id": null,
+    "name": "HIKVISION",
+    "slug": "hikvision",
+    "parent_id": "d86cf659-fe20-4d39-9651-58f1e3e75fba",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T18:53:46.946292+00:00"
+  },
+  {
+    "id": "1aab2e60-7ee8-48e0-9948-8358219129f8",
+    "woo_id": 195,
+    "name": "ACCESORIOS PERIFERICOS",
+    "slug": "accesorios-perifericos",
+    "parent_id": "a9ba8a0e-ac1d-4d80-a2f2-f7022c5c13f6",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "761acac9-20d0-4274-b87f-f07db91d2fda",
+    "woo_id": 315,
+    "name": "2MP",
+    "slug": "2mp-hikvision",
+    "parent_id": "2ea6352b-a6c0-4fe9-a86e-62075e062713",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "300be8cd-420a-4710-8ab7-0c6602f387c4",
+    "woo_id": 401,
+    "name": "2MP",
+    "slug": "2mp-dahua",
+    "parent_id": "62288606-6cc1-4daa-a12a-320af0694476",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "b98122eb-3b44-4fb8-89fe-a4bef369c09f",
+    "woo_id": 133,
+    "name": "ABANICOS",
+    "slug": "abanicos",
+    "parent_id": "d09d326a-09a9-4a71-95f8-325fbdaefde6",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "6ab4d9ae-785c-44ac-a977-edf429647342",
+    "woo_id": 402,
+    "name": "4MP",
+    "slug": "4mp-dahua",
+    "parent_id": "62288606-6cc1-4daa-a12a-320af0694476",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "343d27a5-e9d4-4506-a9db-0bfc145c28f8",
+    "woo_id": 625,
+    "name": "4MP Easy Link Wifi",
+    "slug": "4mp-easy-link-wifi",
+    "parent_id": "cf612052-576a-4fb6-9076-92d92168a39f",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "67017765-fadb-45d6-9b33-91ede7147905",
+    "woo_id": 403,
+    "name": "5MP",
+    "slug": "5mp-dahua",
+    "parent_id": "62288606-6cc1-4daa-a12a-320af0694476",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "551e38ae-155b-4566-8385-272ea8f01de4",
+    "woo_id": 317,
+    "name": "5MP",
+    "slug": "5mp-hikvision",
+    "parent_id": "2ea6352b-a6c0-4fe9-a86e-62075e062713",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "67038f09-6912-47f4-a818-476868407955",
+    "woo_id": 574,
+    "name": "8MP",
+    "slug": "8mp-hikvision",
+    "parent_id": "2ea6352b-a6c0-4fe9-a86e-62075e062713",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "733560a3-8554-49d6-b694-af033640cfc9",
+    "woo_id": 404,
+    "name": "8MP",
+    "slug": "8mp-dahua",
+    "parent_id": "62288606-6cc1-4daa-a12a-320af0694476",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "0f9f976d-4b13-4c41-be48-c26292ae1be1",
+    "woo_id": 542,
+    "name": "ACCESORIOS",
+    "slug": "accesorios-fitness",
+    "parent_id": "17151bac-6b13-4834-b0df-760ee5174969",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "a66f7863-11da-457e-bef4-3db244bccf40",
+    "woo_id": null,
+    "name": "IFLUX",
+    "slug": "iflux",
+    "parent_id": "e513f279-4ade-466e-a4a1-5505c617972f",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T21:46:23.475648+00:00"
+  },
+  {
+    "id": "354c2f77-b3ff-4e85-8d94-dd7ce3c49fd0",
+    "woo_id": 204,
+    "name": "ALAMBRICOS",
+    "slug": "alambricos-mouse",
+    "parent_id": "fd9d3c72-ea16-4cd2-b821-4254e2b37037",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "287685e1-ffea-47f1-854d-6a06b1909468",
+    "woo_id": null,
+    "name": "LANTEK",
+    "slug": "lantek-cat6",
+    "parent_id": "064dc9b3-6358-4d80-9a0f-0d811bb9efe6",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T21:54:39.411848+00:00"
+  },
+  {
+    "id": "0d9e3400-562d-4376-baf4-d45321fc934f",
+    "woo_id": 245,
+    "name": "CAMARAS ANALOGAS",
+    "slug": "camaras-analogicas",
+    "parent_id": "b3627765-0ebd-45af-9f50-1049514a3892",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "8a3c3d76-425d-4f7f-a873-3e5fc2487afd",
+    "woo_id": 938,
+    "name": "CAMARAS CON PANEL SOLAR",
+    "slug": "camaras-con-panel-solar",
+    "parent_id": "b3627765-0ebd-45af-9f50-1049514a3892",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "3cfe6b35-d811-49a8-b5e1-44c4c581d68c",
+    "woo_id": 246,
+    "name": "CAMARAS DIGITALES",
+    "slug": "camaras-digitales-camaras-de-vigilancia",
+    "parent_id": "b3627765-0ebd-45af-9f50-1049514a3892",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "bd653333-2afc-4af0-9571-dc989d7a6ee5",
+    "woo_id": null,
+    "name": "DAHUA",
+    "slug": "dahua1",
+    "parent_id": "c1dd85bf-fb2d-4872-8e14-051f523b4e54",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-15T16:42:48.461818+00:00"
+  },
+  {
+    "id": "462a0fd5-5738-4ed8-b87f-5feb15560e86",
+    "woo_id": 268,
+    "name": "CAT6",
+    "slug": "cat6-patch-cord",
+    "parent_id": "3731e4db-9973-4d83-beb4-b21b4979fe74",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "9867d84d-2425-45c0-90c4-8154f34954eb",
+    "woo_id": 247,
+    "name": "CAMARAS PTZ",
+    "slug": "camaras-ptz",
+    "parent_id": "b3627765-0ebd-45af-9f50-1049514a3892",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "413fe3f4-8ca4-47a2-a56d-dc35dff4bb94",
+    "woo_id": null,
+    "name": "UNIARCH",
+    "slug": "uniarch",
+    "parent_id": "456b2206-f558-4bb7-9a1e-f55b34e65484",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T22:45:24.817405+00:00"
+  },
+  {
+    "id": "b78e7254-30b0-4248-b3ee-599e18ed5678",
+    "woo_id": 135,
+    "name": "BATIDORAS",
+    "slug": "batidoras",
+    "parent_id": "d09d326a-09a9-4a71-95f8-325fbdaefde6",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "3393de84-70f6-4f60-9d5f-a57f61bdf6ad",
+    "woo_id": 138,
+    "name": "CAFETERAS",
+    "slug": "cafeteras",
+    "parent_id": "d09d326a-09a9-4a71-95f8-325fbdaefde6",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "66a1f441-27f6-4679-bb2d-d03ceb14b9c1",
+    "woo_id": 139,
+    "name": "CENTROS DE LAVADO",
+    "slug": "centros-de-lavado",
+    "parent_id": "d09d326a-09a9-4a71-95f8-325fbdaefde6",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "67f28af6-e435-4b9e-bd07-8222a6935af2",
+    "woo_id": 210,
+    "name": "CONSUMIBLES: TINTAS-CARTUCHOS",
+    "slug": "consumibles",
+    "parent_id": "57f2cff4-3875-4476-a564-fdca2ec2b709",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "d0028c71-8c16-4503-9bfc-fbcadd1f7677",
+    "woo_id": 196,
+    "name": "ACCESORIOS PORTATILES",
+    "slug": "accesorios-portatiles",
+    "parent_id": "1aab2e60-7ee8-48e0-9948-8358219129f8",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "d75bb5be-dc7d-4c27-9cc2-b79b05212647",
+    "woo_id": 197,
+    "name": "CABLES",
+    "slug": "cables",
+    "parent_id": "1aab2e60-7ee8-48e0-9948-8358219129f8",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "26ae5190-f6ff-41f9-8b99-fbce92ffccec",
+    "woo_id": 173,
+    "name": "ALMACENAMIENTO",
+    "slug": "almacenamiento",
+    "parent_id": "a9ba8a0e-ac1d-4d80-a2f2-f7022c5c13f6",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "d796618d-05c2-493f-bfd7-251f3819f18b",
+    "woo_id": 45,
+    "name": "CASE-FUENTES DE PODER",
+    "slug": "cases-fuentes-de-poder",
+    "parent_id": "a9ba8a0e-ac1d-4d80-a2f2-f7022c5c13f6",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "b802806e-dc15-48ed-98d3-821a4a6bc1b9",
+    "woo_id": 149,
+    "name": "CAMARAS WEB",
+    "slug": "camaras-digitales",
+    "parent_id": "5f52b38c-783c-4e06-aa81-0c31cb9b732d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "34816df7-1148-45b8-9fa1-4fc6c01b4026",
+    "woo_id": 590,
+    "name": "AIRES ACONDICIONADO",
+    "slug": "aires-acondicionados",
+    "parent_id": "28c92c66-e44c-4246-a7aa-ab6ecadd9ad2",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "1cce65ab-280b-4579-8aef-689f0359f492",
+    "woo_id": 143,
+    "name": "CONGELADORES",
+    "slug": "congeladores",
+    "parent_id": "28c92c66-e44c-4246-a7aa-ab6ecadd9ad2",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "b4193aaa-9462-4284-993b-ef4750305669",
+    "woo_id": 415,
+    "name": "ALARMAS IMOU",
+    "slug": "alarmas-imou",
+    "parent_id": "de177617-033e-4e32-88aa-60951aeab75e",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "16391d97-9f74-46d0-8f13-ba09f92a3c4b",
+    "woo_id": 439,
+    "name": "ALARMAS HIKVISION",
+    "slug": "alarmas-hikvision",
+    "parent_id": "de177617-033e-4e32-88aa-60951aeab75e",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "82e1a63b-8ef1-4a80-a4ab-452c45fed377",
+    "woo_id": 580,
+    "name": "ALARMAS DAHUA",
+    "slug": "dahua-alarmas-seguridad",
+    "parent_id": "de177617-033e-4e32-88aa-60951aeab75e",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "6d66710d-0f07-41f2-96e0-513d3d535452",
+    "woo_id": 237,
+    "name": "ANALOGOS-DVR",
+    "slug": "analogos-dvr",
+    "parent_id": "dbdcb267-1608-4666-90bc-6b0107b851cf",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "eee52953-9562-4d48-bbcc-368ef46471ec",
+    "woo_id": 609,
+    "name": "CAMARAS IP CABLEADAS",
+    "slug": "camaras-ip",
+    "parent_id": "3cfe6b35-d811-49a8-b5e1-44c4c581d68c",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "533f80f8-dff5-483b-a9b8-e6b1920d114f",
+    "woo_id": null,
+    "name": "TELEFONIA IP",
+    "slug": "telefonia-ip",
+    "parent_id": "1302edfa-c22c-4b71-aded-f7bf94fac3df",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-18T14:39:33.990632+00:00"
+  },
+  {
+    "id": "870081ad-f1bf-43cf-b28f-782cc2010ae4",
+    "woo_id": null,
+    "name": "MICRO SD",
+    "slug": "micro-sd",
+    "parent_id": "61310b63-ceae-4bae-9ef0-27da8781d170",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-19T15:26:16.744079+00:00"
+  },
+  {
+    "id": "219b3a39-8fe8-4502-b1fb-5c64602c9cd0",
+    "woo_id": null,
+    "name": "TARJETAS MADRE",
+    "slug": "tarjetas-madre",
+    "parent_id": "a9ba8a0e-ac1d-4d80-a2f2-f7022c5c13f6",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-21T15:30:56.64175+00:00"
+  },
+  {
+    "id": "0ed4791a-19bc-426e-bc79-f52866b2a669",
+    "woo_id": 194,
+    "name": "ANTIVIRUS",
+    "slug": "antivirus",
+    "parent_id": null,
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "9cfd9d67-a022-42da-adaf-4ddf9b78c4aa",
+    "woo_id": 570,
+    "name": "Dahua 8MP con Audio",
+    "slug": "dahua-8mp-con-audio",
+    "parent_id": "3bb77a56-81a5-4a88-983f-8491c4ba30e8",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "32385d59-1f12-417f-82ba-0ee92b9be823",
+    "woo_id": 190,
+    "name": "MEMORIA P/LAPTOPS",
+    "slug": "laptop-portatiles",
+    "parent_id": "74b705ab-2864-4f9b-8137-055fa088d362",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "06a24af2-6d4b-40c0-bd10-0a1c9640119b",
+    "woo_id": 606,
+    "name": "MAQUINAS",
+    "slug": "maquinas",
+    "parent_id": "17151bac-6b13-4834-b0df-760ee5174969",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "4312a134-edfe-44a3-bd8b-804afb2379fa",
+    "woo_id": 569,
+    "name": "DAHUA 2MP FULLCOLOR C/AUDIO",
+    "slug": "dahua-2mp-fullcolor-con-audio",
+    "parent_id": "3bb77a56-81a5-4a88-983f-8491c4ba30e8",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "2ea6352b-a6c0-4fe9-a86e-62075e062713",
+    "woo_id": 239,
+    "name": "DVR-HIKVISION",
+    "slug": "dvr-hikvision",
+    "parent_id": "6d66710d-0f07-41f2-96e0-513d3d535452",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "7c866e0b-3064-4129-bba7-b00c93955c1d",
+    "woo_id": null,
+    "name": "ACCESORIOS P/UPS",
+    "slug": "accesorios-p-ups",
+    "parent_id": "d86cf659-fe20-4d39-9651-58f1e3e75fba",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T17:56:07.601622+00:00"
+  },
+  {
+    "id": "57f2cff4-3875-4476-a564-fdca2ec2b709",
+    "woo_id": 207,
+    "name": "IMPRESORAS-ESCANERES",
+    "slug": "impresoras-escaneres",
+    "parent_id": "b235aee5-095c-4d22-aead-ab754818ccc4",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "60a47247-ebef-486a-82db-e20a8d6c258d",
+    "woo_id": 214,
+    "name": "IMPRESORAS FOTOGRAFICAS",
+    "slug": "impresoras-fotograficas",
+    "parent_id": "57f2cff4-3875-4476-a564-fdca2ec2b709",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "26287380-a071-40d0-b577-ed6eddf2fe90",
+    "woo_id": 216,
+    "name": "IMPRESORAS LASERJET",
+    "slug": "impresoras-laserjet",
+    "parent_id": "57f2cff4-3875-4476-a564-fdca2ec2b709",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "dcae319a-98f2-43c4-9ee1-e39ea3a46f19",
+    "woo_id": 572,
+    "name": "Hikvision 2MP",
+    "slug": "hikvision-2mp",
+    "parent_id": "eb6c7e48-e7b1-49cc-9dfb-9b984d3978d8",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "8a597de3-6c81-4214-a533-93fac3c45429",
+    "woo_id": 598,
+    "name": "Hikvision 2MP ColorVU con Audio",
+    "slug": "hikvision-2mp-colorvu-con-audio",
+    "parent_id": "eb6c7e48-e7b1-49cc-9dfb-9b984d3978d8",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "936fb3d0-1a31-4818-b3a9-475148e4de66",
+    "woo_id": 596,
+    "name": "Hikvision 5MP ColorVU con Audio",
+    "slug": "hikvision-5mp-colorvu-con-audio",
+    "parent_id": "eb6c7e48-e7b1-49cc-9dfb-9b984d3978d8",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "911c1eff-8700-45c4-9fad-e2b303c48191",
+    "woo_id": 575,
+    "name": "Hikvision 8MP",
+    "slug": "hikvision-8mp",
+    "parent_id": "eb6c7e48-e7b1-49cc-9dfb-9b984d3978d8",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "1296f408-3dae-41ce-acc8-8d31aad0c912",
+    "woo_id": 442,
+    "name": "HiLook 2MP ColorVu",
+    "slug": "hikvision-colorvu",
+    "parent_id": "eb6c7e48-e7b1-49cc-9dfb-9b984d3978d8",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "5a83e6cd-beb3-4bec-be97-0511d8d1cffc",
+    "woo_id": 213,
+    "name": "IMPRESORAS MATRIZ DE PUNTOS",
+    "slug": "impresoras-matriz-de-punto",
+    "parent_id": "57f2cff4-3875-4476-a564-fdca2ec2b709",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "62288606-6cc1-4daa-a12a-320af0694476",
+    "woo_id": 241,
+    "name": "DVR-DAHUA",
+    "slug": "dvr-dahua",
+    "parent_id": "6d66710d-0f07-41f2-96e0-513d3d535452",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "d3ef2d11-71b7-4394-b219-7f1df2e5bddb",
+    "woo_id": 217,
+    "name": "IMPRESORAS MULTIFUNCIONALES",
+    "slug": "impresoras-multifuncionales",
+    "parent_id": "57f2cff4-3875-4476-a564-fdca2ec2b709",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "99577a16-4dd6-4ec7-8568-1927e5ce3b2f",
+    "woo_id": 219,
+    "name": "INK-JET",
+    "slug": "ink-jet",
+    "parent_id": "d3ef2d11-71b7-4394-b219-7f1df2e5bddb",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "41b1e640-df00-4a05-80a3-22b7a3c4568d",
+    "woo_id": 205,
+    "name": "INALAMBRICOS",
+    "slug": "inalambricos-mouse",
+    "parent_id": "fd9d3c72-ea16-4cd2-b821-4254e2b37037",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "1af1c9ab-98e5-4891-84c9-81546e10779d",
+    "woo_id": null,
+    "name": "DAHUA",
+    "slug": "dahua",
+    "parent_id": "d86cf659-fe20-4d39-9651-58f1e3e75fba",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T18:53:51.261398+00:00"
+  },
+  {
+    "id": "a8af42e3-1572-46e5-ac49-058f3fe7a11a",
+    "woo_id": 147,
+    "name": "MONITORES",
+    "slug": "monitores",
+    "parent_id": "5f52b38c-783c-4e06-aa81-0c31cb9b732d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "9970a0c4-9f27-4ead-97af-49b41fcd4111",
+    "woo_id": 218,
+    "name": "LASER",
+    "slug": "laser",
+    "parent_id": "d3ef2d11-71b7-4394-b219-7f1df2e5bddb",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "a47ee761-14b9-4070-b00f-c5d2c0787210",
+    "woo_id": null,
+    "name": "CABLINK",
+    "slug": "cablink",
+    "parent_id": "e513f279-4ade-466e-a4a1-5505c617972f",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T21:46:44.854065+00:00"
+  },
+  {
+    "id": "1c910f3a-1583-4a86-a56a-65a34e44a82d",
+    "woo_id": 69,
+    "name": "LECTORES DE CODIGOS DE BARRA",
+    "slug": "lectores-de-codigos-de-barras",
+    "parent_id": "2c224ebc-86aa-4dd5-a6d6-a5586213f23d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "7244c657-17b5-4155-9bf4-d784fb9e443f",
+    "woo_id": 68,
+    "name": "MUEBLES",
+    "slug": "muebles",
+    "parent_id": "2949826c-8e9b-4853-91b4-11f38162fd32",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "65bf6255-ce1c-449c-a1bd-33d4bca62737",
+    "woo_id": 605,
+    "name": "JUGUETES",
+    "slug": "juguetes",
+    "parent_id": "2949826c-8e9b-4853-91b4-11f38162fd32",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "a7edd5ee-a099-4207-bdd7-cb42ca1bb5ea",
+    "woo_id": 937,
+    "name": "HOGAR INTELIGENTE",
+    "slug": "hogar-inteligente",
+    "parent_id": "2949826c-8e9b-4853-91b4-11f38162fd32",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "17151bac-6b13-4834-b0df-760ee5174969",
+    "woo_id": 93,
+    "name": "FITNESS",
+    "slug": "fitness",
+    "parent_id": "2949826c-8e9b-4853-91b4-11f38162fd32",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "d09d326a-09a9-4a71-95f8-325fbdaefde6",
+    "woo_id": 67,
+    "name": "ELECTRODOMESTICOS",
+    "slug": "electrodomesticos",
+    "parent_id": "2949826c-8e9b-4853-91b4-11f38162fd32",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "7bf19f14-be0f-4526-85a4-062f026da3c5",
+    "woo_id": 74,
+    "name": "ESCRITORIO-DESKTOP",
+    "slug": "escritorio-desktop",
+    "parent_id": "c6245f0e-7709-41ec-91b1-ef30ee77683a",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "a18ed2c9-82e7-41b0-830b-249098fd0aa7",
+    "woo_id": 64,
+    "name": "LAPTOPS",
+    "slug": "laptops",
+    "parent_id": "c6245f0e-7709-41ec-91b1-ef30ee77683a",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "765129b0-c411-4a24-82b5-73534d67744d",
+    "woo_id": 238,
+    "name": "DIGITALES-NVR",
+    "slug": "digitales-nvr",
+    "parent_id": "dbdcb267-1608-4666-90bc-6b0107b851cf",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "fd9d3c72-ea16-4cd2-b821-4254e2b37037",
+    "woo_id": 200,
+    "name": "MOUSE (RATON)",
+    "slug": "mouse",
+    "parent_id": "1aab2e60-7ee8-48e0-9948-8358219129f8",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "c3263b78-7733-4ca0-944d-2660e984ba44",
+    "woo_id": 175,
+    "name": "DISCOS DUROS EXTERNOS",
+    "slug": "discos-duros-externos",
+    "parent_id": "26ae5190-f6ff-41f9-8b99-fbce92ffccec",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "9fa57a8d-ef7e-4f23-8ba5-15826ee5058e",
+    "woo_id": 174,
+    "name": "DISCOS DUROS INTERNOS",
+    "slug": "discos-duros-internos",
+    "parent_id": "26ae5190-f6ff-41f9-8b99-fbce92ffccec",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "1a6883ea-ffd4-41b1-8836-d365fbe4085a",
+    "woo_id": 189,
+    "name": "MEMORIA P/PC",
+    "slug": "escritorio-pc",
+    "parent_id": "74b705ab-2864-4f9b-8137-055fa088d362",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "df9570e2-eecd-479b-8b0b-734d5da34394",
+    "woo_id": 627,
+    "name": "KITS WIFI TP-LINK",
+    "slug": "kits-wifi-tp-link",
+    "parent_id": "438cba11-ccce-4e82-891b-166828846f78",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "207a60b0-bd68-4568-b6c5-d046c40c13d1",
+    "woo_id": 183,
+    "name": "ENCAPSULADORES",
+    "slug": "encapsuladores",
+    "parent_id": "26ae5190-f6ff-41f9-8b99-fbce92ffccec",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "0194b7ad-f348-4b53-b376-3f84f44592a1",
+    "woo_id": 184,
+    "name": "LLAVES MAYA",
+    "slug": "llaves-maya",
+    "parent_id": "61310b63-ceae-4bae-9ef0-27da8781d170",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "61310b63-ceae-4bae-9ef0-27da8781d170",
+    "woo_id": 177,
+    "name": "MEMORIAS",
+    "slug": "memorias",
+    "parent_id": "26ae5190-f6ff-41f9-8b99-fbce92ffccec",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "456b2206-f558-4bb7-9a1e-f55b34e65484",
+    "woo_id": 411,
+    "name": "INALAMBRICAS",
+    "slug": "inalambricas",
+    "parent_id": "3cfe6b35-d811-49a8-b5e1-44c4c581d68c",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "3fbef887-57d3-44ea-9f28-8747dad54fc1",
+    "woo_id": 623,
+    "name": "NEXXT",
+    "slug": "nexxt",
+    "parent_id": "456b2206-f558-4bb7-9a1e-f55b34e65484",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "18a72282-3d16-4314-a55f-15fe19c5c38b",
+    "woo_id": null,
+    "name": "IMOU",
+    "slug": "imou",
+    "parent_id": "456b2206-f558-4bb7-9a1e-f55b34e65484",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T22:34:39.819648+00:00"
+  },
+  {
+    "id": "4888e425-d25b-4cd4-b62d-afb520d00f8b",
+    "woo_id": null,
+    "name": "CAMARAS 4G",
+    "slug": "camaras-4g",
+    "parent_id": "3cfe6b35-d811-49a8-b5e1-44c4c581d68c",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-13T15:21:11.060239+00:00"
+  },
+  {
+    "id": "74b705ab-2864-4f9b-8137-055fa088d362",
+    "woo_id": 188,
+    "name": "MEMORIAS RAM",
+    "slug": "memorias-modulos-ram",
+    "parent_id": "a9ba8a0e-ac1d-4d80-a2f2-f7022c5c13f6",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "3bb77a56-81a5-4a88-983f-8491c4ba30e8",
+    "woo_id": 382,
+    "name": "DAHUA ANALOGOS",
+    "slug": "dahua-analogicos",
+    "parent_id": "0b964a30-11cb-4960-a478-d7f11c777970",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "9ac54ef0-e979-4c58-8ecb-e9c366f21faa",
+    "woo_id": 567,
+    "name": "DAHUA 2MP",
+    "slug": "dahua-2mp",
+    "parent_id": "3bb77a56-81a5-4a88-983f-8491c4ba30e8",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "eb6c7e48-e7b1-49cc-9dfb-9b984d3978d8",
+    "woo_id": 235,
+    "name": "HIKVISION ANALOGOS",
+    "slug": "hikvision-analogicos",
+    "parent_id": "0b964a30-11cb-4960-a478-d7f11c777970",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "beb4b0bd-3c68-4cc2-b12a-4565d30018ff",
+    "woo_id": 178,
+    "name": "DD ESTADO SOLIDO",
+    "slug": "estado-solido",
+    "parent_id": "9fa57a8d-ef7e-4f23-8ba5-15826ee5058e",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "26486d99-7273-4325-af0a-9006ceca373b",
+    "woo_id": 181,
+    "name": "DD MECANICOS",
+    "slug": "escritorio",
+    "parent_id": "9fa57a8d-ef7e-4f23-8ba5-15826ee5058e",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "cf612052-576a-4fb6-9076-92d92168a39f",
+    "woo_id": 236,
+    "name": "HIKVISION DIGITALES",
+    "slug": "hikvision-digitales",
+    "parent_id": "0b964a30-11cb-4960-a478-d7f11c777970",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "0c9531f9-69f0-4b8d-91d0-f5ed6d1be5d4",
+    "woo_id": 127,
+    "name": "DESKTOP GENERICAS",
+    "slug": "genericas",
+    "parent_id": "7bf19f14-be0f-4526-85a4-062f026da3c5",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "43f59df1-2f65-457e-bf70-96b57d608826",
+    "woo_id": 628,
+    "name": "KITS WIFI IMOU",
+    "slug": "kits-wifi-imou",
+    "parent_id": "438cba11-ccce-4e82-891b-166828846f78",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "0e01fbe1-a629-4360-bdad-04190ac1191b",
+    "woo_id": 629,
+    "name": "KITS WIFI DAHUA",
+    "slug": "kits-wifi-dahua",
+    "parent_id": "438cba11-ccce-4e82-891b-166828846f78",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "b2232ebb-bc42-441c-9c4e-859faab38f7b",
+    "woo_id": 617,
+    "name": "DVR-UNIVIEW",
+    "slug": "uniview",
+    "parent_id": "6d66710d-0f07-41f2-96e0-513d3d535452",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "daaaf73a-0bb5-47d2-aeef-3a7d2454a671",
+    "woo_id": null,
+    "name": "MERCUSYS",
+    "slug": "mercusys1",
+    "parent_id": "c1dd85bf-fb2d-4872-8e14-051f523b4e54",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-15T16:42:35.788429+00:00"
+  },
+  {
+    "id": "d1195753-13c4-4c7f-a155-d4062beedc4c",
+    "woo_id": 436,
+    "name": "DAHUA 5MP FULLCOLOR C/AUDIO",
+    "slug": "dahua-5mp-fullcolor-con-audio",
+    "parent_id": "3bb77a56-81a5-4a88-983f-8491c4ba30e8",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "3bb934b9-52a4-4200-94b0-ff326204edd9",
+    "woo_id": 600,
+    "name": "MESITAS",
+    "slug": "mesitas",
+    "parent_id": "7244c657-17b5-4155-9bf4-d784fb9e443f",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "28c92c66-e44c-4246-a7aa-ab6ecadd9ad2",
+    "woo_id": 134,
+    "name": "ENFRIAMIENTO",
+    "slug": "enfriamiento",
+    "parent_id": "d09d326a-09a9-4a71-95f8-325fbdaefde6",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.517861+00:00"
+  },
+  {
+    "id": "106a62b0-82fd-4627-b72a-09340e4139a2",
+    "woo_id": 932,
+    "name": "MICROONDAS",
+    "slug": "hornos-de-microondas",
+    "parent_id": "256b126b-b8b2-4b54-b3fc-9f8be17c0bb2",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "d4b033a9-0c1f-4666-853a-4a28f5e25429",
+    "woo_id": 933,
+    "name": "FREIDORES",
+    "slug": "hornos-freidores",
+    "parent_id": "256b126b-b8b2-4b54-b3fc-9f8be17c0bb2",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "15c1fb35-e2d1-43f2-8045-e56682a8b7cc",
+    "woo_id": null,
+    "name": "HIKVISION",
+    "slug": "hikvision12",
+    "parent_id": "eee52953-9562-4d48-bbcc-368ef46471ec",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-17T21:46:22.271474+00:00"
+  },
+  {
+    "id": "f638eb62-058d-4c3c-a66f-524f4f4a6d64",
+    "woo_id": 939,
+    "name": "HERVIDORES ELECTRICOS",
+    "slug": "hervidores-electricos",
+    "parent_id": "d09d326a-09a9-4a71-95f8-325fbdaefde6",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "256b126b-b8b2-4b54-b3fc-9f8be17c0bb2",
+    "woo_id": 132,
+    "name": "HORNOS",
+    "slug": "hornos",
+    "parent_id": "d09d326a-09a9-4a71-95f8-325fbdaefde6",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "6cee060a-aeb7-40d9-a448-02430aab4294",
+    "woo_id": 145,
+    "name": "ESCRITORIOS",
+    "slug": "escritorios",
+    "parent_id": "7244c657-17b5-4155-9bf4-d784fb9e443f",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "31f7d662-bc6b-4249-96d1-c0e8aac73881",
+    "woo_id": 416,
+    "name": "GAVETEROS",
+    "slug": "gaveteros",
+    "parent_id": "7244c657-17b5-4155-9bf4-d784fb9e443f",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "2397b62a-ab3a-43c6-8fa2-0e6fd2f0402b",
+    "woo_id": null,
+    "name": "CELULARES",
+    "slug": "celulares",
+    "parent_id": "1302edfa-c22c-4b71-aded-f7bf94fac3df",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-18T14:39:45.942276+00:00"
+  },
+  {
+    "id": "35533700-1b5e-41d0-a443-68cebd18fe9d",
+    "woo_id": 622,
+    "name": "CERRADURAS INTELIGENTES",
+    "slug": "llavines-inteligentes",
+    "parent_id": "a7a3d04a-1729-45c8-81b6-23dc6e1cae73",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "120ebe8d-c097-45b5-9cbb-b77beedc5f25",
+    "woo_id": null,
+    "name": "TECLADOS",
+    "slug": "teclados",
+    "parent_id": "1aab2e60-7ee8-48e0-9948-8358219129f8",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-19T15:51:12.857669+00:00"
+  },
+  {
+    "id": "04668254-f500-41f9-935c-4f5fe9b0eb3a",
+    "woo_id": null,
+    "name": "TARJETAS MADRE AMD",
+    "slug": "tarjetas-madre-amd",
+    "parent_id": "219b3a39-8fe8-4502-b1fb-5c64602c9cd0",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-21T15:31:48.852137+00:00"
+  },
+  {
+    "id": "845d4e03-b6e6-486a-b7ea-9805515f52dd",
+    "woo_id": 242,
+    "name": "NVR-HIKVISION",
+    "slug": "hikvision-nvr-netware-video-recorder",
+    "parent_id": "765129b0-c411-4a24-82b5-73534d67744d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "5c703b3a-bc6a-46c4-bc5f-a84604875b90",
+    "woo_id": 929,
+    "name": "NVR-IMOU",
+    "slug": "imou-nvr-netware-video-recorder",
+    "parent_id": "765129b0-c411-4a24-82b5-73534d67744d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "1699232b-7efd-4c3a-a038-bb5409e9fd63",
+    "woo_id": null,
+    "name": "HUBS",
+    "slug": "hubs",
+    "parent_id": "3fdaf06e-9741-4a7f-b700-8c6ad9237d5d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-10T14:17:48.557193+00:00"
+  },
+  {
+    "id": "40b7af21-2e04-4884-82b1-98f3429aa3fc",
+    "woo_id": null,
+    "name": "CABLE UTP",
+    "slug": "cable-utp",
+    "parent_id": "3fdaf06e-9741-4a7f-b700-8c6ad9237d5d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-10T14:32:30.132064+00:00"
+  },
+  {
+    "id": "2d2fe457-732a-44f1-aef8-9e7ea8a63cb4",
+    "woo_id": null,
+    "name": "PUNTOS DE ACCESO",
+    "slug": "puntos-de-acceso",
+    "parent_id": "3fdaf06e-9741-4a7f-b700-8c6ad9237d5d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-10T14:32:57.816494+00:00"
+  },
+  {
+    "id": "10c5cbd5-08a0-46e5-b4b7-066c1b2ce5d6",
+    "woo_id": 146,
+    "name": "PROYECTORES",
+    "slug": "proyectores",
+    "parent_id": "5f52b38c-783c-4e06-aa81-0c31cb9b732d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "7858dcd5-9148-4302-b5d8-166e9e63d834",
+    "woo_id": 209,
+    "name": "PARLANTES",
+    "slug": "parlantes",
+    "parent_id": "b235aee5-095c-4d22-aead-ab754818ccc4",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "1d84b4bd-3e40-48d4-9b6a-9ccf34b20990",
+    "woo_id": null,
+    "name": "IMPRESORAS DE RECIBOS",
+    "slug": "impresoras-de-recibos",
+    "parent_id": "2c224ebc-86aa-4dd5-a6d6-a5586213f23d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-11T12:43:21.705443+00:00"
+  },
+  {
+    "id": "76178691-657c-4f92-865c-1bd5c681d462",
+    "woo_id": null,
+    "name": "EAST",
+    "slug": "east",
+    "parent_id": "d86cf659-fe20-4d39-9651-58f1e3e75fba",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T18:53:13.250866+00:00"
+  },
+  {
+    "id": "9c8147cd-2935-47ff-883e-f3145a8ef1d1",
+    "woo_id": null,
+    "name": "WITEK",
+    "slug": "witek",
+    "parent_id": "c1dd85bf-fb2d-4872-8e14-051f523b4e54",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-15T16:41:29.869938+00:00"
+  },
+  {
+    "id": "917b9e3b-016d-48f5-b07d-3fbd49ec956b",
+    "woo_id": null,
+    "name": "ACCESORIOS DE REDES",
+    "slug": "accesorios-de-redes",
+    "parent_id": "3fdaf06e-9741-4a7f-b700-8c6ad9237d5d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T14:01:20.482208+00:00"
+  },
+  {
+    "id": "e447b0b5-16b2-4149-9a04-e60cf327fe0c",
+    "woo_id": 201,
+    "name": "OTROS",
+    "slug": "otros",
+    "parent_id": "1aab2e60-7ee8-48e0-9948-8358219129f8",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "db045b3e-0a3e-4ed3-a7d0-18523f6256f3",
+    "woo_id": 148,
+    "name": "PANTALLAS DE PROYECCION",
+    "slug": "pantallas-de-proyeccion",
+    "parent_id": "5f52b38c-783c-4e06-aa81-0c31cb9b732d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "c5de3873-980e-424e-a6a8-52445511e122",
+    "woo_id": null,
+    "name": "LANTEK",
+    "slug": "lantek",
+    "parent_id": "e513f279-4ade-466e-a4a1-5505c617972f",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T21:47:02.194596+00:00"
+  },
+  {
+    "id": "8eb06174-bce0-4e98-bcc5-e21ff8a2b5bb",
+    "woo_id": null,
+    "name": "EZVIZ",
+    "slug": "ezviz",
+    "parent_id": "456b2206-f558-4bb7-9a1e-f55b34e65484",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-12T22:34:47.971368+00:00"
+  },
+  {
+    "id": "ecd8926f-768e-44d1-bf03-c32c25524cff",
+    "woo_id": null,
+    "name": "MERCUSYS",
+    "slug": "mercusys",
+    "parent_id": "456b2206-f558-4bb7-9a1e-f55b34e65484",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-13T21:40:16.874554+00:00"
+  },
+  {
+    "id": "eaaefdce-0088-4f7a-96a2-c9bc066bb278",
+    "woo_id": 65,
+    "name": "PROCESADORES",
+    "slug": "procesadores",
+    "parent_id": "a9ba8a0e-ac1d-4d80-a2f2-f7022c5c13f6",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "d4968743-0393-43b6-b069-7df1b44088c9",
+    "woo_id": 233,
+    "name": "PROCESADORES AMD",
+    "slug": "procesadores-amd",
+    "parent_id": "eaaefdce-0088-4f7a-96a2-c9bc066bb278",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "3c5efd0c-1af4-46b5-aef2-5ce19332f2df",
+    "woo_id": 234,
+    "name": "PROCESADORES INTEL",
+    "slug": "procesadores-intel",
+    "parent_id": "eaaefdce-0088-4f7a-96a2-c9bc066bb278",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "54ac6547-ed2a-44ce-a842-ba18426c0fdb",
+    "woo_id": null,
+    "name": "HIKVISION",
+    "slug": "hikvision1",
+    "parent_id": "c1dd85bf-fb2d-4872-8e14-051f523b4e54",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-15T16:43:00.08709+00:00"
+  },
+  {
+    "id": "d2cb4031-3001-48e8-9e3b-54b97105715f",
+    "woo_id": null,
+    "name": "TP-LINK",
+    "slug": "tp-link1",
+    "parent_id": "c1dd85bf-fb2d-4872-8e14-051f523b4e54",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-15T16:41:19.851036+00:00"
+  },
+  {
+    "id": "3731e4db-9973-4d83-beb4-b21b4979fe74",
+    "woo_id": 262,
+    "name": "PATCH CORD",
+    "slug": "patch-cord",
+    "parent_id": "40b7af21-2e04-4884-82b1-98f3429aa3fc",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "83d895da-b1ff-4b2b-82ce-a09cf590f1d5",
+    "woo_id": 244,
+    "name": "NVR-DAHUA",
+    "slug": "dahua-nvr-netware-video-recorder",
+    "parent_id": "765129b0-c411-4a24-82b5-73534d67744d",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "ec5d11ed-3b88-42a9-a378-0424c2bb1f1b",
+    "woo_id": null,
+    "name": "DAHUA",
+    "slug": "dahua12",
+    "parent_id": "eee52953-9562-4d48-bbcc-368ef46471ec",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-17T21:46:12.198339+00:00"
+  },
+  {
+    "id": "d3ed5e00-5c18-414e-8c60-53a92ed8d6bc",
+    "woo_id": null,
+    "name": "UNV",
+    "slug": "unv1",
+    "parent_id": "eee52953-9562-4d48-bbcc-368ef46471ec",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-17T21:45:58.496913+00:00"
+  },
+  {
+    "id": "1f58cf01-0280-4cfa-8c27-f055ba803f8a",
+    "woo_id": 137,
+    "name": "OLLAS",
+    "slug": "ollas",
+    "parent_id": "d09d326a-09a9-4a71-95f8-325fbdaefde6",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-05-20T17:13:28.763225+00:00"
+  },
+  {
+    "id": "9e5a3e81-a0b7-4a16-a4f1-558c4da2a27e",
+    "woo_id": null,
+    "name": "VIDEO PORTEROS",
+    "slug": "video-porteros",
+    "parent_id": "a7a3d04a-1729-45c8-81b6-23dc6e1cae73",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-18T15:58:58.522375+00:00"
+  },
+  {
+    "id": "44c816ba-a86d-4a2c-938f-5f9635370383",
+    "woo_id": null,
+    "name": "TECLADO INALAMBRICOS",
+    "slug": "teclado-inalambricos",
+    "parent_id": "120ebe8d-c097-45b5-9cbb-b77beedc5f25",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-19T15:51:40.015257+00:00"
+  },
+  {
+    "id": "5ee05bc8-392c-4cb6-a4e6-ce73f5ac8d30",
+    "woo_id": null,
+    "name": "TARJETAS MADRE INTEL",
+    "slug": "tarjetas-madre-intel",
+    "parent_id": "219b3a39-8fe8-4502-b1fb-5c64602c9cd0",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-21T15:32:05.738092+00:00"
+  },
+  {
+    "id": "9914d18e-13c0-4674-bd91-2398e68cf8e3",
+    "woo_id": null,
+    "name": "HIKVISION",
+    "slug": "hikvision123",
+    "parent_id": "456b2206-f558-4bb7-9a1e-f55b34e65484",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-22T16:20:27.09419+00:00"
+  },
+  {
+    "id": "f6a8f17d-d12e-4000-8d5e-ff73d2f71dbb",
+    "woo_id": null,
+    "name": "HIKVISION",
+    "slug": "hikvision1234",
+    "parent_id": "f900628e-8ee2-426e-9f37-773b3da68221",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-24T22:20:01.488399+00:00"
+  },
+  {
+    "id": "f4728856-318a-44ee-970f-d2674629f3d7",
+    "woo_id": null,
+    "name": "MERCUSYS",
+    "slug": "mercusys12",
+    "parent_id": "f900628e-8ee2-426e-9f37-773b3da68221",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-24T22:17:07.08859+00:00"
+  },
+  {
+    "id": "710e270f-7eb4-49e8-ba31-4db425d8ebb6",
+    "woo_id": null,
+    "name": "UBIQUITI",
+    "slug": "ubiquiti12",
+    "parent_id": "f900628e-8ee2-426e-9f37-773b3da68221",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-24T22:19:16.522381+00:00"
+  },
+  {
+    "id": "756473fc-7f6c-4947-8876-e4847a9e58d5",
+    "woo_id": null,
+    "name": "RUIJIE-REYEE",
+    "slug": "ruijie-reyee12",
+    "parent_id": "f900628e-8ee2-426e-9f37-773b3da68221",
+    "image_url": null,
+    "description": null,
+    "created_at": "2026-06-24T22:18:56.059001+00:00"
+  }
+]

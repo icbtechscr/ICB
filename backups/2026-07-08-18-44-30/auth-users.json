@@ -1,0 +1,526 @@
+[
+  {
+    "id": "2d11ac1d-1dde-47f0-9919-414cb6faf675",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "gerald@icb.com",
+    "email_confirmed_at": "2026-06-22T17:31:22.43602Z",
+    "phone": "",
+    "confirmed_at": "2026-06-22T17:31:22.43602Z",
+    "last_sign_in_at": "2026-07-08T18:40:41.588102Z",
+    "app_metadata": {
+      "provider": "email",
+      "providers": [
+        "email"
+      ]
+    },
+    "user_metadata": {
+      "branch_ids": [
+        "san-jose",
+        "alajuela",
+        "heredia",
+        "cartago",
+        "cedi-barreal",
+        "ciudad-quesada"
+      ],
+      "cedula": "602980043",
+      "email_verified": true,
+      "full_name": "GERALD VEGA GOMEZ",
+      "role": "colaborador",
+      "vacation_adjust": 0,
+      "vacation_rate": 1
+    },
+    "identities": null,
+    "created_at": "2026-06-22T17:31:22.389957Z",
+    "updated_at": "2026-07-08T18:40:41.596618Z",
+    "is_anonymous": false
+  },
+  {
+    "id": "a130f14a-b05b-492c-8b32-7d8fd54be185",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "chacon@icb.com",
+    "email_confirmed_at": "2026-06-08T18:49:26.523906Z",
+    "phone": "",
+    "confirmed_at": "2026-06-08T18:49:26.523906Z",
+    "last_sign_in_at": "2026-07-07T18:08:44.948853Z",
+    "app_metadata": {
+      "provider": "email",
+      "providers": [
+        "email"
+      ]
+    },
+    "user_metadata": {
+      "branch_ids": [
+        "san-jose",
+        "cartago"
+      ],
+      "cedula": "303400119",
+      "email_verified": true,
+      "full_name": "RANDALL CHACON VALDERRAMOS",
+      "hire_date": "2024-01-23",
+      "role": "colaborador",
+      "vacation_adjust": -29,
+      "vacation_rate": 1
+    },
+    "identities": null,
+    "created_at": "2026-06-08T18:49:26.493702Z",
+    "updated_at": "2026-07-08T17:22:32.630722Z",
+    "is_anonymous": false
+  },
+  {
+    "id": "d402c736-7e1d-4acf-bc51-e18d7d56dd12",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "frodev@icb.com",
+    "email_confirmed_at": "2026-06-03T15:14:14.995491Z",
+    "phone": "",
+    "confirmed_at": "2026-06-03T15:14:14.995491Z",
+    "last_sign_in_at": "2026-07-03T22:04:10.198277Z",
+    "app_metadata": {
+      "provider": "email",
+      "providers": [
+        "email"
+      ]
+    },
+    "user_metadata": {
+      "avatar_url": "https://fnnzlkvohsaxwnmdymvc.supabase.co/storage/v1/object/public/imagenes/avatars/d402c736-7e1d-4acf-bc51-e18d7d56dd12-mr3wvzr7.png",
+      "branch_ids": [
+        "remoto",
+        "cartago"
+      ],
+      "cedula": "305280434",
+      "email_verified": true,
+      "full_name": "ANDRES GARITA RODRIGUEZ",
+      "hire_date": "2026-05-01",
+      "role": "dev",
+      "vacation_adjust": -2,
+      "vacation_rate": 1
+    },
+    "identities": null,
+    "created_at": "2026-06-03T15:14:14.959729Z",
+    "updated_at": "2026-07-08T17:18:48.819106Z",
+    "is_anonymous": false
+  },
+  {
+    "id": "061f3c0a-f0a8-40e6-a189-78b5540fe650",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "marco@icb.com",
+    "email_confirmed_at": "2026-06-02T17:12:49.264097Z",
+    "phone": "",
+    "confirmed_at": "2026-06-02T17:12:49.264097Z",
+    "last_sign_in_at": "2026-07-02T02:41:17.350693Z",
+    "app_metadata": {
+      "provider": "email",
+      "providers": [
+        "email"
+      ]
+    },
+    "user_metadata": {
+      "branch_id": null,
+      "branch_ids": [
+        "remoto"
+      ],
+      "cedula": "118750998",
+      "email_verified": true,
+      "full_name": "MARCO TORRES ULATE",
+      "role": "colaborador",
+      "vacation_adjust": 0,
+      "vacation_rate": 1
+    },
+    "identities": null,
+    "created_at": "2026-06-02T17:12:49.238373Z",
+    "updated_at": "2026-07-02T22:05:13.923938Z",
+    "is_anonymous": false
+  },
+  {
+    "id": "53494bf5-65b5-4c10-8b6e-cbd13dc05b82",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "donald@icb.com",
+    "email_confirmed_at": "2026-06-01T23:24:04.163774Z",
+    "phone": "",
+    "confirmed_at": "2026-06-01T23:24:04.163774Z",
+    "last_sign_in_at": "2026-06-02T14:58:39.278656Z",
+    "app_metadata": {
+      "provider": "email",
+      "providers": [
+        "email"
+      ]
+    },
+    "user_metadata": {
+      "branch_id": "heredia",
+      "branch_ids": [
+        "heredia",
+        "san-jose",
+        "cedi-barreal",
+        "alajuela"
+      ],
+      "cedula": "155826315120",
+      "email_verified": true,
+      "entry_time": "08:00",
+      "full_name": "DONALD TALAVERA RUGAMA",
+      "role": "colaborador",
+      "vacation_adjust": 0,
+      "vacation_rate": 1
+    },
+    "identities": null,
+    "created_at": "2026-06-01T23:24:04.114793Z",
+    "updated_at": "2026-07-08T15:17:01.195522Z",
+    "is_anonymous": false
+  },
+  {
+    "id": "a030029f-c39b-45ca-bb95-3521c0832c2e",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "edmundo@icb.com",
+    "email_confirmed_at": "2026-06-01T23:23:36.506526Z",
+    "phone": "",
+    "confirmed_at": "2026-06-01T23:23:36.506526Z",
+    "last_sign_in_at": "2026-07-02T20:34:29.532391Z",
+    "app_metadata": {
+      "provider": "email",
+      "providers": [
+        "email"
+      ]
+    },
+    "user_metadata": {
+      "branch_id": "heredia",
+      "branch_ids": [
+        "heredia",
+        "san-jose"
+      ],
+      "cedula": "356010159",
+      "email_verified": true,
+      "full_name": "EDMUNDO SANDI MORA",
+      "role": "colaborador",
+      "vacation_adjust": 0,
+      "vacation_rate": 1
+    },
+    "identities": null,
+    "created_at": "2026-06-01T23:23:36.503971Z",
+    "updated_at": "2026-07-08T18:07:44.259439Z",
+    "is_anonymous": false
+  },
+  {
+    "id": "575abeb5-a2f5-4371-8e25-6474ea68dfc4",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "frank@icb.com",
+    "email_confirmed_at": "2026-06-01T23:22:16.990854Z",
+    "phone": "",
+    "confirmed_at": "2026-06-01T23:22:16.990854Z",
+    "last_sign_in_at": "2026-06-19T14:27:32.897997Z",
+    "app_metadata": {
+      "provider": "email",
+      "providers": [
+        "email"
+      ]
+    },
+    "user_metadata": {
+      "avatar_url": "https://fnnzlkvohsaxwnmdymvc.supabase.co/storage/v1/object/public/imagenes/avatars/575abeb5-a2f5-4371-8e25-6474ea68dfc4-mr3xxstd.png",
+      "branch_id": "cartago",
+      "branch_ids": [
+        "cartago"
+      ],
+      "cedula": "304200261",
+      "email_verified": true,
+      "full_name": "FRANK ALEXANDER GUEVARA VALDERRAMOS",
+      "hire_date": "2026-01-05",
+      "role": "colaborador",
+      "vacation_adjust": 0,
+      "vacation_rate": 1
+    },
+    "identities": null,
+    "created_at": "2026-06-01T23:22:16.971462Z",
+    "updated_at": "2026-07-08T18:07:43.172514Z",
+    "is_anonymous": false
+  },
+  {
+    "id": "38a38450-2fb0-4da9-80c6-17a86b451b45",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "joseluis@icb.com",
+    "email_confirmed_at": "2026-06-01T23:21:27.381497Z",
+    "phone": "",
+    "confirmed_at": "2026-06-01T23:21:27.381497Z",
+    "last_sign_in_at": "2026-06-19T14:29:09.083901Z",
+    "app_metadata": {
+      "provider": "email",
+      "providers": [
+        "email"
+      ]
+    },
+    "user_metadata": {
+      "branch_id": "san-jose",
+      "branch_ids": [
+        "san-jose"
+      ],
+      "cedula": "155855164412",
+      "email_verified": true,
+      "full_name": "JOSE LUIS OROZCO VALVERDE",
+      "role": "colaborador",
+      "vacation_adjust": 0,
+      "vacation_rate": 1
+    },
+    "identities": null,
+    "created_at": "2026-06-01T23:21:27.375193Z",
+    "updated_at": "2026-07-07T21:08:41.997304Z",
+    "is_anonymous": false
+  },
+  {
+    "id": "15bbd1be-2fd8-49e6-a4c8-f5deaf153588",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "randall@icb.com",
+    "email_confirmed_at": "2026-06-01T23:20:55.165497Z",
+    "phone": "",
+    "confirmed_at": "2026-06-01T23:20:55.165497Z",
+    "last_sign_in_at": "2026-07-03T23:42:09.857011Z",
+    "app_metadata": {
+      "provider": "email",
+      "providers": [
+        "email"
+      ]
+    },
+    "user_metadata": {
+      "avatar_url": "https://fnnzlkvohsaxwnmdymvc.supabase.co/storage/v1/object/public/imagenes/avatars/15bbd1be-2fd8-49e6-a4c8-f5deaf153588-mr3y2apm.png",
+      "branch_id": "san-jose",
+      "branch_ids": [
+        "san-jose"
+      ],
+      "cedula": "115570904",
+      "email_verified": true,
+      "full_name": "RANDALL ALFARO RIVAS",
+      "role": "colaborador",
+      "vacation_adjust": 0,
+      "vacation_rate": 1
+    },
+    "identities": null,
+    "created_at": "2026-06-01T23:20:55.159201Z",
+    "updated_at": "2026-07-08T18:17:15.483365Z",
+    "is_anonymous": false
+  },
+  {
+    "id": "e1bd695b-34f5-4146-8073-183615137d6c",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "eduardo@icb.com",
+    "email_confirmed_at": "2026-06-01T23:20:32.173564Z",
+    "phone": "",
+    "confirmed_at": "2026-06-01T23:20:32.173564Z",
+    "last_sign_in_at": "2026-06-08T18:02:21.363747Z",
+    "app_metadata": {
+      "provider": "email",
+      "providers": [
+        "email"
+      ]
+    },
+    "user_metadata": {
+      "branch_id": "san-jose",
+      "branch_ids": [
+        "san-jose"
+      ],
+      "cedula": "119870371",
+      "email_verified": true,
+      "full_name": "EDUARDO SOLANO CARRILLO",
+      "role": "colaborador",
+      "vacation_adjust": 0,
+      "vacation_rate": 1
+    },
+    "identities": null,
+    "created_at": "2026-06-01T23:20:32.169772Z",
+    "updated_at": "2026-07-08T17:57:10.865173Z",
+    "is_anonymous": false
+  },
+  {
+    "id": "ab281fde-dca8-4bf5-a004-ef4c3f6b850b",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "silvia@icb.com",
+    "email_confirmed_at": "2026-06-01T23:20:05.597172Z",
+    "phone": "",
+    "confirmed_at": "2026-06-01T23:20:05.597172Z",
+    "last_sign_in_at": "2026-06-09T14:05:47.68381Z",
+    "app_metadata": {
+      "provider": "email",
+      "providers": [
+        "email"
+      ]
+    },
+    "user_metadata": {
+      "branch_id": "san-jose",
+      "branch_ids": [
+        "san-jose"
+      ],
+      "cedula": "603180008",
+      "email_verified": true,
+      "full_name": "SILVIA CARRILLO BRICENO",
+      "role": "colaborador",
+      "vacation_adjust": 0,
+      "vacation_rate": 1
+    },
+    "identities": null,
+    "created_at": "2026-06-01T23:20:05.571035Z",
+    "updated_at": "2026-07-06T18:50:42.427409Z",
+    "is_anonymous": false
+  },
+  {
+    "id": "ec76eb99-41cb-4c03-ab68-0da041becb8a",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "cilinia@icb.com",
+    "email_confirmed_at": "2026-06-01T23:18:46.877843Z",
+    "phone": "",
+    "confirmed_at": "2026-06-01T23:18:46.877843Z",
+    "last_sign_in_at": "2026-07-08T17:21:10.181763Z",
+    "app_metadata": {
+      "provider": "email",
+      "providers": [
+        "email"
+      ]
+    },
+    "user_metadata": {
+      "branch_id": "ciudad-quesada",
+      "branch_ids": [
+        "ciudad-quesada"
+      ],
+      "cedula": "205120921",
+      "email_verified": true,
+      "entry_time": "08:30",
+      "full_name": "CILINIA MURILLO",
+      "hire_date": "2022-04-01",
+      "role": "colaborador",
+      "vacation_adjust": 0,
+      "vacation_rate": 1
+    },
+    "identities": null,
+    "created_at": "2026-06-01T23:18:46.872467Z",
+    "updated_at": "2026-07-08T18:20:51.50449Z",
+    "is_anonymous": false
+  },
+  {
+    "id": "4d1f12f8-f5e6-480b-a45c-dabd23ed6e9b",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "wilkelm@icb.com",
+    "email_confirmed_at": "2026-06-01T23:18:03.296115Z",
+    "phone": "",
+    "confirmed_at": "2026-06-01T23:18:03.296115Z",
+    "last_sign_in_at": "2026-07-08T18:07:28.082373Z",
+    "app_metadata": {
+      "provider": "email",
+      "providers": [
+        "email"
+      ]
+    },
+    "user_metadata": {
+      "branch_id": "ciudad-quesada",
+      "branch_ids": [
+        "ciudad-quesada"
+      ],
+      "cedula": "109730099",
+      "email_verified": true,
+      "full_name": "WILKELM SOLANO PORTILLA",
+      "role": "colaborador",
+      "vacation_adjust": 0,
+      "vacation_rate": 1
+    },
+    "identities": null,
+    "created_at": "2026-06-01T23:18:03.275048Z",
+    "updated_at": "2026-07-08T18:07:28.159275Z",
+    "is_anonymous": false
+  },
+  {
+    "id": "498d3af7-aaa8-4d9d-ac1b-0e64cd5cf2ee",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "karla@icb.com",
+    "email_confirmed_at": "2026-06-01T23:16:46.708026Z",
+    "phone": "",
+    "confirmed_at": "2026-06-01T23:16:46.708026Z",
+    "last_sign_in_at": "2026-07-02T02:42:47.244642Z",
+    "app_metadata": {
+      "provider": "email",
+      "providers": [
+        "email"
+      ]
+    },
+    "user_metadata": {
+      "branch_ids": [],
+      "cedula": "110200708",
+      "email_verified": true,
+      "full_name": "KARLA ULATE MORALES",
+      "role": "admin",
+      "vacation_adjust": 0,
+      "vacation_rate": 1
+    },
+    "identities": null,
+    "created_at": "2026-06-01T23:16:46.695188Z",
+    "updated_at": "2026-07-03T21:49:02.250723Z",
+    "is_anonymous": false
+  },
+  {
+    "id": "55e84d14-3366-4d2a-80df-26d4f209e62c",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "eveling@icb.com",
+    "email_confirmed_at": "2026-06-01T23:16:07.683991Z",
+    "phone": "",
+    "confirmed_at": "2026-06-01T23:16:07.683991Z",
+    "last_sign_in_at": "2026-06-03T13:55:22.91469Z",
+    "app_metadata": {
+      "provider": "email",
+      "providers": [
+        "email"
+      ]
+    },
+    "user_metadata": {
+      "branch_id": "alajuela",
+      "branch_ids": [
+        "alajuela"
+      ],
+      "cedula": "2880104340",
+      "email_verified": true,
+      "entry_time": "08:00",
+      "full_name": "EVELING MARICELA ALEMAN VASQUEZ",
+      "role": "colaborador",
+      "vacation_adjust": 0,
+      "vacation_rate": 1
+    },
+    "identities": null,
+    "created_at": "2026-06-01T23:16:07.632936Z",
+    "updated_at": "2026-07-08T18:10:35.316293Z",
+    "is_anonymous": false
+  },
+  {
+    "id": "973866a2-f75b-4abe-99b4-236886643d23",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "dhadmin@icb.com",
+    "email_confirmed_at": "2026-05-22T14:46:33.039949Z",
+    "phone": "",
+    "confirmed_at": "2026-05-22T14:46:33.039949Z",
+    "last_sign_in_at": "2026-07-07T23:22:52.408565Z",
+    "app_metadata": {
+      "provider": "email",
+      "providers": [
+        "email"
+      ]
+    },
+    "user_metadata": {
+      "branch_ids": [],
+      "cedula": "502170551",
+      "email_verified": true,
+      "full_name": "HERBERTH TORRES CAMACHO",
+      "role": "admin",
+      "vacation_adjust": 0,
+      "vacation_rate": 1
+    },
+    "identities": null,
+    "created_at": "2026-05-22T14:46:33.023137Z",
+    "updated_at": "2026-07-08T18:34:36.374726Z",
+    "is_anonymous": false
+  }
+]

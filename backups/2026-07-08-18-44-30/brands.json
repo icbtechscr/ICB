@@ -1,0 +1,536 @@
+[
+  {
+    "id": "ff6c7766-a0d3-483d-9681-13cfa045422d",
+    "name": "X-Micro",
+    "slug": "x-micro",
+    "logo_url": null
+  },
+  {
+    "id": "9923f87b-4f47-4a77-919e-b4e493094d8f",
+    "name": "Teklink",
+    "slug": "teklink",
+    "logo_url": null
+  },
+  {
+    "id": "db03a263-41b2-4834-91bd-e53734f5bc25",
+    "name": "IMOU",
+    "slug": "imou",
+    "logo_url": null
+  },
+  {
+    "id": "1fc3af83-ee41-4141-bd77-06342548ec5f",
+    "name": "Nova",
+    "slug": "nova",
+    "logo_url": null
+  },
+  {
+    "id": "fde0bab2-f028-4b89-8f82-37a4b80f0cab",
+    "name": "Amazon",
+    "slug": "amazon",
+    "logo_url": null
+  },
+  {
+    "id": "c6532b61-cbf3-4e7e-b1cf-2a7232c58e45",
+    "name": "Hikvision",
+    "slug": "hikvision",
+    "logo_url": null
+  },
+  {
+    "id": "b7a3685e-fdaa-4e36-be4b-eaec01ff6577",
+    "name": "TP-Link",
+    "slug": "tp-link",
+    "logo_url": null
+  },
+  {
+    "id": "95e3e8ac-c6be-40e3-97b0-31b23f828576",
+    "name": "Ruijie",
+    "slug": "ruijie",
+    "logo_url": null
+  },
+  {
+    "id": "3a6ec3a9-3328-435f-a507-89e459be58d2",
+    "name": "CDP",
+    "slug": "cdp",
+    "logo_url": null
+  },
+  {
+    "id": "2922b2be-d993-4972-9643-e6e4d90bc68e",
+    "name": "Dahua",
+    "slug": "dahua",
+    "logo_url": null
+  },
+  {
+    "id": "de238714-e3d3-445a-92ae-3404df5494ea",
+    "name": "Forza",
+    "slug": "forza",
+    "logo_url": null
+  },
+  {
+    "id": "e108c3c7-0105-48e5-bfaa-2c2bd3795a05",
+    "name": "EAST",
+    "slug": "east",
+    "logo_url": null
+  },
+  {
+    "id": "6bf68ae5-4abb-4ac7-8f61-23bf33f9f8f1",
+    "name": "Lantek",
+    "slug": "lantek",
+    "logo_url": null
+  },
+  {
+    "id": "07e849a0-297d-45b6-ada9-4f95be4bbaa1",
+    "name": "Ubiquiti",
+    "slug": "ubiquiti",
+    "logo_url": null
+  },
+  {
+    "id": "91edf5fd-49e1-4c0c-b78a-9118d536de03",
+    "name": "Kodak",
+    "slug": "kodak",
+    "logo_url": null
+  },
+  {
+    "id": "f2259ef6-f8d6-4cd0-bcdd-78bd3d7137b8",
+    "name": "Adata",
+    "slug": "adata",
+    "logo_url": null
+  },
+  {
+    "id": "2c31584b-1561-4568-b777-b75179115278",
+    "name": "Ezviz",
+    "slug": "ezviz",
+    "logo_url": null
+  },
+  {
+    "id": "8ccba00b-cfbc-4024-914d-c7a9b64ae3bb",
+    "name": "Kingston",
+    "slug": "kingston",
+    "logo_url": null
+  },
+  {
+    "id": "4b90bb10-d4cc-4667-ace4-ab6232ac6859",
+    "name": "Dell",
+    "slug": "dell",
+    "logo_url": null
+  },
+  {
+    "id": "084769ab-f5d7-4637-98a4-985845391951",
+    "name": "Apple",
+    "slug": "apple",
+    "logo_url": null
+  },
+  {
+    "id": "4baae606-c1a1-454c-86d8-23cd54599d97",
+    "name": "Logitech",
+    "slug": "logitech",
+    "logo_url": null
+  },
+  {
+    "id": "3655cc11-fc17-434d-9dc8-3d78d6d7f6c0",
+    "name": "Epson",
+    "slug": "epson",
+    "logo_url": null
+  },
+  {
+    "id": "485c1514-75e1-4cb1-b7d9-c85459d3ed37",
+    "name": "ZKTeco",
+    "slug": "zkteco",
+    "logo_url": null
+  },
+  {
+    "id": "ac5c2bf4-e420-4685-88b8-e868bcc1668c",
+    "name": "Honeywell",
+    "slug": "honeywell",
+    "logo_url": null
+  },
+  {
+    "id": "f7f4f9fd-3175-4e84-a822-ab4fc072c9d3",
+    "name": "Xiaomi",
+    "slug": "xiaomi",
+    "logo_url": null
+  },
+  {
+    "id": "65334575-a307-48b5-92a6-940c7ea099b5",
+    "name": "3nstar",
+    "slug": "3nstar",
+    "logo_url": null
+  },
+  {
+    "id": "5ed23295-75e1-4dfb-a4d0-01b94aadabd9",
+    "name": "Cudy",
+    "slug": "cudy",
+    "logo_url": null
+  },
+  {
+    "id": "7d2b0c79-15c3-41ed-93f8-1873e92c1119",
+    "name": "Seagate",
+    "slug": "seagate",
+    "logo_url": null
+  },
+  {
+    "id": "3e270ee4-f7d8-41d2-8170-e9bcb88c8c68",
+    "name": "Mikrotik",
+    "slug": "mikrotik",
+    "logo_url": null
+  },
+  {
+    "id": "5f1b1ee4-a479-4b02-98cf-6249cbab3609",
+    "name": "Lenovo",
+    "slug": "lenovo",
+    "logo_url": null
+  },
+  {
+    "id": "cbc795f8-9061-4c5d-b9f5-8af33bf3b021",
+    "name": "Samsung",
+    "slug": "samsung",
+    "logo_url": null
+  },
+  {
+    "id": "7d4fdb1c-55eb-4d5c-9961-f5842ab22ac1",
+    "name": "APC",
+    "slug": "apc",
+    "logo_url": null
+  },
+  {
+    "id": "eb96b5e8-2e56-4fa4-8629-9a3b75e0ee76",
+    "name": "Klip Xtreme",
+    "slug": "klip-xtreme",
+    "logo_url": null
+  },
+  {
+    "id": "5a5c2ca2-9fed-41b4-81eb-71561dbd88ad",
+    "name": "Western Digital",
+    "slug": "western-digital",
+    "logo_url": null
+  },
+  {
+    "id": "56160f59-a175-45b2-95a9-c71d6064a7de",
+    "name": "SPROTEK",
+    "slug": "sprotek",
+    "logo_url": null
+  },
+  {
+    "id": "e7154cf7-c961-4cba-81a7-fe78f01d6614",
+    "name": "MERCUSYS",
+    "slug": "mercusys",
+    "logo_url": null
+  },
+  {
+    "id": "4ed71571-855c-4225-872b-14a6eed44aea",
+    "name": "MIDEA",
+    "slug": "midea",
+    "logo_url": null
+  },
+  {
+    "id": "e0482a33-11d7-4b42-b56f-36e67e07da57",
+    "name": "LINKSYS",
+    "slug": "linksys",
+    "logo_url": null
+  },
+  {
+    "id": "bf72020d-a75b-49a4-8fd2-54d0cece053c",
+    "name": "WITEK",
+    "slug": "witek",
+    "logo_url": null
+  },
+  {
+    "id": "1036c4c6-20ea-4465-9ae8-7808e2a6152b",
+    "name": "NEXXT",
+    "slug": "nexxt",
+    "logo_url": null
+  },
+  {
+    "id": "81ace2aa-6274-4164-9969-1008f1bde53c",
+    "name": "XTECH",
+    "slug": "xtech",
+    "logo_url": null
+  },
+  {
+    "id": "62649199-6cd3-4fe0-bfe4-d1d788a24b4f",
+    "name": "AGILER",
+    "slug": "agiler",
+    "logo_url": null
+  },
+  {
+    "id": "2a158744-2a98-4597-9c10-b3a131c9e429",
+    "name": "FRIGIDAIRE",
+    "slug": "frigidaire",
+    "logo_url": null
+  },
+  {
+    "id": "78c91b4e-5630-4640-ab62-7e1f088d22ce",
+    "name": "STINGRAY",
+    "slug": "stingray",
+    "logo_url": null
+  },
+  {
+    "id": "3d2844ee-958f-4877-8200-11174387301b",
+    "name": "IFLUX",
+    "slug": "iflux",
+    "logo_url": null
+  },
+  {
+    "id": "8be04129-9a8f-4d31-bffd-c15c468eb36f",
+    "name": "UNIARCH",
+    "slug": "uniarch",
+    "logo_url": null
+  },
+  {
+    "id": "f6207505-d135-4b8e-9def-0bd253a1e978",
+    "name": "UNV",
+    "slug": "unv",
+    "logo_url": null
+  },
+  {
+    "id": "d824d499-644b-48dd-8062-c012d41a42a5",
+    "name": "INTEL",
+    "slug": "intel",
+    "logo_url": null
+  },
+  {
+    "id": "af809cc7-2d9d-40e5-b1cb-d35b0777d56a",
+    "name": "ASUS",
+    "slug": "asus",
+    "logo_url": null
+  },
+  {
+    "id": "d52ba7b3-a25e-45b6-9819-49f0b39f6e31",
+    "name": "SAT",
+    "slug": "sat",
+    "logo_url": null
+  },
+  {
+    "id": "fe90f7d6-f68c-4c16-8a6f-afe3ba77555d",
+    "name": "GRANDSTREAM",
+    "slug": "grandstream",
+    "logo_url": null
+  },
+  {
+    "id": "cd9c386f-69c8-41a0-8c98-4c87a4926836",
+    "name": "PROSKIT",
+    "slug": "proskit",
+    "logo_url": null
+  },
+  {
+    "id": "21a85ead-5b92-49ec-87e0-26758b0bd974",
+    "name": "HILOOK",
+    "slug": "hilook",
+    "logo_url": null
+  },
+  {
+    "id": "c072d80d-7b2d-4825-95d9-2ad98f9873a8",
+    "name": "UNNO",
+    "slug": "unno",
+    "logo_url": null
+  },
+  {
+    "id": "a29f96e1-d47c-4d71-b5e7-94806a5a59dc",
+    "name": "UGREEN",
+    "slug": "ugreen",
+    "logo_url": null
+  },
+  {
+    "id": "b1096069-300b-4b2e-a286-e96a747bd440",
+    "name": "ARGOM",
+    "slug": "argom",
+    "logo_url": null
+  },
+  {
+    "id": "e498c4bd-4472-42a3-a6e7-15199ab71b2f",
+    "name": "POWER XL",
+    "slug": "power-xl",
+    "logo_url": null
+  },
+  {
+    "id": "b8477e77-00c2-4dba-a5ef-81ee71b25bc1",
+    "name": "AMD",
+    "slug": "amd",
+    "logo_url": null
+  },
+  {
+    "id": "6cbdcbf4-ae86-4e7c-b681-dde4a2324a90",
+    "name": "JVC",
+    "slug": "jvc",
+    "logo_url": null
+  },
+  {
+    "id": "6f1cfaea-f35d-434a-81a6-2e7fae769645",
+    "name": "TARGUS",
+    "slug": "targus",
+    "logo_url": null
+  },
+  {
+    "id": "ae23dfe3-b561-47af-b3c5-46dae62b7098",
+    "name": "EVGA",
+    "slug": "evga",
+    "logo_url": null
+  },
+  {
+    "id": "399f6855-5e1a-46d7-8be2-58ae0138956f",
+    "name": "BIOSTAR",
+    "slug": "biostar",
+    "logo_url": null
+  },
+  {
+    "id": "6492c96a-35ed-42e2-82fd-ddc11b87b9c6",
+    "name": "BOETEC",
+    "slug": "boetec",
+    "logo_url": null
+  },
+  {
+    "id": "8c9743c4-3528-4cca-90e9-4a82c2a11e0c",
+    "name": "GYGABITE",
+    "slug": "gygabite",
+    "logo_url": null
+  },
+  {
+    "id": "24e066c4-5006-4c9a-b6c1-ce22baa038be",
+    "name": "MSI",
+    "slug": "msi",
+    "logo_url": null
+  },
+  {
+    "id": "73fce942-23c8-4bd5-83f2-186d30dad097",
+    "name": "PATRIOT",
+    "slug": "patriot",
+    "logo_url": null
+  },
+  {
+    "id": "1fe84bbb-e9b0-4156-a762-d8ea65ebea24",
+    "name": "HIKSEMI",
+    "slug": "hiksemi",
+    "logo_url": null
+  },
+  {
+    "id": "276c720e-e765-4517-b219-b40cb5a7fc1d",
+    "name": "MUSHKIN",
+    "slug": "mushkin",
+    "logo_url": null
+  },
+  {
+    "id": "34786649-ac57-46d4-8829-f344d3571b28",
+    "name": "ARTEK",
+    "slug": "artek",
+    "logo_url": null
+  },
+  {
+    "id": "56b3faf2-c8b9-4f38-abf1-bb70e1661079",
+    "name": "VIEWSONIC",
+    "slug": "viewsonic",
+    "logo_url": null
+  },
+  {
+    "id": "53a25da5-7aec-4551-bb66-9c5cc9a75f8a",
+    "name": "HP",
+    "slug": "hp",
+    "logo_url": null
+  },
+  {
+    "id": "ec4c17da-8e39-4bbc-b54a-bb365e96771e",
+    "name": "TOSHIBA",
+    "slug": "toshiba",
+    "logo_url": null
+  },
+  {
+    "id": "c43d3505-82c4-42e8-845f-e8cd0c46ddf3",
+    "name": "AOC",
+    "slug": "aoc",
+    "logo_url": null
+  },
+  {
+    "id": "06d413d0-61b7-4227-9406-5a830c766123",
+    "name": "ERICK-SON",
+    "slug": "erick-son",
+    "logo_url": null
+  },
+  {
+    "id": "b99e2f2b-4968-4ff5-981a-213c9e5d8092",
+    "name": "ROKU",
+    "slug": "roku",
+    "logo_url": null
+  },
+  {
+    "id": "22c4fd96-c641-49cc-a83d-505764f1ef50",
+    "name": "AEROCOOL",
+    "slug": "aerocool",
+    "logo_url": null
+  },
+  {
+    "id": "1cb4d106-cdbe-4c0d-bc33-f71f15d22fed",
+    "name": "KENNETH COLE",
+    "slug": "kenneth-cole",
+    "logo_url": null
+  },
+  {
+    "id": "2471e820-5e39-417d-96ae-95aecb5e6c54",
+    "name": "SABO",
+    "slug": "sabo",
+    "logo_url": null
+  },
+  {
+    "id": "8bd50e38-6fe5-491d-b860-d0627ffece1c",
+    "name": "OSTA",
+    "slug": "osta",
+    "logo_url": null
+  },
+  {
+    "id": "9b3fe4ff-28ec-462f-9a96-7b661041a919",
+    "name": "TEKNO",
+    "slug": "tekno",
+    "logo_url": null
+  },
+  {
+    "id": "e97c0b8e-1f3b-4c83-a3e4-1304e3ac716a",
+    "name": "CHIQ",
+    "slug": "chiq",
+    "logo_url": null
+  },
+  {
+    "id": "15c2f629-20b3-4076-874f-db412bdc0574",
+    "name": "LG",
+    "slug": "lg",
+    "logo_url": null
+  },
+  {
+    "id": "890e6259-0ee1-4baf-81aa-bc7be24e2e7d",
+    "name": "WINDMERE",
+    "slug": "windmere",
+    "logo_url": null
+  },
+  {
+    "id": "7e157566-0e14-42ec-838e-32dccbd5f234",
+    "name": "Black&Decker",
+    "slug": "black-decker",
+    "logo_url": null
+  },
+  {
+    "id": "17c7a52a-7a9b-45c4-8c93-904eb9c2089c",
+    "name": "CABLINK",
+    "slug": "cablink",
+    "logo_url": null
+  },
+  {
+    "id": "aabd8fb0-41b6-4078-a9ed-00582ed613fe",
+    "name": "WESTINGHOUSE",
+    "slug": "westinghouse",
+    "logo_url": null
+  },
+  {
+    "id": "f72fb60f-4e9c-42e4-bfd1-4af0dd58b3b5",
+    "name": "ONN",
+    "slug": "onn",
+    "logo_url": null
+  },
+  {
+    "id": "a993e8ab-261d-4ab3-a931-fcbd9b4d677e",
+    "name": "WACOM",
+    "slug": "wacom",
+    "logo_url": null
+  },
+  {
+    "id": "e2780c1e-369e-4bf3-9118-7701fb7805f4",
+    "name": "MAGNUS",
+    "slug": "magnus",
+    "logo_url": null
+  }
+]

@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "framer-motion";
+import { ProductImage } from "@/components/ProductImage";
 
 type Cat = {
   id: string;
@@ -60,17 +60,13 @@ export function CategoryCarousel({
               className="group/item flex w-32 shrink-0 flex-col items-center sm:w-40"
             >
               <div className="relative flex aspect-square w-28 items-center justify-center overflow-hidden rounded-full bg-[#ffffff] ring-1 ring-ink-200 transition-all duration-300 group-hover/item:-translate-y-1 group-hover/item:ring-brand-400 group-hover/item:shadow-lift sm:w-36">
-                {c.imageUrl ? (
-                  <Image
-                    src={c.imageUrl}
-                    alt={c.name}
-                    fill
-                    sizes="(max-width: 640px) 112px, 144px"
-                    className="object-contain p-4 transition-transform duration-500 group-hover/item:scale-110"
-                  />
-                ) : (
-                  <span className="text-xs text-ink-400">{c.name}</span>
-                )}
+                <ProductImage
+                  src={c.imageUrl}
+                  alt={c.name}
+                  sizes="(max-width: 640px) 112px, 144px"
+                  className="p-4 transition-transform duration-500 group-hover/item:scale-110"
+                  placeholderLabel={c.name}
+                />
                 <span className="absolute -top-1 right-1 rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-soft">
                   {c.count}
                 </span>
