@@ -34,8 +34,12 @@ export function CatalogFilters({
   const cat = params.get("cat") ?? "";
   const brand = params.get("brand") ?? "";
   const sort = params.get("sort") ?? "relevancia";
+  const stock = params.get("stock") ?? "";
   const active =
-    (cat ? 1 : 0) + (brand ? 1 : 0) + (sort !== "relevancia" ? 1 : 0);
+    (cat ? 1 : 0) +
+    (brand ? 1 : 0) +
+    (stock ? 1 : 0) +
+    (sort !== "relevancia" ? 1 : 0);
 
   const useTree = categoryTree.length > 0;
 
@@ -157,6 +161,17 @@ export function CatalogFilters({
                 {b}
               </option>
             ))}
+          </select>
+
+          <select
+            value={stock}
+            onChange={(e) => update("stock", e.target.value)}
+            className={selectCls}
+            aria-label="Disponibilidad"
+          >
+            <option value="">Toda disponibilidad</option>
+            <option value="in">En stock</option>
+            <option value="out">Agotados</option>
           </select>
 
           <select

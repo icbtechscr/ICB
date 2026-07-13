@@ -586,6 +586,7 @@ export async function getBrands(): Promise<string[]> {
 }
 
 export type CatalogSort = "relevancia" | "precio-asc" | "precio-desc" | "nombre" | "nuevos";
+export type CatalogStock = "in" | "out";
 
 export type CatalogParams = {
   page?: number;
@@ -593,6 +594,7 @@ export type CatalogParams = {
   category?: string; // slug
   brand?: string; // name
   sort?: CatalogSort;
+  stock?: CatalogStock;
   q?: string; // texto de búsqueda (nombre, SKU, descripción corta)
 };
 
@@ -623,6 +625,12 @@ export async function getCatalogProducts(params: CatalogParams): Promise<{
   }
   if (params.brand) {
     query = query.eq("brand.name", params.brand);
+  }
+  if (params.stock === "in") {
+    query = query.eq("in_stock", true);
+  }
+  if (params.stock === "out") {
+    query = query.eq("in_stock", false);
   }
   const needle = params.q?.trim();
   if (needle) {

@@ -7,6 +7,7 @@ import {
   getCategoryTree,
   getBrands,
   type CatalogSort,
+  type CatalogStock,
 } from "@/lib/products";
 
 export const metadata = { title: "Catálogo" };
@@ -29,6 +30,7 @@ export default async function ProductsPage({
     cat?: string;
     brand?: string;
     sort?: string;
+    stock?: string;
     q?: string;
   }>;
 }) {
@@ -38,13 +40,17 @@ export default async function ProductsPage({
   const cat = params.cat || undefined;
   const brand = params.brand || undefined;
   const q = params.q?.trim() || undefined;
+  const stock: CatalogStock | undefined =
+    params.stock === "out" || params.stock === "in"
+      ? params.stock
+      : undefined;
   const sort: CatalogSort = SORTS.includes(params.sort as CatalogSort)
     ? (params.sort as CatalogSort)
     : "relevancia";
 
   const [{ products: slice, total }, categories, categoryTree, brands] =
     await Promise.all([
-      getCatalogProducts({ page, perPage, category: cat, brand, sort, q }),
+      getCatalogProducts({ page, perPage, category: cat, brand, sort, stock, q }),
       getTopCategories(100),
       getCategoryTree(),
       getBrands(),
@@ -57,6 +63,7 @@ export default async function ProductsPage({
     if (q) qs.set("q", q);
     if (cat) qs.set("cat", cat);
     if (brand) qs.set("brand", brand);
+    if (stock) qs.set("stock", stock);
     if (sort !== "relevancia") qs.set("sort", sort);
     if (p > 1) qs.set("page", String(p));
     const s = qs.toString();
@@ -79,7 +86,7 @@ export default async function ProductsPage({
           </h1>
           <p className="mt-1 text-sm text-ink-500">
             {total} producto{total !== 1 ? "s" : ""}
-            {q || cat || brand ? " (filtrado)" : " disponibles"}
+            {q || cat || brand || stock ? " (filtrado)" : " disponibles"}
           </p>
         </div>
 

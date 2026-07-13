@@ -33,6 +33,20 @@ export default async function AdminProductsPage({
     for (const [k, v] of Object.entries(extra)) sp.set(k, String(v));
     return sp.toString();
   };
+  const filterHref = (filter: "all" | "onSale" | "outOfStock") => {
+    const sp = new URLSearchParams();
+    if (q) sp.set("q", q);
+    if (filter === "onSale") sp.set("on_sale", "1");
+    if (filter === "outOfStock") sp.set("out", "1");
+    const s = sp.toString();
+    return s ? `/admin/productos?${s}` : "/admin/productos";
+  };
+  const filterLinkClass = (active: boolean) =>
+    `rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+      active
+        ? "border-brand-600 bg-brand-600 text-white"
+        : "border-ink-200 bg-white text-ink-600 hover:bg-ink-50"
+    }`;
   const activeFilter = onSale ? "Ofertas" : outOfStock ? "Agotados" : null;
 
   return (
@@ -67,6 +81,19 @@ export default async function AdminProductsPage({
         {onSale && <input type="hidden" name="on_sale" value="1" />}
         {outOfStock && <input type="hidden" name="out" value="1" />}
       </form>
+
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-ink-500">Ver:</span>
+        <Link href={filterHref("all")} className={filterLinkClass(!onSale && !outOfStock)}>
+          Todos
+        </Link>
+        <Link href={filterHref("onSale")} className={filterLinkClass(onSale)}>
+          Ofertas
+        </Link>
+        <Link href={filterHref("outOfStock")} className={filterLinkClass(outOfStock)}>
+          Agotados
+        </Link>
+      </div>
 
       {activeFilter && (
         <div className="mb-4 flex items-center gap-2 text-sm">
