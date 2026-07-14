@@ -9,6 +9,7 @@ import {
   TrendingUp,
   ShoppingBag,
   User,
+  Store,
   type LucideIcon,
 } from "lucide-react";
 import { canSell, type UserRole } from "@/lib/roles";
@@ -75,6 +76,16 @@ export const PORTAL_MODULES: PortalModule[] = [
     navLabel: "Vender",
     description: "Publicá productos del catálogo en tu página.",
     Icon: Megaphone,
+    requires: "sell",
+    hideInNav: true,
+  },
+  {
+    id: "mercadolibre",
+    href: "/portal/mercadolibre",
+    label: "MercadoLibre",
+    navLabel: "MercadoLibre",
+    description: "Conectá tu cuenta y publicá el catálogo en MercadoLibre.",
+    Icon: Store,
     requires: "sell",
     hideInNav: true,
   },
