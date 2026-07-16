@@ -1,77 +1,116 @@
+import { writeFile } from "node:fs/promises";
 import sharp from "sharp";
 
-// Ícono "rounded" (esquinas redondeadas) para uso general / Apple.
-const rounded = `
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#16225c"/>
-      <stop offset="1" stop-color="#2b3aa1"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="112" fill="url(#g)"/>
-  <circle cx="248" cy="236" r="118" fill="none" stroke="#ffffff" stroke-width="22"/>
-  <line x1="248" y1="236" x2="248" y2="166" stroke="#ffffff" stroke-width="20" stroke-linecap="round"/>
-  <line x1="248" y1="236" x2="300" y2="262" stroke="#ffffff" stroke-width="20" stroke-linecap="round"/>
-  <circle cx="338" cy="322" r="60" fill="#55cd6c" stroke="#16225c" stroke-width="14"/>
-  <path d="M312 322 l17 17 l32 -36" fill="none" stroke="#0f1840" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="256" y="446" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="62" font-weight="800" fill="#ffffff" letter-spacing="6">ICB</text>
-</svg>`;
+const logoPath = "public/icb-logo.png";
 
-// Versión "maskable": fondo a sangre completa (sin esquinas transparentes)
-// y contenido dentro de la zona segura (~80%).
-const maskable = `
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#16225c"/>
-      <stop offset="1" stop-color="#2b3aa1"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" fill="url(#g2)"/>
-  <g transform="translate(256,256) scale(0.74) translate(-256,-256)">
-    <circle cx="248" cy="236" r="118" fill="none" stroke="#ffffff" stroke-width="22"/>
-    <line x1="248" y1="236" x2="248" y2="166" stroke="#ffffff" stroke-width="20" stroke-linecap="round"/>
-    <line x1="248" y1="236" x2="300" y2="262" stroke="#ffffff" stroke-width="20" stroke-linecap="round"/>
-    <circle cx="338" cy="322" r="60" fill="#55cd6c" stroke="#16225c" stroke-width="14"/>
-    <path d="M312 322 l17 17 l32 -36" fill="none" stroke="#0f1840" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
-    <text x="256" y="446" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="62" font-weight="800" fill="#ffffff" letter-spacing="6">ICB</text>
-  </g>
-</svg>`;
+async function squareLogo(size, { safeArea = 0.9 } = {}) {
+  const logoSize = Math.round(size * safeArea);
+  const logo = await sharp(logoPath)
+    .resize(logoSize, logoSize, {
+      fit: "contain",
+      background: { r: 255, g: 255, b: 255, alpha: 0 },
+    })
+    .png()
+    .toBuffer();
 
-const r = Buffer.from(rounded);
-const m = Buffer.from(maskable);
+  return sharp({
+    create: {
+      width: size,
+      height: size,
+      channels: 4,
+      background: "#ffffff",
+    },
+  })
+    .composite([{ input: logo, gravity: "center" }])
+    .png()
+    .toBuffer();
+}
+
+function createIco(pngs) {
+  const header = Buffer.alloc(6);
+  header.writeUInt16LE(0, 0);
+  header.writeUInt16LE(1, 2);
+  header.writeUInt16LE(pngs.length, 4);
+
+  let offset = 6 + pngs.length * 16;
+  const entries = pngs.map(({ size, data }) => {
+    const entry = Buffer.alloc(16);
+    entry.writeUInt8(size === 256 ? 0 : size, 0);
+    entry.writeUInt8(size === 256 ? 0 : size, 1);
+    entry.writeUInt8(0, 2);
+    entry.writeUInt8(0, 3);
+    entry.writeUInt16LE(1, 4);
+    entry.writeUInt16LE(32, 6);
+    entry.writeUInt32LE(data.length, 8);
+    entry.writeUInt32LE(offset, 12);
+    offset += data.length;
+    return entry;
+  });
+
+  return Buffer.concat([header, ...entries, ...pngs.map(({ data }) => data)]);
+}
+
+const [favicon32, favicon48, favicon192, favicon256, icon512, maskable512] =
+  await Promise.all([
+    squareLogo(32, { safeArea: 0.96 }),
+    squareLogo(48, { safeArea: 0.94 }),
+    squareLogo(192, { safeArea: 0.92 }),
+    squareLogo(256, { safeArea: 0.92 }),
+    squareLogo(512, { safeArea: 0.9 }),
+    squareLogo(512, { safeArea: 0.72 }),
+  ]);
 
 await Promise.all([
-  sharp(r).resize(512, 512).png().toFile("public/icon-512.png"),
-  sharp(r).resize(192, 192).png().toFile("public/icon-192.png"),
-  sharp(m).resize(512, 512).png().toFile("public/icon-maskable-512.png"),
-  // Apple: cuadrado opaco (iOS aplica su propia máscara redondeada).
-  sharp(m).resize(180, 180).png().toFile("public/apple-touch-icon.png"),
+  writeFile("public/favicon-32.png", favicon32),
+  writeFile("public/favicon-48.png", favicon48),
+  writeFile("public/favicon-192.png", favicon192),
+  writeFile("public/icon-192.png", favicon192),
+  writeFile("public/icon-512.png", icon512),
+  writeFile("public/icon-maskable-512.png", maskable512),
+  sharp(favicon256).resize(180, 180).png().toFile("public/apple-touch-icon.png"),
+  writeFile(
+    "src/app/favicon.ico",
+    createIco([
+      { size: 32, data: favicon32 },
+      { size: 48, data: favicon48 },
+      { size: 256, data: favicon256 },
+    ])
+  ),
 ]);
 
-// Favicon (pestaña del navegador): logo de marca ICB sobre fondo blanco cuadrado.
-const faviconBase = await sharp({
-  create: { width: 512, height: 512, channels: 4, background: "#ffffff" },
-})
-  .composite([
-    {
-      input: await sharp("public/icb-logo.png")
-        .resize(472, 472, {
-          fit: "contain",
-          background: { r: 255, g: 255, b: 255, alpha: 0 },
-        })
-        .toBuffer(),
-      gravity: "center",
-    },
-  ])
+const ogBackground = Buffer.from(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
+    <defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#0f1840"/>
+        <stop offset="1" stop-color="#202f82"/>
+      </linearGradient>
+    </defs>
+    <rect width="1200" height="630" fill="url(#bg)"/>
+    <circle cx="1110" cy="80" r="250" fill="#55cd6c" opacity="0.12"/>
+    <circle cx="80" cy="610" r="220" fill="#55cd6c" opacity="0.08"/>
+    <rect x="240" y="90" width="720" height="360" rx="44" fill="#ffffff"/>
+    <text x="600" y="520" fill="#ffffff" text-anchor="middle"
+      font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="700">
+      Tecnología · Seguridad · Redes · POS
+    </text>
+    <text x="600" y="570" fill="#bfc7ec" text-anchor="middle"
+      font-family="Arial, Helvetica, sans-serif" font-size="25">
+      Costa Rica · icbtechscr.com
+    </text>
+  </svg>
+`);
+const ogLogo = await sharp(logoPath)
+  .resize(620, 300, {
+    fit: "contain",
+    background: { r: 255, g: 255, b: 255, alpha: 0 },
+  })
   .png()
   .toBuffer();
 
-await Promise.all([
-  sharp(faviconBase).resize(192, 192).png().toFile("public/favicon-192.png"),
-  sharp(faviconBase).resize(48, 48).png().toFile("public/favicon-48.png"),
-  sharp(faviconBase).resize(32, 32).png().toFile("public/favicon-32.png"),
-]);
+await sharp(ogBackground)
+  .composite([{ input: ogLogo, left: 290, top: 120 }])
+  .png()
+  .toFile("public/og-icb.png");
 
-console.log("Iconos generados ✔");
+console.log("Iconos ICB e imagen social generados ✔");

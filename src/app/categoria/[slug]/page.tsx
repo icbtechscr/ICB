@@ -12,7 +12,7 @@ import {
   type Product,
 } from "@/lib/products";
 import { getCategoryGroup } from "@/lib/category-tree";
-import { absoluteUrl } from "@/lib/site";
+import { absoluteUrl, SITE_NAME, SITE_OG_IMAGE_URL } from "@/lib/site";
 
 export const revalidate = 60;
 
@@ -55,10 +55,13 @@ async function resolveCategory(
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ sort?: string; brand?: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const filters = await searchParams;
   const view = await resolveCategory(slug);
   if (!view) return { title: "Categoría no encontrada" };
   const desc = `Comprá ${view.name.toLowerCase()} en ICB Tech Costa Rica. Productos con garantía oficial y envío a todo el país.`;
@@ -67,7 +70,21 @@ export async function generateMetadata({
     title: view.name,
     description: desc,
     alternates: { canonical: url },
-    openGraph: { title: view.name, description: desc, url },
+    robots:
+      filters.sort || filters.brand ? { index: false, follow: true } : undefined,
+    openGraph: {
+      title: view.name,
+      description: desc,
+      url,
+      siteName: SITE_NAME,
+      images: [SITE_OG_IMAGE_URL],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: view.name,
+      description: desc,
+      images: [SITE_OG_IMAGE_URL],
+    },
   };
 }
 
@@ -97,8 +114,39 @@ export default async function CategoryPage({
     : view.products;
   products = sortProducts(products, sort);
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Inicio",
+        item: absoluteUrl("/"),
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Catálogo",
+        item: absoluteUrl("/productos"),
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: view.name,
+        item: absoluteUrl(`/categoria/${slug}`),
+      },
+    ],
+  };
+
   return (
     <div className="bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
       <div className="mx-auto max-w-7xl px-4 pb-20 pt-8">
         <nav className="mb-6 flex flex-wrap items-center gap-1 text-xs font-medium text-ink-500">
           <Link href="/" className="hover:text-brand-600">

@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { rewriteMediaUrl } from "./image-url";
+import { decodeHtml } from "./utils";
 import {
   isPurchasableStock,
   isMissingStockStatusError,
@@ -88,16 +89,20 @@ function rowToProduct(r: Row): Product {
     .sort((a, b) => a.position - b.position)
     .map((i) => ({
       src: rewriteMediaUrl(i.url),
-      alt: i.alt ?? "",
+      alt: decodeHtml(i.alt ?? r.name),
       position: i.position,
     }));
   const categories = (r.product_categories ?? [])
     .map((pc) => pc.category)
-    .filter((c): c is { id: string; name: string; slug: string } => !!c);
+    .filter((c): c is { id: string; name: string; slug: string } => !!c)
+    .map((category) => ({
+      ...category,
+      name: decodeHtml(category.name),
+    }));
   return {
     id: r.id,
     wooId: r.woo_id,
-    name: r.name,
+    name: decodeHtml(r.name),
     slug: r.slug,
     sku: r.sku,
     shortDescription: r.short_description ?? "",
@@ -110,7 +115,7 @@ function rowToProduct(r: Row): Product {
     salePriceCRC: r.sale_price_crc,
     images,
     categories,
-    brand: r.brand?.name ?? null,
+    brand: r.brand?.name ? decodeHtml(r.brand.name) : null,
   };
 }
 
@@ -608,16 +613,28 @@ export async function getProductSlugs(limit = 100): Promise<string[]> {
 
 // Para sitemap: todos los slugs (con updated_at si existe)
 export async function getAllProductSlugs(): Promise<
-  { slug: string; updatedAt: string | null }[]
+  { slug: string; updatedAt: string | null; imageUrl: string | null }[]
 > {
   const { data, error } = await supabase
     .from("products")
-    .select("slug, updated_at")
+    .select("slug, updated_at, product_images(url, position)")
     .range(0, 4999);
   if (error) throw error;
-  return ((data ?? []) as { slug: string; updated_at: string | null }[]).map(
-    (r) => ({ slug: r.slug, updatedAt: r.updated_at })
-  );
+  return (
+    (data ?? []) as {
+      slug: string;
+      updated_at: string | null;
+      product_images: { url: string; position: number }[];
+    }[]
+  ).map((r) => ({
+    slug: r.slug,
+    updatedAt: r.updated_at,
+    imageUrl: r.product_images?.length
+      ? rewriteMediaUrl(
+          [...r.product_images].sort((a, b) => a.position - b.position)[0].url
+        )
+      : null,
+  }));
 }
 
 export async function getAllCategorySlugs(): Promise<string[]> {

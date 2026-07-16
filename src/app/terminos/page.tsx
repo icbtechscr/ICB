@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { LegalPage, LegalSection } from "@/components/LegalPage";
+import { absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Términos y condiciones",
   description:
     "Términos y condiciones de uso y compra en el sitio de ICB Tech Costa Rica.",
+  alternates: { canonical: absoluteUrl("/terminos") },
 };
 
 export default function TerminosPage() {

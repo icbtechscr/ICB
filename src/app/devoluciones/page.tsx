@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { LegalPage, LegalSection } from "@/components/LegalPage";
+import { absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Política de Garantía, Cambios y Devoluciones",
   description:
     "Política oficial de garantía, cambios y devoluciones de ICB Technologies Costa Rica.",
+  alternates: { canonical: absoluteUrl("/devoluciones") },
 };
 
 export default function DevolucionesPage() {

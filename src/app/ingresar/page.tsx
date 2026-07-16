@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/supabase-server";
 import { getUserRole } from "@/lib/roles";
@@ -5,8 +6,9 @@ import { IngresarForm } from "@/components/IngresarForm";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Iniciar sesión — ICB Technologies",
+export const metadata: Metadata = {
+  title: "Iniciar sesión",
+  robots: { index: false, follow: false, noarchive: true },
 };
 
 export default async function IngresarPage() {

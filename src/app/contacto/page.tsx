@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { LegalPage, LegalSection } from "@/components/LegalPage";
 import { getSiteContent } from "@/lib/site-content";
+import { absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Contacto",
   description:
     "Contactá a ICB Tech: teléfono, correo y sucursales en Costa Rica.",
+  alternates: { canonical: absoluteUrl("/contacto") },
 };
 
 export const revalidate = 60;

@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { LegalPage, LegalSection } from "@/components/LegalPage";
+import { absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Política de Envíos",
   description:
     "Política oficial de envíos de ICB Technologies Costa Rica: cobertura, tarifas, plazos y condiciones.",
+  alternates: { canonical: absoluteUrl("/envios") },
 };
 
 export default function EnviosPage() {

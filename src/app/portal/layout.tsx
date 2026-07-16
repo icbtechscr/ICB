@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { getCurrentUser } from "@/lib/supabase-server";
@@ -11,11 +12,12 @@ import { PortalShell } from "@/components/portal/PortalShell";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: {
     default: "Portal del colaborador — ICB Technologies",
     template: "%s — Portal ICB",
   },
+  robots: { index: false, follow: false, noarchive: true, noimageindex: true },
 };
 
 export default async function PortalLayout({

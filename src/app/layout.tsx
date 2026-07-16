@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { cookies } from "next/headers";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { Header } from "@/components/Header";
@@ -8,8 +7,12 @@ import { SiteChromeGate } from "@/components/SiteChromeGate";
 import { ChatWidget } from "@/components/ChatWidget";
 import { CartProvider } from "@/lib/cart";
 import { getNavMenu } from "@/lib/category-tree";
-import { getCurrentUser } from "@/lib/supabase-server";
-import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
+import {
+  SITE_URL,
+  SITE_NAME,
+  SITE_DESCRIPTION,
+  SITE_OG_IMAGE_URL,
+} from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -37,16 +40,35 @@ export const metadata: Metadata = {
     url: SITE_URL,
     title: "ICB Tech — Tecnología y seguridad en Costa Rica",
     description: SITE_DESCRIPTION,
+    images: [
+      {
+        url: SITE_OG_IMAGE_URL,
+        width: 1200,
+        height: 630,
+        alt: "ICB Tech — Tecnología y seguridad en Costa Rica",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "ICB Tech — Tecnología y seguridad en Costa Rica",
     description: SITE_DESCRIPTION,
+    images: [SITE_OG_IMAGE_URL],
   },
-  robots: { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   appleWebApp: {
     capable: true,
-    title: "ICB Portal",
+    title: SITE_NAME,
     statusBarStyle: "black-translucent",
   },
   icons: {
@@ -56,7 +78,7 @@ export const metadata: Metadata = {
       { url: "/favicon-48.png", sizes: "48x48", type: "image/png" },
       { url: "/favicon-192.png", sizes: "192x192", type: "image/png" },
     ],
-    // Ícono de la app instalada en el celular = reloj+check (PWA).
+    // La misma identidad del carrito de ICB en navegador, móvil y buscadores.
     apple: "/apple-touch-icon.png",
   },
 };
@@ -71,14 +93,20 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const menu = await getNavMenu();
-  const dark = (await cookies()).get("site-theme")?.value === "dark";
-  const user = await getCurrentUser();
   return (
-    <html lang="es" className={`h-full antialiased${dark ? " dark" : ""}`}>
+    <html lang="es" className="h-full antialiased" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{if(document.cookie.includes("site-theme=dark")){document.documentElement.classList.add("dark")}}catch(e){}',
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col text-ink-900">
         <CartProvider>
           <SiteChromeGate>
-            <Header menu={menu} initialDark={dark} initialAuthed={!!user} />
+            <Header menu={menu} />
           </SiteChromeGate>
           <main className="flex-1">{children}</main>
           <SiteChromeGate>

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
 import { HeroBanner } from "@/components/HeroBanner";
@@ -14,11 +15,69 @@ import {
   type Product,
 } from "@/lib/products";
 import { getSiteContent } from "@/lib/site-content";
+import { BRANCHES } from "@/lib/branches";
+import {
+  SITE_DESCRIPTION,
+  SITE_LOGO_URL,
+  SITE_NAME,
+  SITE_URL,
+} from "@/lib/site";
+
+export const metadata: Metadata = {
+  title: { absolute: "ICB Tech — Tecnología y seguridad en Costa Rica" },
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: SITE_URL },
+  openGraph: { url: SITE_URL },
+};
 
 export const revalidate = 60;
 
 export default async function HomePage() {
   const content = await getSiteContent();
+
+  const socialProfiles = [
+    content.footer.facebook,
+    content.footer.instagram,
+    content.footer.youtube,
+  ].filter((url) => /^https?:\/\//i.test(url));
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: SITE_NAME,
+      alternateName: ["ICB Technologies", "ICB"],
+      inLanguage: "es-CR",
+      publisher: { "@id": `${SITE_URL}/#organization` },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "OnlineStore",
+      "@id": `${SITE_URL}/#organization`,
+      name: "ICB Technologies",
+      alternateName: SITE_NAME,
+      url: SITE_URL,
+      logo: {
+        "@type": "ImageObject",
+        url: SITE_LOGO_URL,
+        width: 192,
+        height: 192,
+      },
+      image: SITE_LOGO_URL,
+      description: SITE_DESCRIPTION,
+      telephone: content.footer.phone,
+      email: content.footer.email,
+      areaServed: { "@type": "Country", name: "Costa Rica" },
+      address: BRANCHES.filter((branch) => !branch.cedi).map((branch) => ({
+        "@type": "PostalAddress",
+        streetAddress: branch.address,
+        addressLocality: branch.city,
+        addressCountry: "CR",
+      })),
+      sameAs: socialProfiles.length ? socialProfiles : undefined,
+    },
+  ];
 
   const [autoFeatured, autoCats] = await Promise.all([
     getFeaturedProducts(12),
@@ -64,6 +123,12 @@ export default async function HomePage() {
 
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
       <HeroBanner featured={heroFeatured} hero={content.hero} />
 
       <FeatureStrip />

@@ -8,7 +8,7 @@ import { getProductBySlug } from "@/lib/products";
 import { formatCRC, decodeHtml, stripHtml } from "@/lib/utils";
 import { parseKitDescription } from "@/lib/parseKit";
 import { ProductTabs } from "@/components/ProductTabs";
-import { SITE_NAME, absoluteUrl } from "@/lib/site";
+import { SITE_NAME, SITE_OG_IMAGE_URL, SITE_URL, absoluteUrl } from "@/lib/site";
 import { STOCK_LABELS, effectiveStockStatus } from "@/lib/stock";
 
 // El layout raíz lee cookies() (modo noche + sesión), lo que vuelve dinámica
@@ -31,7 +31,7 @@ export async function generateMetadata({
     stripHtml(product.shortDescription) ||
     stripHtml(product.description).slice(0, 160) ||
     `${product.name} disponible en ICB Tech Costa Rica.`;
-  const img = product.images[0]?.src;
+  const img = product.images[0]?.src || SITE_OG_IMAGE_URL;
   const url = absoluteUrl(`/productos/${product.slug}`);
 
   return {
@@ -44,13 +44,13 @@ export async function generateMetadata({
       description: desc.slice(0, 160),
       url,
       siteName: SITE_NAME,
-      images: img ? [{ url: img }] : undefined,
+      images: [{ url: img, alt: product.name }],
     },
     twitter: {
       card: "summary_large_image",
       title: product.name,
       description: desc.slice(0, 160),
-      images: img ? [img] : undefined,
+      images: [img],
     },
   };
 }
@@ -81,9 +81,34 @@ export default async function ProductPage({
   const canAddToCart = displayStockStatus !== "out_of_stock";
 
   const price = product.salePriceCRC ?? product.priceCRC;
+  const productUrl = absoluteUrl(`/productos/${product.slug}`);
+  const offers =
+    price > 0
+      ? {
+          "@type": "Offer",
+          url: productUrl,
+          priceCurrency: "CRC",
+          price,
+          itemCondition: "https://schema.org/NewCondition",
+          availability:
+            displayStockStatus === "out_of_stock"
+              ? "https://schema.org/OutOfStock"
+              : displayStockStatus === "backorder"
+                ? "https://schema.org/BackOrder"
+                : "https://schema.org/InStock",
+          seller: {
+            "@type": "Organization",
+            "@id": `${SITE_URL}/#organization`,
+            name: SITE_NAME,
+            url: SITE_URL,
+          },
+        }
+      : undefined;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
+    "@id": `${productUrl}#product`,
+    url: productUrl,
     name: product.name,
     image: product.images.map((i) => i.src),
     description:
@@ -93,26 +118,43 @@ export default async function ProductPage({
     brand: product.brand
       ? { "@type": "Brand", name: product.brand }
       : undefined,
-    offers: {
-      "@type": "Offer",
-      url: absoluteUrl(`/productos/${product.slug}`),
-      priceCurrency: "CRC",
-      price: price > 0 ? price : undefined,
-      availability:
-        displayStockStatus === "out_of_stock"
-          ? "https://schema.org/OutOfStock"
-          : displayStockStatus === "backorder"
-            ? "https://schema.org/BackOrder"
-            : "https://schema.org/InStock",
-      seller: { "@type": "Organization", name: SITE_NAME },
-    },
+    offers,
+  };
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Inicio",
+        item: absoluteUrl("/"),
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Catálogo",
+        item: absoluteUrl("/productos"),
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: product.name,
+        item: productUrl,
+      },
+    ],
   };
 
   return (
     <div className="bg-white">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([jsonLd, breadcrumbJsonLd]).replace(
+            /</g,
+            "\\u003c"
+          ),
+        }}
       />
 
       <div className="mx-auto max-w-7xl px-4 pb-20 pt-8 md:pb-24">

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ProductCard } from "@/components/ProductCard";
 import { CatalogFilters } from "@/components/CatalogFilters";
@@ -9,8 +10,38 @@ import {
   type CatalogSort,
   type CatalogStock,
 } from "@/lib/products";
+import { absoluteUrl, SITE_OG_IMAGE_URL } from "@/lib/site";
 
-export const metadata = { title: "Catálogo" };
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  const hasVariant = Object.values(params).some((value) => value !== undefined);
+  const description =
+    "Explorá el catálogo de ICB Tech: computadoras, videovigilancia, redes, POS, periféricos y tecnología con garantía en Costa Rica.";
+  const url = absoluteUrl("/productos");
+
+  return {
+    title: "Catálogo de tecnología",
+    description,
+    alternates: { canonical: url },
+    robots: hasVariant ? { index: false, follow: true } : undefined,
+    openGraph: {
+      title: "Catálogo de tecnología",
+      description,
+      url,
+      images: [SITE_OG_IMAGE_URL],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Catálogo de tecnología",
+      description,
+      images: [SITE_OG_IMAGE_URL],
+    },
+  };
+}
 
 export const revalidate = 60;
 

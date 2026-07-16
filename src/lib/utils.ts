@@ -19,18 +19,47 @@ export function formatCRC(value: number | string | null | undefined): string {
 
 export function decodeHtml(s: string | null | undefined): string {
   if (!s) return "";
+  const namedEntities: Record<string, string> = {
+    amp: "&",
+    quot: '"',
+    apos: "'",
+    lt: "<",
+    gt: ">",
+    nbsp: " ",
+    aacute: "á",
+    eacute: "é",
+    iacute: "í",
+    oacute: "ó",
+    uacute: "ú",
+    Aacute: "Á",
+    Eacute: "É",
+    Iacute: "Í",
+    Oacute: "Ó",
+    Uacute: "Ú",
+    ntilde: "ñ",
+    Ntilde: "Ñ",
+    uuml: "ü",
+    Uuml: "Ü",
+    copy: "©",
+    reg: "®",
+    trade: "™",
+    ndash: "–",
+    mdash: "—",
+    hellip: "…",
+    laquo: "«",
+    raquo: "»",
+  };
+
   return s
-    .replace(/&#8211;/g, "–")
-    .replace(/&#8212;/g, "—")
-    .replace(/&#8217;/g, "'")
-    .replace(/&#8220;/g, "“")
-    .replace(/&#8221;/g, "”")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&nbsp;/g, " ");
+    .replace(/&#x([0-9a-f]+);?/gi, (_, hex: string) =>
+      String.fromCodePoint(Number.parseInt(hex, 16))
+    )
+    .replace(/&#(\d+);?/g, (_, decimal: string) =>
+      String.fromCodePoint(Number.parseInt(decimal, 10))
+    )
+    .replace(/&([a-zA-Z]+);/g, (entity, name: string) =>
+      Object.hasOwn(namedEntities, name) ? namedEntities[name] : entity
+    );
 }
 
 export function stripHtml(s: string | null | undefined): string {

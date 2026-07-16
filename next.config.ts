@@ -1,6 +1,51 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  async redirects() {
+    return [
+      {
+        source: "/inicio",
+        destination: "/",
+        permanent: true,
+      },
+      {
+        source: "/tienda/:path*",
+        destination: "/productos",
+        permanent: true,
+      },
+      {
+        source: "/producto/:slug",
+        destination: "/productos/:slug",
+        permanent: true,
+      },
+      {
+        source: "/productos/componentes",
+        destination: "/categoria/componentes",
+        permanent: true,
+      },
+      {
+        source: "/envio-devoluciones-y-pago",
+        destination: "/envios",
+        permanent: true,
+      },
+      {
+        source: "/metodos-de-envio",
+        destination: "/envios",
+        permanent: true,
+      },
+      {
+        source: "/politica-privacidad",
+        destination: "/privacidad",
+        permanent: true,
+      },
+      {
+        source: "/acerca-de-nosotros",
+        destination: "/sobre-nosotros",
+        permanent: true,
+      },
+    ];
+  },
   images: {
     // Sirve AVIF/WebP (mucho más livianos que los PNG originales).
     formats: ["image/avif", "image/webp"],

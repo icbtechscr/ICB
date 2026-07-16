@@ -1,10 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, ShieldCheck, Truck, Sparkles, Building2, Headphones, Award } from "lucide-react";
+import { absoluteUrl } from "@/lib/site";
 
-export const metadata = {
-  title: "Sobre nosotros — ICB Technologies",
+export const metadata: Metadata = {
+  title: "Sobre nosotros",
   description:
     "Organización 100% costarricense con más de 20 años de experiencia en el comercio de tecnología.",
+  alternates: { canonical: absoluteUrl("/sobre-nosotros") },
 };
 
 export default function SobreNosotrosPage() {

@@ -1,9 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, Zap } from "lucide-react";
 import { ProductCard } from "@/components/ProductCard";
 import { getOnSaleProducts } from "@/lib/products";
+import { absoluteUrl } from "@/lib/site";
 
-export const metadata = { title: "Ofertas — ICB Tech" };
+export const metadata: Metadata = {
+  title: "Ofertas",
+  description:
+    "Ofertas activas en computadoras, seguridad, redes, POS y tecnología en ICB Tech Costa Rica, mientras dure el inventario.",
+  alternates: { canonical: absoluteUrl("/ofertas") },
+  openGraph: { url: absoluteUrl("/ofertas") },
+};
 export const revalidate = 60;
 
 export default async function OfertasPage() {

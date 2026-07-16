@@ -1,12 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, MapPin, Navigation, Building2, Phone } from "lucide-react";
 import { ProductTabs } from "@/components/ProductTabs";
 import { BRANCHES, type Branch } from "@/lib/branches";
+import { absoluteUrl } from "@/lib/site";
 
-export const metadata = {
-  title: "Sucursales — ICB Technologies",
+export const metadata: Metadata = {
+  title: "Sucursales",
   description:
     "Visitanos en San José, Alajuela, Heredia, Cartago, Ciudad Quesada y nuestro CEDI en Barreal de Heredia.",
+  alternates: { canonical: absoluteUrl("/sucursales") },
 };
 
 function LocationCard({ loc, badge }: { loc: Branch; badge?: string }) {
@@ -61,6 +64,28 @@ function LocationCard({ loc, badge }: { loc: Branch; badge?: string }) {
 }
 
 export default function SucursalesPage() {
+  const locationsJsonLd = BRANCHES.filter((branch) => !branch.cedi).map(
+    (branch) => ({
+      "@context": "https://schema.org",
+      "@type": "ElectronicsStore",
+      "@id": `${absoluteUrl("/sucursales")}#${branch.id}`,
+      name: branch.name,
+      url: `${absoluteUrl("/sucursales")}#${branch.id}`,
+      telephone: branch.phone,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: branch.address,
+        addressLocality: branch.city,
+        addressCountry: "CR",
+      },
+      geo: {
+        "@type": "GeoCoordinates",
+        latitude: branch.lat,
+        longitude: branch.lng,
+      },
+      hasMap: branch.gmaps,
+    })
+  );
   const tabs = BRANCHES.map((b) => ({
     id: b.id,
     label: b.cedi ? "CEDI" : b.city,
@@ -74,6 +99,12 @@ export default function SucursalesPage() {
 
   return (
     <div className="bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(locationsJsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
       <div className="mx-auto max-w-5xl px-4 pb-20 pt-8 md:pb-24">
         <nav className="mb-6 flex flex-wrap items-center gap-1 text-xs font-medium text-ink-500">
           <Link href="/" className="hover:text-brand-600">

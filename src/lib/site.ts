@@ -1,7 +1,6 @@
-// URL pública del sitio. Configurar NEXT_PUBLIC_SITE_URL en Vercel
-// con el dominio final (ej. https://icbtechscr.com).
+// URL pública canónica. El dominio con www es el que sirve el sitio sin redirección.
 export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://icbtechscr.com"
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.icbtechscr.com"
 ).replace(/\/$/, "");
 
 export const SITE_NAME = "ICB Tech";
@@ -12,3 +11,6 @@ export const SITE_DESCRIPTION =
 export function absoluteUrl(path: string): string {
   return `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }
+
+export const SITE_LOGO_URL = absoluteUrl("/favicon-192.png");
+export const SITE_OG_IMAGE_URL = absoluteUrl("/og-icb.png");
