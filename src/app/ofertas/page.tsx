@@ -8,7 +8,7 @@ import { absoluteUrl } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Ofertas",
   description:
-    "Ofertas activas en computadoras, seguridad, redes, POS y tecnología en ICB Tech Costa Rica, mientras dure el inventario.",
+    "Ofertas activas en computadoras, seguridad, redes, POS y tecnología en ICB Technologies Costa Rica, mientras dure el inventario.",
   alternates: { canonical: absoluteUrl("/ofertas") },
   openGraph: { url: absoluteUrl("/ofertas") },
 };

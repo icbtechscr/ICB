@@ -30,7 +30,7 @@ export async function generateMetadata({
   const desc =
     stripHtml(product.shortDescription) ||
     stripHtml(product.description).slice(0, 160) ||
-    `${product.name} disponible en ICB Tech Costa Rica.`;
+    `${product.name} disponible en ICB Technologies Costa Rica.`;
   const img = product.images[0]?.src || SITE_OG_IMAGE_URL;
   const url = absoluteUrl(`/productos/${product.slug}`);
 

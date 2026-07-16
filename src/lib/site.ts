@@ -10,7 +10,7 @@ export const SITE_URL = configuredSiteUrl.replace(
   "https://www.icbtechscr.com"
 );
 
-export const SITE_NAME = "ICB Tech";
+export const SITE_NAME = "ICB Technologies";
 
 export const SITE_DESCRIPTION =
   "Computadoras, cámaras de seguridad, redes, periféricos y POS. Distribuidor oficial Dahua, Hikvision y Uniview en Costa Rica.";
@@ -19,5 +19,5 @@ export function absoluteUrl(path: string): string {
   return `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-export const SITE_LOGO_URL = absoluteUrl("/favicon-192.png");
+export const SITE_LOGO_URL = absoluteUrl("/icb-favicon-192.png");
 export const SITE_OG_IMAGE_URL = absoluteUrl("/og-icb.png");

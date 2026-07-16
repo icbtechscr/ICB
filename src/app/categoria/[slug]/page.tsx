@@ -64,7 +64,7 @@ export async function generateMetadata({
   const filters = await searchParams;
   const view = await resolveCategory(slug);
   if (!view) return { title: "Categoría no encontrada" };
-  const desc = `Comprá ${view.name.toLowerCase()} en ICB Tech Costa Rica. Productos con garantía oficial y envío a todo el país.`;
+  const desc = `Comprá ${view.name.toLowerCase()} en ICB Technologies Costa Rica. Productos con garantía oficial y envío a todo el país.`;
   const url = absoluteUrl(`/categoria/${slug}`);
   return {
     title: view.name,

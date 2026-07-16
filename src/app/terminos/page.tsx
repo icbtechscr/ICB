@@ -5,7 +5,7 @@ import { absoluteUrl } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Términos y condiciones",
   description:
-    "Términos y condiciones de uso y compra en el sitio de ICB Tech Costa Rica.",
+    "Términos y condiciones de uso y compra en el sitio de ICB Technologies Costa Rica.",
   alternates: { canonical: absoluteUrl("/terminos") },
 };
 

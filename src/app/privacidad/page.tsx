@@ -5,7 +5,7 @@ import { absoluteUrl } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Política de privacidad",
   description:
-    "Cómo ICB Tech recopila, usa y protege los datos personales de sus clientes en Costa Rica.",
+    "Cómo ICB Technologies recopila, usa y protege los datos personales de sus clientes en Costa Rica.",
   alternates: { canonical: absoluteUrl("/privacidad") },
 };
 

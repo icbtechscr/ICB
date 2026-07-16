@@ -14,7 +14,7 @@ const tools = [
     function: {
       name: "buscar_productos",
       description:
-        "Busca productos en el catálogo de ICB Tech por nombre, marca o SKU. " +
+        "Busca productos en el catálogo de ICB Technologies por nombre, marca o SKU. " +
         "Úsala cuando el cliente pregunte por un producto, precio, marca o disponibilidad concretos. " +
         "Ignora mayúsculas y tildes. Los resultados vienen ordenados del más barato al más caro. " +
         "Si el cliente da un presupuesto (ej. 'menos de 20 mil', 'hasta 50000'), pásalo en precio_max. " +

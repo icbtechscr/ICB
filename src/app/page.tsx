@@ -24,7 +24,9 @@ import {
 } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: { absolute: "ICB Tech — Tecnología y seguridad en Costa Rica" },
+  title: {
+    absolute: "ICB Technologies — Tecnología y seguridad en Costa Rica",
+  },
   description: SITE_DESCRIPTION,
   alternates: { canonical: SITE_URL },
   openGraph: { url: SITE_URL },
@@ -47,7 +49,7 @@ export default async function HomePage() {
       "@id": `${SITE_URL}/#website`,
       url: SITE_URL,
       name: SITE_NAME,
-      alternateName: ["ICB Technologies", "ICB"],
+      alternateName: ["ICB Technologies Costa Rica", "ICB"],
       inLanguage: "es-CR",
       publisher: { "@id": `${SITE_URL}/#organization` },
     },
@@ -55,8 +57,8 @@ export default async function HomePage() {
       "@context": "https://schema.org",
       "@type": "OnlineStore",
       "@id": `${SITE_URL}/#organization`,
-      name: "ICB Technologies",
-      alternateName: SITE_NAME,
+      name: SITE_NAME,
+      alternateName: "ICB",
       url: SITE_URL,
       logo: {
         "@type": "ImageObject",

@@ -32,7 +32,7 @@ export async function Footer() {
           <div className="md:col-span-2">
             <Image
               src="/icb-logo.png"
-              alt="ICB Tech"
+              alt="ICB Technologies"
               width={200}
               height={64}
               className="h-16 w-auto object-contain brightness-0 invert"

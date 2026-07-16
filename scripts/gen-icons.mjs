@@ -60,22 +60,29 @@ const [favicon32, favicon48, favicon192, favicon256, icon512, maskable512] =
     squareLogo(512, { safeArea: 0.72 }),
   ]);
 
+const faviconIco = createIco([
+  { size: 32, data: favicon32 },
+  { size: 48, data: favicon48 },
+  { size: 256, data: favicon256 },
+]);
+const appleTouch = await sharp(favicon256).resize(180, 180).png().toBuffer();
+
 await Promise.all([
   writeFile("public/favicon-32.png", favicon32),
   writeFile("public/favicon-48.png", favicon48),
   writeFile("public/favicon-192.png", favicon192),
+  // URLs nuevas y estables para forzar a buscadores a abandonar el favicon
+  // anterior que conservan en caché.
+  writeFile("public/icb-favicon-32.png", favicon32),
+  writeFile("public/icb-favicon-48.png", favicon48),
+  writeFile("public/icb-favicon-192.png", favicon192),
+  writeFile("public/icb-favicon.ico", faviconIco),
   writeFile("public/icon-192.png", favicon192),
   writeFile("public/icon-512.png", icon512),
   writeFile("public/icon-maskable-512.png", maskable512),
-  sharp(favicon256).resize(180, 180).png().toFile("public/apple-touch-icon.png"),
-  writeFile(
-    "src/app/favicon.ico",
-    createIco([
-      { size: 32, data: favicon32 },
-      { size: 48, data: favicon48 },
-      { size: 256, data: favicon256 },
-    ])
-  ),
+  writeFile("public/apple-touch-icon.png", appleTouch),
+  writeFile("public/icb-apple-touch-icon.png", appleTouch),
+  writeFile("src/app/favicon.ico", faviconIco),
 ]);
 
 const ogBackground = Buffer.from(`

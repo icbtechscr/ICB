@@ -17,8 +17,8 @@ import {
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "ICB Tech — Tecnología y seguridad en Costa Rica",
-    template: "%s — ICB Tech",
+    default: "ICB Technologies — Tecnología y seguridad en Costa Rica",
+    template: "%s — ICB Technologies",
   },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
@@ -31,27 +31,27 @@ export const metadata: Metadata = {
     "Dahua",
     "Hikvision",
     "Uniview",
-    "ICB Tech",
+    "ICB Technologies",
   ],
   openGraph: {
     type: "website",
     locale: "es_CR",
     siteName: SITE_NAME,
     url: SITE_URL,
-    title: "ICB Tech — Tecnología y seguridad en Costa Rica",
+    title: "ICB Technologies — Tecnología y seguridad en Costa Rica",
     description: SITE_DESCRIPTION,
     images: [
       {
         url: SITE_OG_IMAGE_URL,
         width: 1200,
         height: 630,
-        alt: "ICB Tech — Tecnología y seguridad en Costa Rica",
+        alt: "ICB Technologies — Tecnología y seguridad en Costa Rica",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "ICB Tech — Tecnología y seguridad en Costa Rica",
+    title: "ICB Technologies — Tecnología y seguridad en Costa Rica",
     description: SITE_DESCRIPTION,
     images: [SITE_OG_IMAGE_URL],
   },
@@ -74,12 +74,13 @@ export const metadata: Metadata = {
   icons: {
     // Favicon de la pestaña del navegador = logo de marca ICB.
     icon: [
-      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-48.png", sizes: "48x48", type: "image/png" },
-      { url: "/favicon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icb-favicon.ico", sizes: "any", type: "image/x-icon" },
+      { url: "/icb-favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icb-favicon-48.png", sizes: "48x48", type: "image/png" },
+      { url: "/icb-favicon-192.png", sizes: "192x192", type: "image/png" },
     ],
     // La misma identidad del carrito de ICB en navegador, móvil y buscadores.
-    apple: "/apple-touch-icon.png",
+    apple: "/icb-apple-touch-icon.png",
   },
 };
 

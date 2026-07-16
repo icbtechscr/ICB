@@ -8,7 +8,7 @@ type Msg = { role: "user" | "assistant"; content: string };
 const WELCOME: Msg = {
   role: "assistant",
   content:
-    "¡Hola! 👋 Soy el asistente virtual de ICB Tech. Puedo ayudarte con productos, precios, sucursales, envíos y más. ¿En qué te ayudo?",
+    "¡Hola! 👋 Soy el asistente virtual de ICB Technologies. Puedo ayudarte con productos, precios, sucursales, envíos y más. ¿En qué te ayudo?",
 };
 
 export function ChatWidget() {

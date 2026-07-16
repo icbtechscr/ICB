@@ -7,7 +7,7 @@ import { absoluteUrl } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Contacto",
   description:
-    "Contactá a ICB Tech: teléfono, correo y sucursales en Costa Rica.",
+    "Contactá a ICB Technologies: teléfono, correo y sucursales en Costa Rica.",
   alternates: { canonical: absoluteUrl("/contacto") },
 };
 

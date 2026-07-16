@@ -15,7 +15,7 @@ function buildBranchesText(): string {
 }
 
 export const ICB_KNOWLEDGE = `
-## Sobre ICB Technologies (ICB Tech)
+## Sobre ICB Technologies
 ICB Technologies es una organización 100% costarricense con más de 20 años de
 experiencia en el comercio de tecnología. Vendemos computadoras, cámaras de
 seguridad (CCTV), equipos de redes, periféricos y sistemas POS (punto de venta).
