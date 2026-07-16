@@ -1,5 +1,9 @@
 // Analitica de ventas (sobre cpi_sales) para el panel admin. SOLO servidor.
 import { createAdminClient } from "@/lib/supabase";
+import {
+  getProductSalesAnalytics,
+  type TopSoldProduct,
+} from "@/lib/cpi-products";
 
 export type Bucket = { key: string; count: number; crc: number; usd: number };
 
@@ -18,6 +22,9 @@ export type SalesAnalytics = {
   porTipo: Bucket[];
   porCliente: Bucket[];
   porDia: { day: string; crc: number; usd: number; count: number }[];
+  productUnits: number;
+  productCount: number;
+  topProducts: TopSoldProduct[];
   prevMonthCRC: number; // total del periodo anterior comparable (para el crecimiento)
   hasData: boolean;
 };
@@ -137,7 +144,8 @@ export async function getSalesAnalytics(r: PeriodRange): Promise<SalesAnalytics>
     totalCRC: 0, totalUSD: 0, count: 0, aceptadas: 0, rechazadas: 0,
     ticketPromedioCRC: 0, vendedores: 0, sucursales: 0,
     porSucursal: [], porVendedor: [], porPuntoVenta: [], porTipo: [], porCliente: [],
-    porDia: [], prevMonthCRC: 0, hasData: false,
+    porDia: [], productUnits: 0, productCount: 0, topProducts: [],
+    prevMonthCRC: 0, hasData: false,
   };
 
   let rows: Row[] = [];
@@ -154,6 +162,8 @@ export async function getSalesAnalytics(r: PeriodRange): Promise<SalesAnalytics>
     return empty;
   }
   if (rows.length === 0) return empty;
+
+  const productSales = await getProductSalesAnalytics(r);
 
   const ignored = await fetchIgnored();
   const suc = new Map<string, Bucket>();
@@ -221,6 +231,9 @@ export async function getSalesAnalytics(r: PeriodRange): Promise<SalesAnalytics>
     porTipo: [...tipo.values()].sort((a, b) => b.count - a.count),
     porCliente: [...cli.values()].sort(bySortCrc).slice(0, 10),
     porDia,
+    productUnits: productSales.totalUnits,
+    productCount: productSales.productCount,
+    topProducts: productSales.topProducts,
     prevMonthCRC,
     hasData: true,
   };

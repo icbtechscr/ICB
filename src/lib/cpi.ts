@@ -93,6 +93,29 @@ export type CpiQuoteLine = {
 
 export type CpiQuoteWithLines = CpiQuote & { lines: CpiQuoteLine[] };
 
+export type CpiSoldProduct = {
+  sku: string;
+  descripcion: string;
+  moneda: "CRC" | "USD" | "EUR" | string;
+  cantidad: number;
+  totalVenta: number;
+  costoVenta: number;
+  utilidad: number;
+  stockQty: number | null;
+};
+
+export type CpiDailySoldProducts = {
+  day: string;
+  products: CpiSoldProduct[];
+};
+
+export type CpiInventoryItem = {
+  cpiId: string;
+  sku: string;
+  descripcion: string;
+  stockQty: number;
+};
+
 export type CpiQuoteFetchOptions = {
   from?: string; // YYYY-MM-DD
   to?: string; // YYYY-MM-DD
@@ -341,6 +364,10 @@ function cellsOfRow(row: string): string[] {
   return row.match(/<td[\s\S]*?<\/td>/gi) ?? [];
 }
 
+function cellsOfTableRow(row: string): string[] {
+  return row.match(/<(?:th|td)\b[\s\S]*?<\/(?:th|td)>/gi) ?? [];
+}
+
 function dateOnly(s?: string): string {
   const raw = (s ?? "").trim();
   const m = raw.match(/\d{4}-\d{2}-\d{2}/);
@@ -411,6 +438,221 @@ export function parseCompletadas(html: string): CpiInvoice[] {
 export async function cpiGetCompletadas(): Promise<CpiInvoice[]> {
   const html = await cpiFetchCompletadasHtml();
   return parseCompletadas(html);
+}
+
+// --- Productos vendidos e inventario --------------------------------------
+
+function reportDate(day: string, endOfDay = false): string {
+  const clean = dateOnly(day);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
+    throw new Error(`Fecha CPI invalida: ${day}`);
+  }
+  return `${clean} ${endOfDay ? "23:59:59" : "00:00:00"}`;
+}
+
+function reportRows(html: string): string[][] {
+  return (html.match(/<tr\b[\s\S]*?<\/tr>/gi) ?? [])
+    .map((row) => cellsOfTableRow(row).map(cleanText))
+    .filter((cells) => cells.length > 0);
+}
+
+function headerIndex(headers: string[], label: string): number {
+  const wanted = normalizeName(label);
+  return headers.findIndex((header) => normalizeName(header) === wanted);
+}
+
+function reportNumber(value: string): number {
+  const negative = /^\s*\([\s\S]*\)\s*$/.test(value);
+  const parsed = parseCpiAmount(value);
+  return negative ? -Math.abs(parsed) : parsed;
+}
+
+export async function cpiFetchSoldProductsHtml(
+  opts: { from: string; to: string },
+  cookie?: string
+): Promise<string> {
+  const jar = cookie || (await cpiLogin());
+  const body = new URLSearchParams({
+    duser: USER,
+    d: USER,
+    e: "",
+    f: "",
+    g: "",
+    h: "9999",
+    i: "",
+    j: "",
+    k: reportDate(opts.from),
+    l: "",
+    m: reportDate(opts.to, true),
+    n: "",
+    str2: "Botonplacadorada",
+    str3: "2",
+    str14: "",
+    str15: "fechamodifica DESC",
+    str16: "",
+    str17: "",
+    str19: "SI",
+    str20: "",
+    str21: "",
+    str23: "",
+    str24: "",
+    str25: process.env.CPI_ACTIVITY_CODES || "4741.0|4759.0",
+    str27: process.env.CPI_TAX_TYPES || "0|1",
+    otros: "",
+    familia: "",
+    SocaaID: ID,
+    idiomasistema: "Espanol",
+  });
+  for (const source of ["RT", "RS"]) body.append("str18[]", source);
+  for (const column of ["tipo", "origen", "sucursal", "vendedor", "estado"]) {
+    body.append("str22[]", column);
+  }
+
+  const res = await cpiRequest("ControlSpecFactUnidadesVendidas - Reportes.php", {
+    method: "POST",
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      "x-requested-with": "XMLHttpRequest",
+      origin: new URL(BASE).origin,
+      referer: `${BASE}Page Main 4.php`,
+      ...(jar ? { cookie: jar } : {}),
+    },
+    body: body.toString(),
+  });
+  ensureCpiOk(res, "reporte de unidades vendidas");
+  return res.body;
+}
+
+export function parseSoldProductsReport(html: string): CpiSoldProduct[] {
+  const rows = reportRows(html);
+  const headAt = rows.findIndex(
+    (cells) =>
+      headerIndex(cells, "Codigo") >= 0 &&
+      headerIndex(cells, "Descripcion") >= 0 &&
+      headerIndex(cells, "Unidades Total") >= 0
+  );
+  if (headAt < 0) return [];
+
+  const headers = rows[headAt];
+  const skuAt = headerIndex(headers, "Codigo");
+  const descriptionAt = headerIndex(headers, "Descripcion");
+  const currencyAt = headerIndex(headers, "Moneda");
+  const quantityAt = headerIndex(headers, "Unidades Total");
+  const salesAt = headerIndex(headers, "Valor Venta Total");
+  const costAt = headerIndex(headers, "Costo Venta Total");
+  const profitAt = headerIndex(headers, "Utilidad Total");
+  const stockAt = headerIndex(headers, "Unid Disponibles");
+  const products: CpiSoldProduct[] = [];
+
+  for (const cells of rows.slice(headAt + 1)) {
+    const sku = (cells[skuAt] ?? "").trim();
+    const descripcion = (cells[descriptionAt] ?? "").trim();
+    if ((!sku && !descripcion) || /SUBTOTALES?|TOTALES?/i.test(descripcion)) continue;
+    const cantidad = reportNumber(cells[quantityAt] ?? "0");
+    if (!Number.isFinite(cantidad) || cantidad === 0) continue;
+    products.push({
+      sku,
+      descripcion,
+      moneda: mapCurrency(cells[currencyAt] ?? "CRC"),
+      cantidad,
+      totalVenta: reportNumber(cells[salesAt] ?? "0"),
+      costoVenta: reportNumber(cells[costAt] ?? "0"),
+      utilidad: reportNumber(cells[profitAt] ?? "0"),
+      stockQty: stockAt >= 0 ? reportNumber(cells[stockAt] ?? "0") : null,
+    });
+  }
+  return products;
+}
+
+export async function cpiGetSoldProductsForDays(
+  days: string[]
+): Promise<CpiDailySoldProducts[]> {
+  const uniqueDays = [...new Set(days.map(dateOnly))].filter((day) =>
+    /^\d{4}-\d{2}-\d{2}$/.test(day)
+  );
+  if (uniqueDays.length === 0) return [];
+  const jar = await cpiLogin();
+  return mapLimit(uniqueDays, 2, async (day) => ({
+    day,
+    products: parseSoldProductsReport(
+      await cpiFetchSoldProductsHtml({ from: day, to: day }, jar)
+    ),
+  }));
+}
+
+export async function cpiFetchInventoryItemsHtml(cookie?: string): Promise<string> {
+  const jar = cookie || (await cpiLogin());
+  const body = new URLSearchParams({
+    duser: USER,
+    str1: "",
+    str2: "",
+    str3: "",
+    str4: "",
+    str5: "",
+    str6: "NO",
+    str99: "30000",
+    ordenar: "cdescripcion_esp ASC",
+    moneda: "CRC",
+    otros: "",
+    familia: "",
+    sucursales: "",
+    puntosventa: "",
+    SocaaID: ID,
+    idiomasistema: "Espanol",
+  });
+  for (const column of ["ccodigo", "cdescripcion_esp", "unidaddispo"]) {
+    body.append("columnas[]", column);
+  }
+  const res = await cpiRequest("ControlSpecItemsProdcInventarioFactConsultaReportes.php", {
+    method: "POST",
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      "x-requested-with": "XMLHttpRequest",
+      origin: new URL(BASE).origin,
+      referer: `${BASE}Page Main 4.php`,
+      ...(jar ? { cookie: jar } : {}),
+    },
+    body: body.toString(),
+  });
+  ensureCpiOk(res, "reporte de inventario");
+  return res.body;
+}
+
+export function parseInventoryItemsReport(html: string): CpiInventoryItem[] {
+  const rows = reportRows(html);
+  const headAt = rows.findIndex(
+    (cells) =>
+      headerIndex(cells, "ID") >= 0 &&
+      headerIndex(cells, "Codigo") >= 0 &&
+      headerIndex(cells, "Descripcion") >= 0 &&
+      headerIndex(cells, "Unidades") >= 0
+  );
+  if (headAt < 0) return [];
+
+  const headers = rows[headAt];
+  const idAt = headerIndex(headers, "ID");
+  const skuAt = headerIndex(headers, "Codigo");
+  const descriptionAt = headerIndex(headers, "Descripcion");
+  const stockAt = headerIndex(headers, "Unidades");
+  const items: CpiInventoryItem[] = [];
+
+  for (const cells of rows.slice(headAt + 1)) {
+    const cpiId = (cells[idAt] ?? "").trim();
+    const sku = (cells[skuAt] ?? "").trim();
+    const descripcion = (cells[descriptionAt] ?? "").trim();
+    if (!/^\d+$/.test(cpiId) || (!sku && !descripcion)) continue;
+    items.push({
+      cpiId,
+      sku,
+      descripcion,
+      stockQty: reportNumber(cells[stockAt] ?? "0"),
+    });
+  }
+  return items;
+}
+
+export async function cpiGetInventoryItems(): Promise<CpiInventoryItem[]> {
+  return parseInventoryItemsReport(await cpiFetchInventoryItemsHtml());
 }
 
 // --- Cotizaciones: lista, detalle y lineas de producto ---

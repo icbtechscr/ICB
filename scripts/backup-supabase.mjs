@@ -27,7 +27,8 @@ if (!URL_ || !KEY) {
 const TABLES = [
   "brands", "categories", "product_categories", "product_images", "products",
   "orders", "order_items", "site_settings",
-  "cpi_sales", "cpi_sale_lines", "cpi_quotes", "cpi_quote_lines", "cpi_vendor_map",
+  "cpi_sales", "cpi_sale_lines", "cpi_product_sales_daily",
+  "cpi_quotes", "cpi_quote_lines", "cpi_vendor_map",
   "time_entries", "vacation_requests",
   "push_subscriptions", "vendor_fb_connections", "vendor_posts",
 ];
