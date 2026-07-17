@@ -92,6 +92,9 @@ function request(urlStr, { method = "GET", headers = {}, body = "" } = {}) {
       }
     );
     req.on("error", reject);
+    req.setTimeout(45_000, () => {
+      req.destroy(new Error("CPI no respondio en 45 segundos"));
+    });
     if (body) req.write(body);
     req.end();
   });

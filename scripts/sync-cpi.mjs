@@ -4,6 +4,7 @@
 //
 //   node scripts/sync-cpi.mjs           -> sincroniza
 //   node scripts/sync-cpi.mjs --debug   -> guarda cpi-get/post/lista.html
+//   node scripts/sync-cpi.mjs --dry-run -> consulta y parsea, sin escribir
 import { readFileSync, writeFileSync } from "node:fs";
 import https from "node:https";
 import { createClient } from "@supabase/supabase-js";
@@ -20,6 +21,8 @@ function loadEnv() {
 loadEnv();
 
 const DEBUG = process.argv.includes("--debug");
+const DRY_RUN = process.argv.includes("--dry-run");
+const REQUEST_TIMEOUT_MS = 45_000;
 const BASE = (process.env.CPI_BASE_URL || "https://www.appcontadorcpi.com/gm/").replace(/\/*$/, "/");
 const USER = process.env.CPI_USER || "";
 const PASS = process.env.CPI_PASS || "";
@@ -52,6 +55,9 @@ function request(urlStr, { method = "GET", headers = {}, body = null } = {}) {
       res.on("end", () => resolve({ status: res.statusCode, headers: res.headers, body: data }));
     });
     req.on("error", reject);
+    req.setTimeout(REQUEST_TIMEOUT_MS, () => {
+      req.destroy(new Error(`CPI no respondio en ${REQUEST_TIMEOUT_MS / 1000} segundos`));
+    });
     if (body) req.write(body);
     req.end();
   });
@@ -220,26 +226,62 @@ async function saveRows(rows) {
     for (const u of list?.users || []) { const f = u.user_metadata?.full_name || ""; if (f) byName.set(norm(f), u.id); }
     for (const v of pending) { const uid = byName.get(norm(v)); if (uid) { map.set(v, uid); await sb.from("cpi_vendor_map").update({ user_id: uid }).eq("cpi_vendor", v); } }
   }
-  for (const r of rows) r.user_id = map.get(r.vendedor) || null;
+  const syncedAt = new Date().toISOString();
+  for (const r of rows) {
+    r.user_id = map.get(r.vendedor) || null;
+    r.synced_at = syncedAt;
+  }
 
-  // El reporte es la fuente de verdad del mes: limpiamos el rango antes de insertar
-  // para no dejar duplicados (claves viejas) ni facturas anuladas en CPI.
+  // El reporte es la fuente de verdad del mes. Primero hacemos upsert y solo
+  // despues limpiamos claves obsoletas. Asi, una interrupcion conserva las
+  // ventas que ya estaban visibles en vez de dejar el mes vacio.
   const pad = (n) => String(n).padStart(2, "0");
   const now = new Date();
   const mStart = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`;
   const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const mEnd = `${nextMonth.getFullYear()}-${pad(nextMonth.getMonth() + 1)}-01`;
-  const { error: delErr } = await sb
+  const { data: existing, error: existingErr } = await sb
     .from("cpi_sales")
-    .delete()
+    .select("cpi_key")
     .gte("fecha", mStart)
     .lt("fecha", mEnd);
-  if (delErr) throw new Error("Supabase (limpiar mes): " + delErr.message);
+  if (existingErr) throw new Error("Supabase (leer mes): " + existingErr.message);
 
   const { error } = await sb.from("cpi_sales").upsert(rows, { onConflict: "cpi_key" });
   if (error) throw new Error("Supabase: " + error.message);
+
+  const incomingKeys = new Set(rows.map((row) => row.cpi_key));
+  const staleKeys = (existing || [])
+    .map((row) => row.cpi_key)
+    .filter((key) => !incomingKeys.has(key));
+  const cleanupSafe = !existing?.length || rows.length >= Math.floor(existing.length * 0.8);
+  if (!cleanupSafe) {
+    console.warn(
+      `Aviso: CPI devolvio ${rows.length} de ${existing.length} facturas existentes; se omite la limpieza por seguridad.`
+    );
+  } else {
+    for (let i = 0; i < staleKeys.length; i += 200) {
+      const { error: delErr } = await sb
+        .from("cpi_sales")
+        .delete()
+        .in("cpi_key", staleKeys.slice(i, i + 200));
+      if (delErr) throw new Error("Supabase (limpiar obsoletas): " + delErr.message);
+    }
+  }
   const matched = rows.filter((r) => r.user_id).length;
-  console.log(`Listo. ${rows.length} facturas guardadas (${matched} ligadas a un usuario).`);
+  console.log(
+    `Listo. ${rows.length} facturas guardadas (${matched} ligadas a un usuario, ${cleanupSafe ? staleKeys.length : 0} obsoletas eliminadas).`
+  );
+}
+
+function printDryRun(rows) {
+  const days = [...new Set(rows.map((row) => row.fecha.slice(0, 10)))].sort();
+  const latestDay = days.at(-1) || null;
+  const latestCount = latestDay
+    ? rows.filter((row) => row.fecha.startsWith(latestDay)).length
+    : 0;
+  console.log("Dry-run: no se guardo nada en Supabase.");
+  console.log(JSON.stringify({ rows: rows.length, latestDay, latestCount, days }, null, 2));
 }
 
 // Ruta del archivo a importar si se paso --import (o --import=RUTA).
@@ -259,6 +301,7 @@ async function main() {
     const rows = parse(html);
     console.log(`Parseadas ${rows.length} facturas del archivo.`);
     if (rows.length === 0) { console.log("0 filas. ¿Es el HTML del reporte correcto?"); return; }
+    if (DRY_RUN) { printDryRun(rows); return; }
     await saveRows(rows);
     return;
   }
@@ -270,6 +313,7 @@ async function main() {
   const rows = parse(html);
   console.log(`Parseadas ${rows.length} facturas.`);
   if (rows.length === 0) { console.log("0 filas. Revisa cpi-reporte.html (corré con --debug)."); return; }
+  if (DRY_RUN) { printDryRun(rows); return; }
   await saveRows(rows);
 }
 
