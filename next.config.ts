@@ -25,6 +25,13 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        // La categor\u00eda se renombr\u00f3 a Seguridad; se conserva la URL anterior
+        // para enlaces existentes y para que los buscadores transfieran su se\u00f1al SEO.
+        source: "/categoria/argom-soportes-tv",
+        destination: "/categoria/seguridad",
+        permanent: true,
+      },
+      {
         source: "/envio-devoluciones-y-pago",
         destination: "/envios",
         permanent: true,

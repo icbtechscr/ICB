@@ -184,7 +184,13 @@ export function NavbarManager({
                 value={it.categorySlug ?? ""}
                 onChange={(e) => {
                   const slug = e.target.value || null;
-                  const patch: Partial<NavbarItem> = { categorySlug: slug };
+                  // Un bot\u00f3n asignado a una categor\u00eda debe llevar siempre a esa
+                  // categor\u00eda. As\u00ed un link manual anterior no queda apuntando a
+                  // una secci\u00f3n distinta despu\u00e9s de cambiar el selector.
+                  const patch: Partial<NavbarItem> = {
+                    categorySlug: slug,
+                    href: slug ? null : it.href,
+                  };
                   const isDefaultLabel =
                     !it.label.trim() ||
                     it.label === "Nuevo botón" ||

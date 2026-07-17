@@ -80,7 +80,7 @@ export type NavbarContent = { items: NavbarItem[] };
 export const DEFAULT_NAVBAR_ITEMS: NavbarItem[] = [
   { id: "inicio", label: "Inicio", href: "/", categorySlug: null, categorySlugs: [] },
   { id: "computadoras", label: "Computadoras", href: null, categorySlug: "computadoras", categorySlugs: [] },
-  { id: "seguridad", label: "Seguridad", href: null, categorySlug: "camaras-de-vigilancia", categorySlugs: [] },
+  { id: "seguridad", label: "Seguridad", href: null, categorySlug: "seguridad", categorySlugs: [] },
   { id: "redes", label: "Redes", href: null, categorySlug: "redes", categorySlugs: [] },
   { id: "pos", label: "POS", href: null, categorySlug: "punto-de-venta-pos", categorySlugs: [] },
   { id: "accesorios", label: "Accesorios", href: "/productos", categorySlug: null, categorySlugs: [] },

@@ -59,7 +59,7 @@ function getChildren(parentWooId: number | null, limit = 10): SubCategory[] {
 const CURATED: { label: string; href: string; parentWooId: number | null }[] = [
   { label: "Inicio", href: "/", parentWooId: null },
   { label: "Computadoras", href: "/categoria/computadoras", parentWooId: 51 },
-  { label: "Seguridad", href: "/categoria/camaras-de-vigilancia", parentWooId: 58 },
+  { label: "Seguridad", href: "/categoria/seguridad", parentWooId: 58 },
   { label: "Redes", href: "/categoria/redes", parentWooId: 62 },
   { label: "POS", href: "/categoria/punto-de-venta-pos", parentWooId: 55 },
   { label: "Accesorios", href: "/productos", parentWooId: 195 },
