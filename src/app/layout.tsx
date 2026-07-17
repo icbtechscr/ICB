@@ -97,6 +97,7 @@ export default async function RootLayout({
   return (
     <html lang="es" className="h-full antialiased" suppressHydrationWarning>
       <head>
+        <meta property="og:site_name" content={SITE_NAME} />
         <script
           dangerouslySetInnerHTML={{
             __html:
