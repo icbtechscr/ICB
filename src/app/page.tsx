@@ -25,7 +25,7 @@ import {
 
 export const metadata: Metadata = {
   title: {
-    absolute: "ICB Technologies — Tecnología y seguridad en Costa Rica",
+    absolute: "ICB Technologies Costa Rica — Tecnología y seguridad",
   },
   description: SITE_DESCRIPTION,
   alternates: { canonical: SITE_URL },
@@ -49,7 +49,7 @@ export default async function HomePage() {
       "@id": `${SITE_URL}/#website`,
       url: SITE_URL,
       name: SITE_NAME,
-      alternateName: ["ICB Technologies Costa Rica", "ICB"],
+      alternateName: "ICB",
       inLanguage: "es-CR",
       publisher: { "@id": `${SITE_URL}/#organization` },
     },

@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "ICB Portal",
     short_name: "ICB Portal",
     description:
-      "Portal del colaborador de ICB Technologies: marcaje, ventas y más.",
+      "Portal del colaborador de ICB Technologies Costa Rica: marcaje, ventas y más.",
     start_url: "/portal",
     scope: "/",
     display: "standalone",

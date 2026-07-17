@@ -224,7 +224,7 @@ export function PunchPanel({
                 <span key={b.id}>
                   {b.remote
                     ? "Trabajo remoto"
-                    : b.name.replace(/^ICB Technologies /, "ICB ")}
+                    : b.name.replace(/^ICB Technologies Costa Rica /, "ICB ")}
                   {i < branches.length - 1 ? " ·" : ""}
                 </span>
               ))}
@@ -579,7 +579,7 @@ function Cell({
 }
 
 function shortBranch(name: string | null): string {
-  return (name ?? "").replace(/^ICB Technologies /, "").replace(/^ICB /, "");
+  return (name ?? "").replace(/^ICB Technologies Costa Rica /, "").replace(/^ICB /, "");
 }
 
 function LocationBadge({ cell }: { cell: PunchCell }) {

@@ -32,7 +32,7 @@ export async function Footer() {
           <div className="md:col-span-2">
             <Image
               src="/icb-logo.png"
-              alt="ICB Technologies"
+              alt="ICB Technologies Costa Rica"
               width={200}
               height={64}
               className="h-16 w-auto object-contain brightness-0 invert"
@@ -137,7 +137,7 @@ export async function Footer() {
 
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-7xl items-center justify-center px-4 py-5 text-xs text-ink-500">
-          <p>© {new Date().getFullYear()} ICB Technologies. Todos los derechos reservados.</p>
+          <p>© {new Date().getFullYear()} ICB Technologies Costa Rica. Todos los derechos reservados.</p>
         </div>
       </div>
     </footer>

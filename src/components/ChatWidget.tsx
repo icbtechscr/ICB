@@ -8,7 +8,7 @@ type Msg = { role: "user" | "assistant"; content: string };
 const WELCOME: Msg = {
   role: "assistant",
   content:
-    "¡Hola! 👋 Soy el asistente virtual de ICB Technologies. Puedo ayudarte con productos, precios, sucursales, envíos y más. ¿En qué te ayudo?",
+    "¡Hola! 👋 Soy el asistente virtual de ICB Technologies Costa Rica. Puedo ayudarte con productos, precios, sucursales, envíos y más. ¿En qué te ayudo?",
 };
 
 export function ChatWidget() {
@@ -92,7 +92,7 @@ export function ChatWidget() {
               <Bot className="size-5" />
             </div>
             <div className="leading-tight">
-              <p className="text-sm font-semibold">Asistente ICB Technologies</p>
+              <p className="text-sm font-semibold">Asistente ICB Technologies Costa Rica</p>
               <p className="flex items-center gap-1 text-[11px] text-white/80">
                 <span className="size-1.5 rounded-full bg-accent-400" />
                 En línea

@@ -554,7 +554,7 @@ export default function PagoPage() {
                   <Link href="/privacidad" className="font-bold text-brand-600 underline-offset-4 hover:underline">
                     política de privacidad
                   </Link>{" "}
-                  de ICB Technologies.
+                  de ICB Technologies Costa Rica.
                 </span>
               </label>
             </section>

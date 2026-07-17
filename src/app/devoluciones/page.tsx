@@ -81,7 +81,7 @@ export default function DevolucionesPage() {
           valorar reconocer al cliente un porcentaje del precio pagado, según el
           estado del producto, sus empaques, accesorios, grado de uso,
           deterioro o faltantes. Dicho reconocimiento, si se aprueba, podrá
-          aplicarse como crédito para compras posteriores en ICB Technologies
+          aplicarse como crédito para compras posteriores en ICB Technologies Costa Rica
           Costa Rica.
         </p>
         <p>

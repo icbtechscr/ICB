@@ -1,4 +1,4 @@
-// Sucursales de ICB Technologies + CEDI.
+// Sucursales de ICB Technologies Costa Rica + CEDI.
 // Fuente de verdad compartida por: página /sucursales, footer y el sistema
 // de marcaje de horario (control de colaboradores).
 //
@@ -41,7 +41,7 @@ export const BRANCHES: Branch[] = [
   {
     id: "san-jose",
     city: "San José",
-    name: "ICB Technologies San José",
+    name: "ICB Technologies Costa Rica San José",
     address:
       "Avenida 8, 225 metros al oeste de la entrada principal del Hospital Blanco Cervantes.",
     phone: "+506 4001 6421",
@@ -53,7 +53,7 @@ export const BRANCHES: Branch[] = [
   {
     id: "alajuela",
     city: "Alajuela",
-    name: "ICB Technologies Alajuela",
+    name: "ICB Technologies Costa Rica Alajuela",
     address: "Alajuela centro",
     phone: "+506 4000 0865",
     lat: 10.0127018,
@@ -64,7 +64,7 @@ export const BRANCHES: Branch[] = [
   {
     id: "heredia",
     city: "Heredia",
-    name: "ICB Technologies Heredia",
+    name: "ICB Technologies Costa Rica Heredia",
     address:
       "Corazón de Jesús, Heredia. Costado Sur de la Biblioteca pública de Heredia. Frente al INA.",
     phone: "+506 4001 1931",
@@ -76,7 +76,7 @@ export const BRANCHES: Branch[] = [
   {
     id: "cartago",
     city: "Cartago",
-    name: "ICB Technologies Cartago",
+    name: "ICB Technologies Costa Rica Cartago",
     address: "Boulevard el Molino, segundo piso, a mano izquierda. Local #9.",
     phone: "+506 4001 7961",
     lat: 9.8575258,
@@ -87,7 +87,7 @@ export const BRANCHES: Branch[] = [
   {
     id: "ciudad-quesada",
     city: "Ciudad Quesada",
-    name: "ICB Technologies Ciudad Quesada",
+    name: "ICB Technologies Costa Rica Ciudad Quesada",
     address:
       "Ciudad Quesada, San Carlos. Contiguo a la casa Cural. Plaza comercial Casazul, local al fondo.",
     phone: "+506 4001 6449",

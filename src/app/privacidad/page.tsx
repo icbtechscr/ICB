@@ -5,7 +5,7 @@ import { absoluteUrl } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Política de privacidad",
   description:
-    "Cómo ICB Technologies recopila, usa y protege los datos personales de sus clientes en Costa Rica.",
+    "Cómo ICB Technologies Costa Rica recopila, usa y protege los datos personales de sus clientes.",
   alternates: { canonical: absoluteUrl("/privacidad") },
 };
 
@@ -13,12 +13,12 @@ export default function PrivacidadPage() {
   return (
     <LegalPage
       title="Política de privacidad"
-      intro="En ICB Technologies protegemos tus datos personales conforme a la Ley N.º 8968 de Protección de la Persona frente al Tratamiento de sus Datos Personales de Costa Rica."
+      intro="En ICB Technologies Costa Rica protegemos tus datos personales conforme a la Ley N.º 8968 de Protección de la Persona frente al Tratamiento de sus Datos Personales de Costa Rica."
       updated="Mayo 2026"
     >
       <LegalSection heading="1. Responsable del tratamiento">
         <p>
-          ICB Technologies, con operación en Costa Rica, es responsable del
+          ICB Technologies Costa Rica es responsable del
           tratamiento de los datos personales recopilados a través de este
           sitio. Consultas: info@icbtechscr.com.
         </p>

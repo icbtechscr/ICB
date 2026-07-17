@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: {
-    default: "Portal del colaborador — ICB Technologies",
+    default: "Portal del colaborador — ICB Technologies Costa Rica",
     template: "%s — Portal ICB",
   },
   robots: { index: false, follow: false, noarchive: true, noimageindex: true },

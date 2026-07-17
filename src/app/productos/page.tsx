@@ -20,7 +20,7 @@ export async function generateMetadata({
   const params = await searchParams;
   const hasVariant = Object.values(params).some((value) => value !== undefined);
   const description =
-    "Explorá el catálogo de ICB Technologies: computadoras, videovigilancia, redes, POS, periféricos y tecnología con garantía en Costa Rica.";
+    "Explorá el catálogo de ICB Technologies Costa Rica: computadoras, videovigilancia, redes, POS, periféricos y tecnología con garantía.";
   const url = absoluteUrl("/productos");
 
   return {

@@ -367,7 +367,7 @@ export function TimeclockExport({
       .join("");
     const head = headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("");
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Control de horario - ICB Technologies</title>
+<title>Control de horario - ICB Technologies Costa Rica</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: #0f172a; margin: 32px; }
@@ -429,7 +429,7 @@ export function TimeclockExport({
 </style></head>
 <body>
   <header>
-    <img src="${origin}/icb-logo.png" alt="ICB Technologies" />
+    <img src="${origin}/icb-logo.png" alt="ICB Technologies Costa Rica" />
     <div style="text-align:right">
       <h1>Control de horario</h1>
       <div class="sub" style="margin:4px 0 0">Generado ${new Date().toLocaleString("es-CR")}</div>
@@ -438,7 +438,7 @@ export function TimeclockExport({
   <div class="sub">${escapeHtml(rangeLabel)}</div>
   ${renderTardySection(report)}
   <table><thead><tr>${head}</tr></thead><tbody>${bodyRows}</tbody></table>
-  <footer>ICB Technologies - Reporte de marcajes de colaboradores</footer>
+  <footer>ICB Technologies Costa Rica - Reporte de marcajes de colaboradores</footer>
   <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 350); };</script>
 </body></html>`;
     const w = window.open("", "_blank");

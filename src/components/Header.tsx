@@ -29,7 +29,7 @@ export function Header({
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <Image
             src="/icb-logo.png"
-            alt="ICB Technologies"
+            alt="ICB Technologies Costa Rica"
             width={200}
             height={64}
             className="h-10 w-auto object-contain transition sm:h-14"

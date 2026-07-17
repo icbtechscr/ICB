@@ -17,8 +17,8 @@ import {
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "ICB Technologies — Tecnología y seguridad en Costa Rica",
-    template: "%s — ICB Technologies",
+    default: `${SITE_NAME} — Tecnología y seguridad`,
+    template: `%s — ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
@@ -31,27 +31,27 @@ export const metadata: Metadata = {
     "Dahua",
     "Hikvision",
     "Uniview",
-    "ICB Technologies",
+    SITE_NAME,
   ],
   openGraph: {
     type: "website",
     locale: "es_CR",
     siteName: SITE_NAME,
     url: SITE_URL,
-    title: "ICB Technologies — Tecnología y seguridad en Costa Rica",
+    title: `${SITE_NAME} — Tecnología y seguridad`,
     description: SITE_DESCRIPTION,
     images: [
       {
         url: SITE_OG_IMAGE_URL,
         width: 1200,
         height: 630,
-        alt: "ICB Technologies — Tecnología y seguridad en Costa Rica",
+        alt: `${SITE_NAME} — Tecnología y seguridad`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "ICB Technologies — Tecnología y seguridad en Costa Rica",
+    title: `${SITE_NAME} — Tecnología y seguridad`,
     description: SITE_DESCRIPTION,
     images: [SITE_OG_IMAGE_URL],
   },

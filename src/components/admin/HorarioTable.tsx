@@ -93,7 +93,7 @@ export function HorarioTable({
 function locationBadge(cell: PunchCell) {
   const isRemote = cell.branchId === "remoto";
   const shortName = (cell.branchName ?? "")
-    .replace(/^ICB Technologies /, "")
+    .replace(/^ICB Technologies Costa Rica /, "")
     .replace(/^ICB /, "");
   if (isRemote && cell.within) {
     return (

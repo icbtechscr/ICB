@@ -10,10 +10,10 @@ export const SITE_URL = configuredSiteUrl.replace(
   "https://www.icbtechscr.com"
 );
 
-export const SITE_NAME = "ICB Technologies";
+export const SITE_NAME = "ICB Technologies Costa Rica";
 
 export const SITE_DESCRIPTION =
-  "Computadoras, cámaras de seguridad, redes, periféricos y POS. Distribuidor oficial Dahua, Hikvision y Uniview en Costa Rica.";
+  "ICB Technologies Costa Rica: computadoras, cámaras de seguridad, redes, periféricos y POS. Distribuidor oficial Dahua, Hikvision y Uniview.";
 
 export function absoluteUrl(path: string): string {
   return `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
