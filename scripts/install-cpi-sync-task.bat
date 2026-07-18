@@ -1,31 +1,33 @@
 @echo off
 setlocal
-REM Crea o actualiza una tarea de Windows para correr ventas + cotizaciones CPI cada 30 minutos.
+REM Crea o actualiza la tarea de Windows que corre ventas + cotizaciones CPI
+REM cada 30 minutos, SIN ventana visible (usa el lanzador oculto .vbs).
 
 set "TASK_NAME=ICB Sync CPI"
-set "SCRIPT=%~dp0sync-cpi-all-auto.bat"
+set "LAUNCHER=%~dp0sync-cpi-hidden.vbs"
 
 echo.
-echo Creando/actualizando tarea "%TASK_NAME%" cada 30 minutos...
-echo Script: "%SCRIPT%"
+echo Creando/actualizando la tarea "%TASK_NAME%" (cada 30 min, sin ventana)...
+echo Lanzador: "%LAUNCHER%"
 echo.
 
-schtasks /Create /TN "%TASK_NAME%" /TR "\"%SCRIPT%\"" /SC MINUTE /MO 30 /F
+REM wscript ejecuta el .vbs que a su vez corre sync-cpi-all-auto.bat oculto.
+schtasks /Create /TN "%TASK_NAME%" /TR "wscript.exe \"%LAUNCHER%\"" /SC MINUTE /MO 30 /F
 if errorlevel 1 (
   echo.
-  echo No se pudo crear la tarea. Proba ejecutar este archivo como administrador.
-  echo Tambien podes crearla manualmente apuntando a:
-  echo "%SCRIPT%"
+  echo No se pudo crear la tarea. Proba ejecutar este archivo como administrador
+  echo (clic derecho ^> Ejecutar como administrador).
   echo.
   pause
   exit /b 1
 )
 
 echo.
-echo Tarea lista. Ejecutando una primera sincronizacion de prueba...
+echo Tarea lista. Ejecutando una primera sincronizacion de prueba (en segundo plano)...
 schtasks /Run /TN "%TASK_NAME%"
 
 echo.
-echo Listo. El log queda en scripts\sync-cpi-all.log
+echo Listo. La sincronizacion corre oculta cada 30 minutos.
+echo El log queda en: scripts\sync-cpi-all.log
 echo.
 pause
