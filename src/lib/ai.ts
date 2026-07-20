@@ -190,12 +190,21 @@ ${ICB_KNOWLEDGE}
  */
 export async function generarRespuesta(
   history: ChatMessage[],
-  opts: { tools?: ToolDef[] | null; handlers?: ToolHandlers | null } = {}
+  opts: {
+    tools?: ToolDef[] | null;
+    handlers?: ToolHandlers | null;
+    systemContext?: string | null;
+  } = {}
 ): Promise<{ text: string; tokens: number }> {
-  const { tools = null, handlers = null } = opts;
+  const { tools = null, handlers = null, systemContext = null } = opts;
 
   const messages: ApiMessage[] = [
-    { role: "system", content: buildSystemPrompt() },
+    {
+      role: "system",
+      content: systemContext
+        ? `${buildSystemPrompt()}\n\n== Instrucciones adicionales del canal ==\n${systemContext}`
+        : buildSystemPrompt(),
+    },
     ...history.map((m) => ({
       role: m.role === "user" ? ("user" as const) : ("assistant" as const),
       content: m.content,

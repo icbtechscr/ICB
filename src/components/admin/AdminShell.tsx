@@ -18,6 +18,7 @@ import {
   Lock,
   TrendingUp,
   ClipboardList,
+  Bot,
   type LucideIcon,
 } from "lucide-react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
@@ -51,6 +52,14 @@ const GROUPS: Group[] = [
       { href: "/admin/cotizaciones", label: "Cotizaciones CPI", Icon: ClipboardList },
       { href: "/admin/pedidos", label: "Pedidos online", Icon: ShoppingBag },
     ],
+  },
+  {
+    id: "agente",
+    label: "Agente",
+    Icon: Bot,
+    href: "/admin/agente",
+    prefixes: ["/admin/agente"],
+    sub: [],
   },
   {
     id: "rrhh",
