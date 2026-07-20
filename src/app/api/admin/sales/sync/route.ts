@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase-server";
 import { getUserRole, isAdminLike } from "@/lib/roles";
 import { syncCpiSales } from "@/lib/cpi-sales";
+import { syncCpiProductSales } from "@/lib/cpi-products";
 import { cpiFetchCompletadasHtml, cpiConfigured } from "@/lib/cpi";
 
 export const dynamic = "force-dynamic";
@@ -20,8 +21,11 @@ export async function POST() {
     );
   }
   try {
-    const result = await syncCpiSales();
-    return NextResponse.json(result);
+    const [sales, products] = await Promise.all([
+      syncCpiSales(),
+      syncCpiProductSales(),
+    ]);
+    return NextResponse.json({ sales, products });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return new NextResponse(msg, { status: 500 });

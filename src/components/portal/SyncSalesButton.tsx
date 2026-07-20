@@ -20,8 +20,14 @@ export function SyncSalesButton() {
       if (!res.ok) throw new Error(text || "Error");
       let info = "Listo";
       try {
-        const j = JSON.parse(text) as { fetched: number; upserted: number };
-        info = `${j.upserted} facturas sincronizadas`;
+        const j = JSON.parse(text) as {
+          sales?: { upserted: number };
+          products?: { products: number };
+          upserted?: number;
+        };
+        const invoices = j.sales?.upserted ?? j.upserted ?? 0;
+        const products = j.products?.products ?? 0;
+        info = `${invoices} facturas \u00b7 ${products} productos`;
       } catch {
         /* respuesta no JSON */
       }

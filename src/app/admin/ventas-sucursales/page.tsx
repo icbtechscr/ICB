@@ -1,6 +1,6 @@
 import {
   Wallet, DollarSign, ShoppingBag, Receipt, Building2, TrendingUp,
-  Store, BadgeCheck, CalendarDays, Users,
+  Store, BadgeCheck, CalendarDays, Users, PackageSearch,
 } from "lucide-react";
 import { getSalesAnalytics, periodRange, type Period } from "@/lib/cpi-analytics";
 import { PeriodNav } from "@/components/PeriodNav";
@@ -11,6 +11,73 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Ventas de sucursal — ICB Admin" };
 
 function fmtUSD(n: number) { return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
+
+function SoldProductsTable({
+  products,
+  isMonth,
+}: {
+  products: {
+    sku: string;
+    descripcion: string;
+    cantidad: number;
+    crc: number;
+    usd: number;
+    saleDays: number;
+  }[];
+  isMonth: boolean;
+}) {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft">
+      <h2 className="border-b border-ink-100 px-5 py-3.5 text-sm font-bold text-ink-900">
+        {isMonth ? "Productos m\u00e1s vendidos del mes" : "Productos vendidos hoy"}
+      </h2>
+      {products.length === 0 ? (
+        <div className="px-5 py-8 text-center text-sm text-ink-500">
+          El detalle de productos se mostrar\u00e1 cuando termine la sincronizaci\u00f3n de CPI.
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-ink-100 text-left text-xs uppercase tracking-wider text-ink-500">
+                <th className="px-4 py-2.5 font-bold">Producto</th>
+                {isMonth && <th className="px-3 py-2.5 text-right font-bold">D\u00edas</th>}
+                <th className="px-3 py-2.5 text-right font-bold">Cantidad</th>
+                <th className="px-3 py-2.5 text-right font-bold">Monto</th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((product) => (
+                <tr
+                  key={`${product.sku}-${product.descripcion}`}
+                  className="border-b border-ink-50 last:border-0"
+                >
+                  <td className="px-4 py-2.5">
+                    <p className="max-w-3xl font-semibold text-ink-800">{product.descripcion}</p>
+                    {product.sku && <p className="text-xs text-ink-400">{product.sku}</p>}
+                  </td>
+                  {isMonth && (
+                    <td className="px-3 py-2.5 text-right font-bold text-brand-600">
+                      {product.saleDays}
+                    </td>
+                  )}
+                  <td className="px-3 py-2.5 text-right font-bold text-brand-600">
+                    {product.cantidad.toLocaleString("es-CR", { maximumFractionDigits: 2 })}
+                  </td>
+                  <td className="px-3 py-2.5 text-right font-bold text-ink-900">
+                    {product.usd > 0
+                      ? `${formatCRC(product.crc)} \u00b7 ${fmtUSD(product.usd)}`
+                      : formatCRC(product.crc)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
 
 export default async function VentasSucursalesPage({
   searchParams,
@@ -63,6 +130,8 @@ export default async function VentasSucursalesPage({
             {isMonth && <StatCard label="Promedio diario (₡)" value={formatCRC(promedioDiario)} sub={`${diasConVentas} día(s) con ventas`} Icon={CalendarDays} accent="brand" />}
             {isMonth && <StatCard label="Mejor día (₡)" value={formatCRC(mejorDia.crc)} sub={mejorDia.day ? mejorDia.day.slice(8, 10) + "/" + mejorDia.day.slice(5, 7) : undefined} Icon={TrendingUp} accent="accent" />}
             <StatCard label="Sucursales activas" value={String(a.sucursales)} Icon={Building2} accent="brand" />
+            <StatCard label="Unidades vendidas" value={a.productUnits.toLocaleString("es-CR", { maximumFractionDigits: 2 })} Icon={ShoppingBag} accent="accent" />
+            <StatCard label="Productos vendidos" value={String(a.productCount)} Icon={PackageSearch} accent="brand" />
             <StatCard label="Aceptación" value={a.count ? `${Math.round((a.aceptadas / a.count) * 100)}%` : "—"} Icon={BadgeCheck} accent="accent" />
           </div>
 
@@ -83,6 +152,8 @@ export default async function VentasSucursalesPage({
               <BarList items={cliItems} accent="accent" />
             </section>
           </div>
+
+          <SoldProductsTable products={a.topProducts} isMonth={isMonth} />
 
           <div className="grid gap-6 lg:grid-cols-2">
             <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft">

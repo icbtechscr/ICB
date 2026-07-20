@@ -178,12 +178,6 @@ export async function syncCpiProductSales(
   let productCount = 0;
 
   for (const item of daily) {
-    const { error: deleteError } = await sb
-      .from(PRODUCT_SALES_TABLE)
-      .delete()
-      .eq("sale_date", item.day);
-    if (deleteError) throw productSalesTableError(deleteError);
-
     const products = mergeSoldProducts(item.products);
     productCount += products.length;
     const syncedAt = new Date().toISOString();
@@ -205,6 +199,25 @@ export async function syncCpiProductSales(
         .from(PRODUCT_SALES_TABLE)
         .upsert(rows.slice(i, i + 400), { onConflict: "cpi_key" });
       if (error) throw productSalesTableError(error);
+    }
+
+    // Guardamos primero y solo despues limpiamos claves que ya no aparecen.
+    // Una interrupcion durante el upsert no puede dejar el panel vacio.
+    const { data: existing, error: existingError } = await sb
+      .from(PRODUCT_SALES_TABLE)
+      .select("cpi_key")
+      .eq("sale_date", item.day);
+    if (existingError) throw productSalesTableError(existingError);
+    const currentKeys = new Set(rows.map((row) => row.cpi_key));
+    const staleKeys = (existing ?? [])
+      .map((row: { cpi_key: string }) => row.cpi_key)
+      .filter((key: string) => !currentKeys.has(key));
+    for (let i = 0; i < staleKeys.length; i += 200) {
+      const { error: deleteError } = await sb
+        .from(PRODUCT_SALES_TABLE)
+        .delete()
+        .in("cpi_key", staleKeys.slice(i, i + 200));
+      if (deleteError) throw productSalesTableError(deleteError);
     }
   }
 

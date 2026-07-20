@@ -531,7 +531,12 @@ export function parseSoldProductsReport(html: string): CpiSoldProduct[] {
       headerIndex(cells, "Descripcion") >= 0 &&
       headerIndex(cells, "Unidades Total") >= 0
   );
-  if (headAt < 0) return [];
+  if (headAt < 0) {
+    if (/no se encontraron datos para los filtros seleccionados/i.test(cleanText(html))) {
+      return [];
+    }
+    throw new Error("CPI no devolvio la tabla esperada de unidades vendidas");
+  }
 
   const headers = rows[headAt];
   const skuAt = headerIndex(headers, "Codigo");
