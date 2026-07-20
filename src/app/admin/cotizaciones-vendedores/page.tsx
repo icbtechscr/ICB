@@ -19,6 +19,7 @@ import {
   type QuoteVendorPerformance,
 } from "@/lib/cpi-quotes";
 import { BarList, StatCard, type BarItem } from "@/components/admin/SalesCharts";
+import { ReportExportButtons } from "@/components/admin/ReportExportButtons";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Cotizaciones vendedores - ICB Admin" };
@@ -302,30 +303,37 @@ export default async function CotizacionesVendedoresPage({
               : "Rendimiento del equipo comercial en las cotizaciones de hoy."}
           </p>
         </div>
-        {activeTab === "historial" ? (
-          <div className="inline-flex items-center gap-1 rounded-full border border-ink-200 bg-white p-1">
-            <Link
-              href={`?tab=historial&mes=${shift(year, month1, -1)}`}
-              className="inline-flex size-8 items-center justify-center rounded-full text-ink-600 hover:bg-ink-100"
-            >
-              <ChevronLeft className="size-4" />
-            </Link>
-            <span className="min-w-32 px-2 text-center text-sm font-bold capitalize text-ink-900">
-              {monthLabel(year, month1)}
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <ReportExportButtons
+            kind="quotes"
+            period={activeTab === "historial" ? "month" : "day"}
+            refValue={activeTab === "historial" ? `${year}-${String(month1).padStart(2, "0")}` : today}
+          />
+          {activeTab === "historial" ? (
+            <div className="inline-flex items-center gap-1 rounded-full border border-ink-200 bg-white p-1">
+              <Link
+                href={`?tab=historial&mes=${shift(year, month1, -1)}`}
+                className="inline-flex size-8 items-center justify-center rounded-full text-ink-600 hover:bg-ink-100"
+              >
+                <ChevronLeft className="size-4" />
+              </Link>
+              <span className="min-w-32 px-2 text-center text-sm font-bold capitalize text-ink-900">
+                {monthLabel(year, month1)}
+              </span>
+              <Link
+                href={`?tab=historial&mes=${shift(year, month1, 1)}`}
+                className="inline-flex size-8 items-center justify-center rounded-full text-ink-600 hover:bg-ink-100"
+              >
+                <ChevronRight className="size-4" />
+              </Link>
+            </div>
+          ) : (
+            <span className="inline-flex items-center gap-2 rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-bold text-ink-900">
+              <CalendarDays className="size-4 text-brand-600" />
+              {shortDate(today)}
             </span>
-            <Link
-              href={`?tab=historial&mes=${shift(year, month1, 1)}`}
-              className="inline-flex size-8 items-center justify-center rounded-full text-ink-600 hover:bg-ink-100"
-            >
-              <ChevronRight className="size-4" />
-            </Link>
-          </div>
-        ) : (
-          <span className="inline-flex items-center gap-2 rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-bold text-ink-900">
-            <CalendarDays className="size-4 text-brand-600" />
-            {shortDate(today)}
-          </span>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="mb-6 inline-flex rounded-full border border-ink-200 bg-white p-1">

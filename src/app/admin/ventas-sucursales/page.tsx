@@ -6,6 +6,7 @@ import { getSalesAnalytics, periodRange, type Period } from "@/lib/cpi-analytics
 import { PeriodNav } from "@/components/PeriodNav";
 import { formatCRC } from "@/lib/utils";
 import { StatCard, BarList, DayBars, SplitBar, type BarItem } from "@/components/admin/SalesCharts";
+import { ReportExportButtons } from "@/components/admin/ReportExportButtons";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Ventas de sucursal — ICB Admin" };
@@ -111,7 +112,10 @@ export default async function VentasSucursalesPage({
           </h1>
           <p className="mt-1 text-sm text-ink-600">Facturación por sucursal. Datos de CPI, actualizados con cada sincronización.</p>
         </div>
-        <PeriodNav period={period} refValue={range.ref} label={range.label} />
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <ReportExportButtons kind="sales" period={period} refValue={range.ref} />
+          <PeriodNav period={period} refValue={range.ref} label={range.label} />
+        </div>
       </div>
 
       {!a.hasData ? (
