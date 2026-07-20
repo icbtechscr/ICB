@@ -9,7 +9,8 @@ echo.
 echo Instalando "%TASK_NAME%" para iniciar con Windows...
 schtasks /Create /TN "%TASK_NAME%" /TR "wscript.exe \"%LAUNCHER%\"" /SC ONLOGON /F
 if errorlevel 1 (
-  echo No se pudo crear la tarea. Ejecuta este archivo como administrador.
+  echo No se pudo crear una tarea separada sin permisos de administrador.
+  echo El agente tambien puede iniciarse desde la tarea existente "ICB Sync CPI".
   pause
   exit /b 1
 )
@@ -20,4 +21,3 @@ echo.
 echo Listo. Abre Admin ^> Agente para activar la conexion y escanear el QR.
 echo Log: scripts\whatsapp-agent.log
 pause
-

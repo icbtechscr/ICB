@@ -11,6 +11,10 @@ set "LOG=scripts\sync-cpi-all.log"
 >> "%LOG%" echo [%date% %time%] Iniciando sincronizacion completa CPI
 
 >> "%LOG%" echo.
+>> "%LOG%" echo --- Worker WhatsApp ---
+powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%~dp0ensure-whatsapp-agent.ps1" >> "%LOG%" 2>&1
+
+>> "%LOG%" echo.
 >> "%LOG%" echo --- Ventas CPI ---
 node scripts\sync-cpi.mjs >> "%LOG%" 2>&1
 set "SALES_EXIT=%ERRORLEVEL%"
