@@ -468,3 +468,80 @@ export async function syncCpiInventory(): Promise<InventorySyncResult> {
     unmatchedExamples,
   };
 }
+
+export type ProductRankRow = {
+  rank: number;
+  sku: string;
+  descripcion: string;
+  cantidad: number;
+  crc: number;
+  usd: number;
+  saleDays: number;
+  lastSale: string | null;
+};
+
+/** Ranking historico (acumulado desde siempre) de TODOS los productos facturados.
+ *  Sin limite: si un producto se facturo una sola vez, igual aparece. */
+export async function getAllTimeProductRanking(): Promise<ProductRankRow[]> {
+  try {
+    const sb = createAdminClient();
+    type Agg = {
+      sku: string;
+      descripcion: string;
+      cantidad: number;
+      crc: number;
+      usd: number;
+      days: Set<string>;
+      lastSale: string | null;
+    };
+    const products = new Map<string, Agg>();
+    const page = 1000;
+    for (let from = 0; from < 500000; from += page) {
+      const { data, error } = await sb
+        .from(PRODUCT_SALES_TABLE)
+        .select("sale_date, sku, descripcion, moneda, cantidad, total_venta")
+        .order("sale_date", { ascending: true })
+        .range(from, from + page - 1);
+      if (error) break;
+      const rows = (data ?? []) as (ProductSaleDbRow & { sale_date: string })[];
+      for (const row of rows) {
+        const key = productKey(row.sku, row.descripcion);
+        if (!key) continue;
+        const amount = Number(row.total_venta) || 0;
+        const quantity = Number(row.cantidad) || 0;
+        const agg =
+          products.get(key) ??
+          {
+            sku: row.sku || "",
+            descripcion: row.descripcion || row.sku || "Producto",
+            cantidad: 0,
+            crc: 0,
+            usd: 0,
+            days: new Set<string>(),
+            lastSale: null as string | null,
+          };
+        agg.cantidad += quantity;
+        if (row.moneda === "USD") agg.usd += amount;
+        else agg.crc += amount;
+        agg.days.add(row.sale_date);
+        if (!agg.lastSale || row.sale_date > agg.lastSale) agg.lastSale = row.sale_date;
+        if (!agg.sku && row.sku) agg.sku = row.sku;
+        products.set(key, agg);
+      }
+      if (rows.length < page) break;
+    }
+    const list = [...products.values()].map((p) => ({
+      sku: p.sku,
+      descripcion: p.descripcion,
+      cantidad: p.cantidad,
+      crc: p.crc,
+      usd: p.usd,
+      saleDays: p.days.size,
+      lastSale: p.lastSale,
+    }));
+    list.sort((a, b) => b.cantidad - a.cantidad || b.crc - a.crc || b.usd - a.usd);
+    return list.map((p, i) => ({ ...p, rank: i + 1 }));
+  } catch {
+    return [];
+  }
+}

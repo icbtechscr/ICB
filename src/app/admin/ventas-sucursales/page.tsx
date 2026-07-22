@@ -1,8 +1,9 @@
 import {
   Wallet, DollarSign, ShoppingBag, Receipt, Building2, TrendingUp,
-  Store, BadgeCheck, CalendarDays, Users, PackageSearch,
+  Store, BadgeCheck, CalendarDays, Users, PackageSearch, Trophy,
 } from "lucide-react";
 import { getSalesAnalytics, periodRange, type Period } from "@/lib/cpi-analytics";
+import { getAllTimeProductRanking, type ProductRankRow } from "@/lib/cpi-products";
 import { PeriodNav } from "@/components/PeriodNav";
 import { formatCRC } from "@/lib/utils";
 import { StatCard, BarList, DayBars, SplitBar, type BarItem } from "@/components/admin/SalesCharts";
@@ -80,6 +81,62 @@ function SoldProductsTable({
   );
 }
 
+function ProductRankingTable({ rows }: { rows: ProductRankRow[] }) {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-ink-100 px-5 py-3.5">
+        <h2 className="inline-flex items-center gap-2 text-sm font-bold text-ink-900">
+          <Trophy className="size-4 text-brand-600" /> Ranking historico de productos
+        </h2>
+        <span className="text-xs text-ink-500">
+          {rows.length} producto(s) facturado(s) - acumulado desde siempre
+        </span>
+      </div>
+      {rows.length === 0 ? (
+        <div className="px-5 py-8 text-center text-sm text-ink-500">
+          Aun no hay productos facturados sincronizados.
+        </div>
+      ) : (
+        <div className="max-h-[36rem] overflow-auto">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 z-10 bg-white">
+              <tr className="border-b border-ink-100 text-left text-xs uppercase tracking-wider text-ink-500">
+                <th className="px-4 py-2.5 font-bold">#</th>
+                <th className="px-4 py-2.5 font-bold">Producto</th>
+                <th className="px-3 py-2.5 text-right font-bold">Unidades</th>
+                <th className="px-3 py-2.5 text-right font-bold">Monto</th>
+                <th className="px-3 py-2.5 text-right font-bold">Dias</th>
+                <th className="px-3 py-2.5 text-right font-bold">Ultima venta</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((p) => (
+                <tr key={`${p.rank}-${p.sku}-${p.descripcion}`} className="border-b border-ink-50 last:border-0">
+                  <td className="px-4 py-2.5 font-bold text-ink-400">{p.rank}</td>
+                  <td className="px-4 py-2.5">
+                    <p className="max-w-2xl font-semibold text-ink-800">{p.descripcion}</p>
+                    {p.sku && <p className="text-xs text-ink-400">{p.sku}</p>}
+                  </td>
+                  <td className="px-3 py-2.5 text-right font-bold text-brand-600">
+                    {p.cantidad.toLocaleString("es-CR", { maximumFractionDigits: 2 })}
+                  </td>
+                  <td className="px-3 py-2.5 text-right font-bold text-ink-900">
+                    {p.usd > 0 ? `${formatCRC(p.crc)} - ${fmtUSD(p.usd)}` : formatCRC(p.crc)}
+                  </td>
+                  <td className="px-3 py-2.5 text-right text-ink-600">{p.saleDays}</td>
+                  <td className="px-3 py-2.5 text-right text-ink-500">
+                    {p.lastSale ? `${p.lastSale.slice(8, 10)}/${p.lastSale.slice(5, 7)}` : "-"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default async function VentasSucursalesPage({
   searchParams,
 }: {
@@ -91,6 +148,7 @@ export default async function VentasSucursalesPage({
   const isMonth = period === "month";
 
   const a = await getSalesAnalytics(range);
+  const ranking = await getAllTimeProductRanking();
   const toMoney = (crc: number, usd: number) => (usd > 0 ? `${formatCRC(crc)} · ${fmtUSD(usd)}` : formatCRC(crc));
 
   const diasConVentas = a.porDia.filter((d) => d.crc > 0).length;
@@ -195,6 +253,10 @@ export default async function VentasSucursalesPage({
           </div>
         </div>
       )}
+
+      <div className="mt-6">
+        <ProductRankingTable rows={ranking} />
+      </div>
     </div>
   );
 }
