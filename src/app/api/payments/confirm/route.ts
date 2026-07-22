@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { verifyMountResult } from "@/lib/cybersource";
+import { notifyPaymentResult } from "@/lib/email";
 
 type Body = {
   orderId?: string;
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
     const sb = createAdminClient();
     const { data: order, error } = await sb
       .from("orders")
-      .select("id, order_number, payment_status")
+      .select("id, order_number, payment_status, customer_name, customer_email, customer_phone, total_crc, payment_method, shipping_method")
       .eq("id", orderId)
       .single();
 
@@ -52,6 +53,25 @@ export async function POST(req: Request) {
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId);
+
+    // Aviso al admin del resultado del pago (nunca rompe la respuesta).
+    try {
+      await notifyPaymentResult(
+        {
+          orderNumber: order.order_number,
+          customerName: order.customer_name ?? "",
+          customerEmail: order.customer_email ?? "",
+          customerPhone: order.customer_phone ?? "",
+          total: Number(order.total_crc) || 0,
+          paymentMethod: order.payment_method ?? "tarjeta",
+          shippingMethod: order.shipping_method ?? "",
+        },
+        result.ok,
+        result.message ?? undefined
+      );
+    } catch {
+      /* ignorar errores de correo */
+    }
 
     if (!result.ok) {
       return NextResponse.json(

@@ -41,29 +41,40 @@ function fmtDate(d: string) {
   });
 }
 
+type Bucket = "exitosas" | "pendientes" | "fallidas";
+
+const BUCKET_LABEL: Record<Bucket, string> = {
+  exitosas: "Compras exitosas",
+  pendientes: "Pendientes de pago",
+  fallidas: "Fallidas",
+};
+
+/** Clasifica el pedido segun el resultado del pago. */
+function bucketOf(o: Order): Bucket {
+  const ps = (o.paymentStatus || "").toLowerCase();
+  if (ps === "pagado") return "exitosas";
+  if (ps === "rechazado" || ps === "fallido" || ps === "cancelado") return "fallidas";
+  return "pendientes";
+}
+
 export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
-  const [bucket, setBucket] = useState<"activos" | "completados">("activos");
+  const [bucket, setBucket] = useState<Bucket>("exitosas");
   const [query, setQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const counts = useMemo(() => {
-    let activos = 0;
-    let completados = 0;
-    for (const o of orders) {
-      if (o.status === "entregado") completados += 1;
-      else activos += 1;
-    }
-    return { activos, completados };
+    const c: Record<Bucket, number> = { exitosas: 0, pendientes: 0, fallidas: 0 };
+    for (const o of orders) c[bucketOf(o)] += 1;
+    return c;
   }, [orders]);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     return orders.filter((o) => {
-      const isCompleted = o.status === "entregado";
-      if (bucket === "completados" ? !isCompleted : isCompleted) return false;
+      if (bucketOf(o) !== bucket) return false;
       if (!q) return true;
       return (
         o.orderNumber.toLowerCase().includes(q) ||
@@ -129,30 +140,31 @@ export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
         </div>
       )}
 
-      {/* Pestanas: Activos / Completados */}
+      {/* Pestanas por resultado del pago */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setBucket("activos")}
-          className={`rounded-full border px-4 py-1.5 text-xs font-bold transition ${
-            bucket === "activos"
-              ? "border-brand-600 bg-brand-600 text-white"
-              : "border-ink-200 text-ink-600 hover:bg-ink-100"
-          }`}
-        >
-          Activos ({counts.activos})
-        </button>
-        <button
-          type="button"
-          onClick={() => setBucket("completados")}
-          className={`rounded-full border px-4 py-1.5 text-xs font-bold transition ${
-            bucket === "completados"
-              ? "border-emerald-600 bg-emerald-600 text-white"
-              : "border-ink-200 text-ink-600 hover:bg-ink-100"
-          }`}
-        >
-          Completados ({counts.completados})
-        </button>
+        {(["exitosas", "pendientes", "fallidas"] as Bucket[]).map((b) => {
+          const active = bucket === b;
+          const tone =
+            b === "exitosas"
+              ? "border-emerald-600 bg-emerald-600"
+              : b === "fallidas"
+                ? "border-red-600 bg-red-600"
+                : "border-amber-500 bg-amber-500";
+          return (
+            <button
+              key={b}
+              type="button"
+              onClick={() => setBucket(b)}
+              className={`rounded-full border px-4 py-1.5 text-xs font-bold transition ${
+                active
+                  ? `${tone} text-white`
+                  : "border-ink-200 text-ink-600 hover:bg-ink-100"
+              }`}
+            >
+              {BUCKET_LABEL[b]} ({counts[b]})
+            </button>
+          );
+        })}
         <div className="relative ml-auto">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
           <input
