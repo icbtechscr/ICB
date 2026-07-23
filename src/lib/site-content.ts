@@ -166,7 +166,7 @@ export const DEFAULT_CONTENT: SiteContent = {
   footer: {
     description:
       "Organización 100% costarricense con más de 20 años de experiencia en el comercio de tecnología. 5 sucursales + CEDI propio.",
-    locationsText: "San José · Alajuela · Heredia · Cartago · Ciudad Quesada",
+    locationsText: "San José · Alajuela · Heredia · Cartago",
     phone: "+506 2222 3333",
     email: "info@icbtechscr.com",
     facebook: "#",

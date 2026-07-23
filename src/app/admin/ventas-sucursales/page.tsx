@@ -1,6 +1,6 @@
 import {
   Wallet, DollarSign, ShoppingBag, Receipt, Building2, TrendingUp,
-  Store, BadgeCheck, CalendarDays, Users, PackageSearch, Trophy,
+  Store, BadgeCheck, CalendarDays, Users, PackageSearch, Trophy, FileSpreadsheet,
 } from "lucide-react";
 import { getSalesAnalytics, periodRange, type Period } from "@/lib/cpi-analytics";
 import { getAllTimeProductRanking, type ProductRankRow } from "@/lib/cpi-products";
@@ -88,9 +88,17 @@ function ProductRankingTable({ rows }: { rows: ProductRankRow[] }) {
         <h2 className="inline-flex items-center gap-2 text-sm font-bold text-ink-900">
           <Trophy className="size-4 text-brand-600" /> Ranking historico de productos
         </h2>
-        <span className="text-xs text-ink-500">
-          {rows.length} producto(s) facturado(s) - acumulado desde siempre
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-ink-500">
+            {rows.length} producto(s) facturado(s) - acumulado desde siempre
+          </span>
+          <a
+            href="/api/admin/reports/products"
+            className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 bg-white px-3 py-1.5 text-xs font-bold text-ink-700 shadow-sm transition hover:border-accent-200 hover:bg-accent-50 hover:text-accent-700"
+          >
+            <FileSpreadsheet className="size-3.5" /> Excel
+          </a>
+        </div>
       </div>
       {rows.length === 0 ? (
         <div className="px-5 py-8 text-center text-sm text-ink-500">

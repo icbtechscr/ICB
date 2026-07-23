@@ -85,18 +85,6 @@ export const BRANCHES: Branch[] = [
     waze: "https://ul.waze.com/ul?place=ChIJL_zCzzzfoI8RiUcRV_B3gHU&ll=9.85752580%2C-83.93226830&navigate=yes&utm_campaign=default&utm_source=waze_website&utm_medium=lm_share_location",
   },
   {
-    id: "ciudad-quesada",
-    city: "Ciudad Quesada",
-    name: "ICB Technologies Costa Rica Ciudad Quesada",
-    address:
-      "Ciudad Quesada, San Carlos. Contiguo a la casa Cural. Plaza comercial Casazul, local al fondo.",
-    phone: "+506 4001 6449",
-    lat: 10.3225147,
-    lng: -84.429679,
-    gmaps: "https://maps.app.goo.gl/tAfXJkaFGKvPWe4e8",
-    waze: "https://ul.waze.com/ul?place=ChIJDYj1qtploI8RSCjHXKD_9S0&ll=10.32251470%2C-84.42956790&navigate=yes&utm_campaign=default&utm_source=waze_website&utm_medium=lm_share_location",
-  },
-  {
     id: "cedi-barreal",
     city: "Barreal de Heredia",
     name: "CEDI Barreal de Heredia",

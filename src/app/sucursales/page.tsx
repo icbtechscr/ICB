@@ -8,7 +8,7 @@ import { absoluteUrl } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Sucursales",
   description:
-    "Visitanos en San José, Alajuela, Heredia, Cartago, Ciudad Quesada y nuestro CEDI en Barreal de Heredia.",
+    "Visitanos en San José, Alajuela, Heredia, Cartago y nuestro CEDI en Barreal de Heredia.",
   alternates: { canonical: absoluteUrl("/sucursales") },
 };
 
