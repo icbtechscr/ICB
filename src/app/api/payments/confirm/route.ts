@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { verifyMountResult } from "@/lib/cybersource";
-import { notifyPaymentResult } from "@/lib/email";
+import { notifyPaymentResult, sendCustomerReceipt } from "@/lib/email";
 
 type Body = {
   orderId?: string;
@@ -53,6 +53,51 @@ export async function POST(req: Request) {
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId);
+
+    // Comprobante al CLIENTE: solo si el pago fue aprobado (ya se rebajo).
+    if (result.ok) {
+      try {
+        const { data: items } = await sb
+          .from("order_items")
+          .select("product_name, qty, line_total_crc")
+          .eq("order_id", orderId);
+        const pi = ((result.payload as Record<string, unknown> | null)
+          ?.paymentInformation ?? {}) as Record<string, unknown>;
+        const card = (pi.card ?? pi.tokenizedCard ?? {}) as Record<string, unknown>;
+        const proc = ((result.payload as Record<string, unknown> | null)
+          ?.processorInformation ?? {}) as Record<string, unknown>;
+        const CARD_BRAND: Record<string, string> = {
+          "001": "Visa",
+          "002": "Mastercard",
+          "003": "Amex",
+          "004": "Discover",
+        };
+        const brandCode = card.type as string | undefined;
+        await sendCustomerReceipt({
+          orderNumber: order.order_number,
+          customerName: order.customer_name ?? "",
+          customerEmail: order.customer_email ?? "",
+          customerPhone: order.customer_phone ?? "",
+          total: Number(order.total_crc) || 0,
+          paymentMethod: order.payment_method ?? "tarjeta",
+          shippingMethod: order.shipping_method ?? "",
+          items: (items ?? []).map(
+            (i: { product_name: string; qty: number; line_total_crc: number }) => ({
+              name: i.product_name,
+              qty: i.qty,
+              lineTotal: Number(i.line_total_crc) || 0,
+            })
+          ),
+          authCode:
+            (proc.approvalCode as string | undefined) ??
+            (proc.transactionId as string | undefined),
+          cardBrand: brandCode ? CARD_BRAND[brandCode] ?? brandCode : undefined,
+          cardLast4: card.suffix as string | undefined,
+        });
+      } catch {
+        /* ignorar errores de correo */
+      }
+    }
 
     // Aviso al admin del resultado del pago (nunca rompe la respuesta).
     try {
