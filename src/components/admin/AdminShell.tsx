@@ -19,6 +19,7 @@ import {
   TrendingUp,
   ClipboardList,
   Bot,
+  Boxes,
   type LucideIcon,
 } from "lucide-react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
@@ -45,9 +46,11 @@ const GROUPS: Group[] = [
       "/admin/pedidos",
       "/admin/ventas-sucursales",
       "/admin/cotizaciones",
+      "/admin/inventario-cpi",
     ],
     sub: [
       { href: "/admin/productos", label: "Inventario", Icon: Package },
+      { href: "/admin/inventario-cpi", label: "Inventario de CPI", Icon: Boxes },
       { href: "/admin/ventas-sucursales", label: "Ventas de sucursal", Icon: Store },
       { href: "/admin/cotizaciones", label: "Cotizaciones CPI", Icon: ClipboardList },
       { href: "/admin/pedidos", label: "Pedidos online", Icon: ShoppingBag },
