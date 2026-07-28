@@ -4,7 +4,6 @@ import { getProductsByIds } from "@/lib/products";
 import { computeShippingCost, generateOrderNumber } from "@/lib/orders";
 import { distanceKm, ORIGIN, getZone } from "@/lib/shipping";
 import { stockOrderLimit } from "@/lib/stock";
-import { notifyNewOrder } from "@/lib/email";
 
 type Body = {
   items?: { id: string; qty: number }[];
@@ -173,26 +172,6 @@ export async function POST(req: Request) {
       // limpiar la orden huérfana
       await sb.from("orders").delete().eq("id", order.id);
       return new NextResponse(itemsErr.message, { status: 500 });
-    }
-
-    // Aviso al admin de que entro una compra nueva (nunca rompe el pedido).
-    try {
-      await notifyNewOrder({
-        orderNumber,
-        customerName: customer.name,
-        customerEmail: customer.email,
-        customerPhone: customer.phone,
-        total,
-        paymentMethod,
-        shippingMethod,
-        items: lineItems.map((li) => ({
-          name: li.product_name,
-          qty: li.qty,
-          lineTotal: li.line_total_crc,
-        })),
-      });
-    } catch {
-      /* ignorar errores de correo */
     }
 
     return NextResponse.json({

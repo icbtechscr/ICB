@@ -13,7 +13,7 @@ import {
   Trash2,
 } from "lucide-react";
 import {
-  ORDER_STATUSES,
+  MANAGED_STATUSES,
   STATUS_LABEL,
   SHIPPING_LABEL,
   PAYMENT_LABEL,
@@ -41,32 +41,30 @@ function fmtDate(d: string) {
   });
 }
 
-type Bucket = "exitosas" | "pendientes" | "fallidas";
+type Bucket = "cobradas" | "sincobro";
 
 const BUCKET_LABEL: Record<Bucket, string> = {
-  exitosas: "Compras exitosas",
-  pendientes: "Pendientes de pago",
-  fallidas: "Fallidas",
+  cobradas: "Pagadas — listas para enviar",
+  sincobro: "Sin cobro",
 };
 
-/** Clasifica el pedido segun el resultado del pago. */
+/** Cobrada = el dinero se rebajo de la tarjeta. Lo demas va a "Sin cobro". */
 function bucketOf(o: Order): Bucket {
-  const ps = (o.paymentStatus || "").toLowerCase();
-  if (ps === "pagado") return "exitosas";
-  if (ps === "rechazado" || ps === "fallido" || ps === "cancelado") return "fallidas";
-  return "pendientes";
+  return (o.paymentStatus || "").toLowerCase() === "pagado"
+    ? "cobradas"
+    : "sincobro";
 }
 
 export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
-  const [bucket, setBucket] = useState<Bucket>("exitosas");
+  const [bucket, setBucket] = useState<Bucket>("cobradas");
   const [query, setQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const counts = useMemo(() => {
-    const c: Record<Bucket, number> = { exitosas: 0, pendientes: 0, fallidas: 0 };
+    const c: Record<Bucket, number> = { cobradas: 0, sincobro: 0 };
     for (const o of orders) c[bucketOf(o)] += 1;
     return c;
   }, [orders]);
@@ -142,14 +140,12 @@ export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
 
       {/* Pestanas por resultado del pago */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        {(["exitosas", "pendientes", "fallidas"] as Bucket[]).map((b) => {
+        {(["cobradas", "sincobro"] as Bucket[]).map((b) => {
           const active = bucket === b;
           const tone =
-            b === "exitosas"
+            b === "cobradas"
               ? "border-emerald-600 bg-emerald-600"
-              : b === "fallidas"
-                ? "border-red-600 bg-red-600"
-                : "border-amber-500 bg-amber-500";
+              : "border-red-600 bg-red-600";
           return (
             <button
               key={b}
@@ -344,7 +340,7 @@ export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
                               disabled={savingId === o.id}
                               className="rounded-xl border border-ink-200 bg-transparent px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500 disabled:opacity-60"
                             >
-                              {ORDER_STATUSES.map((s) => (
+                              {MANAGED_STATUSES.map((s) => (
                                 <option key={s} value={s}>
                                   {STATUS_LABEL[s]}
                                 </option>

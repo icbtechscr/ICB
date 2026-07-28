@@ -13,9 +13,12 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
   pagado: "Pagado",
   preparando: "Preparando",
   enviado: "Enviado",
-  entregado: "Entregado",
+  entregado: "Completado",
   cancelado: "Cancelado",
 };
+
+/** Estados que el admin puede elegir: solo Enviado y Completado. */
+export const MANAGED_STATUSES = ["enviado", "entregado"] as const;
 
 import { distanceShippingCost, getZone, zoneRate } from "./shipping";
 
