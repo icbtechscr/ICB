@@ -98,8 +98,10 @@ function orderHtml(o: OrderMailInfo, headline: string, color: string): string {
 /** Aviso al admin: entro un pedido nuevo desde la tienda. */
 export async function notifyNewOrder(o: OrderMailInfo): Promise<void> {
   await send(
-    `Nuevo pedido ${o.orderNumber} — ${money(o.total)}`,
-    orderHtml(o, "Nuevo pedido en la tienda", "#0f1840")
+    `Nuevo pedido ${o.orderNumber} — ${money(o.total)} (${o.paymentMethod})`,
+    orderHtml(o, "Nuevo pedido — pendiente de pago", "#b45309") +
+      `<p style="max-width:560px;margin:12px auto 0;font-family:system-ui,Segoe UI,Arial,sans-serif;font-size:13px;color:#667">` +
+      `El cliente eligió <strong>${esc(o.paymentMethod)}</strong>. Verificá que el dinero haya entrado antes de despachar.</p>`
   );
 }
 
