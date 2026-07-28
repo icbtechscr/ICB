@@ -20,13 +20,20 @@ node scripts\sync-cpi-quotes.mjs
 set "QUOTES_EXIT=%ERRORLEVEL%"
 
 echo.
+echo === Inventario CPI ===
+node scripts\sync-cpi-inventory.mjs
+set "INVENTORY_EXIT=%ERRORLEVEL%"
+
+echo.
 echo Ventas CPI: codigo %SALES_EXIT%
 echo Productos vendidos CPI: codigo %PRODUCTS_EXIT%
 echo Cotizaciones CPI: codigo %QUOTES_EXIT%
+echo Inventario CPI: codigo %INVENTORY_EXIT%
 
 echo.
 pause
 
 if not "%SALES_EXIT%"=="0" exit /b %SALES_EXIT%
 if not "%PRODUCTS_EXIT%"=="0" exit /b %PRODUCTS_EXIT%
-exit /b %QUOTES_EXIT%
+if not "%QUOTES_EXIT%"=="0" exit /b %QUOTES_EXIT%
+exit /b %INVENTORY_EXIT%

@@ -32,8 +32,15 @@ node scripts\sync-cpi-quotes.mjs >> "%LOG%" 2>&1
 set "QUOTES_EXIT=%ERRORLEVEL%"
 >> "%LOG%" echo [Cotizaciones CPI] Codigo de salida: %QUOTES_EXIT%
 
+>> "%LOG%" echo.
+>> "%LOG%" echo --- Inventario CPI ---
+node scripts\sync-cpi-inventory.mjs >> "%LOG%" 2>&1
+set "INVENTORY_EXIT=%ERRORLEVEL%"
+>> "%LOG%" echo [Inventario CPI] Codigo de salida: %INVENTORY_EXIT%
+
 >> "%LOG%" echo [%date% %time%] Fin sincronizacion completa CPI
 
 if not "%SALES_EXIT%"=="0" exit /b %SALES_EXIT%
 if not "%PRODUCTS_EXIT%"=="0" exit /b %PRODUCTS_EXIT%
-exit /b %QUOTES_EXIT%
+if not "%QUOTES_EXIT%"=="0" exit /b %QUOTES_EXIT%
+exit /b %INVENTORY_EXIT%
