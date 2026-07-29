@@ -252,7 +252,14 @@ async function probeSucursales(cookie, max = 12) {
   for (let i = 1; i <= max; i++) {
     try {
       const n = parseInventory(await fetchInventory(cookie, String(i))).length;
-      const nota = n === 0 ? "vacio" : n === base ? "= sin filtro (el codigo se ignora)" : "DISTINTO ✔";
+      // Si la diferencia es minima, el filtro en realidad se esta ignorando.
+      const dif = Math.abs(n - base);
+      const nota =
+        n === 0
+          ? "vacio"
+          : dif <= Math.max(5, base * 0.02)
+            ? "practicamente igual (el filtro se ignora)"
+            : "DISTINTO ✔ (el filtro si funciona)";
       console.log(`  codigo ${String(i).padStart(2)} -> ${String(n).padStart(5)} items   ${nota}`);
     } catch (e) {
       console.log(`  codigo ${i} -> error: ${e.message}`);
