@@ -34,7 +34,7 @@ export default async function InventarioCpiPage({
           <Boxes className="size-6 text-brand-600" /> Inventario de CPI
         </h1>
         <p className="mt-1 text-sm text-ink-600">
-          Existencias por sucursal según CPI.
+          Existencias por sucursal según CPI. Cada sucursal lista todo el catálogo; lo que cambia son las existencias.
           {syncedLabel ? ` Última sincronización: ${syncedLabel}.` : ""}
         </p>
       </div>
@@ -67,7 +67,7 @@ export default async function InventarioCpiPage({
                   }`}
                 >
                   <Store className="size-3.5" />
-                  {s.label} ({s.items})
+                  {s.label} ({s.conStock})
                 </Link>
               );
             })}
@@ -75,8 +75,11 @@ export default async function InventarioCpiPage({
 
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
             <StatCard
-              label="Productos"
-              value={inv.totalItems.toLocaleString("es-CR")}
+              label="Productos con existencias"
+              value={inv.rows
+                .filter((r) => (Number(r.stock_qty) || 0) > 0)
+                .length.toLocaleString("es-CR")}
+              sub={`de ${inv.totalItems.toLocaleString("es-CR")} en el catálogo`}
               Icon={PackageSearch}
               accent="brand"
             />

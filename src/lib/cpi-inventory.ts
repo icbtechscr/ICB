@@ -9,7 +9,13 @@ export type InventoryRow = {
   stock_qty: number;
 };
 
-export type InventorySucursal = { code: string; label: string; items: number };
+export type InventorySucursal = {
+  code: string;
+  label: string;
+  items: number;
+  /** Productos con existencias > 0 (el dato util: el catalogo se lista completo). */
+  conStock: number;
+};
 
 export type InventoryView = {
   sucursales: InventorySucursal[];
@@ -34,11 +40,16 @@ export async function getCpiInventory(sucursalCode?: string): Promise<InventoryV
     // Sucursales disponibles (con su conteo). Se pagina porque Supabase
     // limita cada consulta a 1000 filas.
     const page = 1000;
-    const all: { sucursal_code: string; sucursal: string; synced_at: string }[] = [];
+    const all: {
+      sucursal_code: string;
+      sucursal: string;
+      stock_qty: number;
+      synced_at: string;
+    }[] = [];
     for (let from = 0; from < 200000; from += page) {
       const { data, error } = await sb
         .from("cpi_inventory")
-        .select("sucursal_code, sucursal, synced_at")
+        .select("sucursal_code, sucursal, stock_qty, synced_at")
         .range(from, from + page - 1);
       if (error) break;
       const chunk = (data ?? []) as typeof all;
@@ -52,8 +63,10 @@ export async function getCpiInventory(sucursalCode?: string): Promise<InventoryV
         code: r.sucursal_code,
         label: r.sucursal || "Sin sucursal",
         items: 0,
+        conStock: 0,
       };
       s.items += 1;
+      if ((Number(r.stock_qty) || 0) > 0) s.conStock += 1;
       bySuc.set(r.sucursal_code, s);
       if (!syncedAt || r.synced_at > syncedAt) syncedAt = r.synced_at;
     }

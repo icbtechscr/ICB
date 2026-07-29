@@ -161,6 +161,20 @@ async function discoverFromPages(cookie) {
   return [];
 }
 
+/** Sucursales de CPI (codigos tomados del filtro "sucursalinventario"). */
+const CPI_SUCURSALES = [
+  { code: "001", label: "San Jose" },
+  { code: "002", label: "Alajuela" },
+  { code: "003", label: "Cartago" },
+  { code: "004", label: "Heredia" },
+  { code: "005", label: "BODEGA RMA" },
+  { code: "006", label: "Puntarenas" },
+  { code: "007", label: "Limon" },
+  { code: "008", label: "San Carlos" },
+  { code: "009", label: "Apartados" },
+  { code: "020", label: "BARREAL" },
+];
+
 function sucursalesFromArgs() {
   const arg = process.argv.find((a) => a.startsWith("--sucursales="));
   if (!arg) return null;
@@ -187,7 +201,7 @@ async function fetchInventory(cookie, sucursalCode) {
     sucursales: sucursalCode || "",
     puntosventa: "",
     SocaaID: ID,
-    idiomasistema: "Espanol",
+    idiomasistema: "",
   });
   for (const c of ["ccodigo", "cdescripcion_esp", "unidaddispo"]) body.append("columnas[]", c);
   const payload = body.toString();
@@ -227,8 +241,9 @@ function parseInventory(html) {
   const iSku = idxOf(head, "codigo");
   const iDesc = idxOf(head, "descripcion");
   const iQty = idxOf(head, "unidades");
+  // CPI usa formato ingles: coma = miles, punto = decimales (ej. 1,234.50).
   const num = (s) => {
-    const n = Number(String(s).replace(/[^\d.,-]/g, "").replace(/\./g, "").replace(",", "."));
+    const n = Number(String(s).replace(/[^\d.-]/g, "").replace(/,/g, ""));
     return Number.isFinite(n) ? n : 0;
   };
   const items = [];
@@ -278,8 +293,7 @@ async function main() {
     return;
   }
 
-  let sucursales = sucursalesFromArgs() ?? discoverSucursales(html);
-  if (sucursales.length === 0) sucursales = await discoverFromPages(cookie);
+  let sucursales = sucursalesFromArgs() ?? CPI_SUCURSALES;
   if (sucursales.length === 0) {
     console.log("No se detectaron sucursales; se sincroniza el inventario general.");
     sucursales = [{ code: "", label: "Todas las sucursales" }];
