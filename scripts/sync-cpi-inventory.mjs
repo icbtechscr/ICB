@@ -120,6 +120,47 @@ function discoverSucursales(html) {
   return [...found].map(([code, label]) => ({ code, label }));
 }
 
+/** Paginas donde puede vivir el filtro de sucursales del modulo de inventario. */
+const FILTER_PAGES = [
+  "ControlItemsProdcInventarioFactConsultaReportes.php",
+  "ItemsProdcInventarioFactConsultaReportes.php",
+  "Page Main 4.php",
+];
+
+/** Intenta descubrir las sucursales pidiendo las paginas del modulo. */
+async function discoverFromPages(cookie) {
+  for (const page of FILTER_PAGES) {
+    try {
+      const body = new URLSearchParams({
+        duser: USER,
+        SocaaID: ID,
+        idiomasistema: "Espanol",
+      }).toString();
+      const res = await request(`${BASE}${page}`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/x-www-form-urlencoded",
+          "content-length": Buffer.byteLength(body),
+          "x-requested-with": "XMLHttpRequest",
+          origin: new URL(BASE).origin,
+          referer: `${BASE}Page Main 4.php`,
+          ...(cookie ? { cookie } : {}),
+        },
+        body,
+      });
+      if (DEBUG) writeFileSync(`cpi-inv-page-${page.replace(/[^a-z0-9]+/gi, "_")}.html`, res.body, "utf8");
+      const found = discoverSucursales(res.body);
+      if (found.length) {
+        console.log(`  (sucursales detectadas en ${page})`);
+        return found;
+      }
+    } catch {
+      /* seguir con la siguiente pagina */
+    }
+  }
+  return [];
+}
+
 function sucursalesFromArgs() {
   const arg = process.argv.find((a) => a.startsWith("--sucursales="));
   if (!arg) return null;
@@ -207,6 +248,7 @@ async function main() {
   const { cookie, html } = await login();
 
   let sucursales = sucursalesFromArgs() ?? discoverSucursales(html);
+  if (sucursales.length === 0) sucursales = await discoverFromPages(cookie);
   if (sucursales.length === 0) {
     console.log("No se detectaron sucursales; se sincroniza el inventario general.");
     sucursales = [{ code: "", label: "Todas las sucursales" }];
@@ -214,13 +256,19 @@ async function main() {
     console.log(`Sucursales detectadas: ${sucursales.map((s) => `${s.label} (${s.code})`).join(", ")}`);
   }
 
-  const rows = [];
+  // Map por clave: si CPI repite un item, se queda el ultimo (evita el error
+  // "ON CONFLICT DO UPDATE command cannot affect row a second time").
+  const byKey = new Map();
+  let duplicados = 0;
   for (const suc of sucursales) {
     const items = parseInventory(await fetchInventory(cookie, suc.code));
     console.log(`  ${suc.label}: ${items.length} items`);
     for (const it of items) {
-      rows.push({
-        cpi_key: `${suc.code}|${it.cpiId || it.sku || it.descripcion}`.slice(0, 200),
+      const ident = it.cpiId || it.sku || it.descripcion;
+      const key = `${suc.code}|${ident}`.slice(0, 200);
+      if (byKey.has(key)) duplicados += 1;
+      byKey.set(key, {
+        cpi_key: key,
         sucursal_code: suc.code,
         sucursal: suc.label,
         cpi_id: it.cpiId,
@@ -231,6 +279,8 @@ async function main() {
       });
     }
   }
+  const rows = [...byKey.values()];
+  if (duplicados) console.log(`  (se unificaron ${duplicados} item(s) repetido(s))`);
 
   console.log(`Total: ${rows.length} filas de inventario.`);
   if (DRY_RUN) { console.log("--dry-run: no se escribió en Supabase."); return; }
