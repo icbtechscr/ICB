@@ -243,9 +243,33 @@ function parseInventory(html) {
   return items;
 }
 
+/** Prueba codigos de sucursal 1..N y reporta cuantos items devuelve cada uno.
+ *  Sirve para descubrir los codigos reales sin tener que mirar la UI de CPI. */
+async function probeSucursales(cookie, max = 12) {
+  console.log(`Probando codigos de sucursal 1..${max} (esto tarda un poco)…`);
+  const base = parseInventory(await fetchInventory(cookie, "")).length;
+  console.log(`  (sin filtro) -> ${base} items`);
+  for (let i = 1; i <= max; i++) {
+    try {
+      const n = parseInventory(await fetchInventory(cookie, String(i))).length;
+      const nota = n === 0 ? "vacio" : n === base ? "= sin filtro (el codigo se ignora)" : "DISTINTO ✔";
+      console.log(`  codigo ${String(i).padStart(2)} -> ${String(n).padStart(5)} items   ${nota}`);
+    } catch (e) {
+      console.log(`  codigo ${i} -> error: ${e.message}`);
+    }
+  }
+  console.log("\nSi algun codigo dice DISTINTO, ese filtro si funciona.");
+  console.log('Usalo asi: node scripts/sync-cpi-inventory.mjs --sucursales="1=San Jose,2=Alajuela"');
+}
+
 async function main() {
   console.log("Iniciando sesión en CPI…");
   const { cookie, html } = await login();
+
+  if (process.argv.includes("--probe")) {
+    await probeSucursales(cookie);
+    return;
+  }
 
   let sucursales = sucursalesFromArgs() ?? discoverSucursales(html);
   if (sucursales.length === 0) sucursales = await discoverFromPages(cookie);
