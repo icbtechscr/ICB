@@ -31,14 +31,23 @@ export async function getCpiInventory(sucursalCode?: string): Promise<InventoryV
   try {
     const sb = createAdminClient();
 
-    // Sucursales disponibles (con su conteo de items).
-    const { data: all } = await sb
-      .from("cpi_inventory")
-      .select("sucursal_code, sucursal, synced_at")
-      .limit(100000);
+    // Sucursales disponibles (con su conteo). Se pagina porque Supabase
+    // limita cada consulta a 1000 filas.
+    const page = 1000;
+    const all: { sucursal_code: string; sucursal: string; synced_at: string }[] = [];
+    for (let from = 0; from < 200000; from += page) {
+      const { data, error } = await sb
+        .from("cpi_inventory")
+        .select("sucursal_code, sucursal, synced_at")
+        .range(from, from + page - 1);
+      if (error) break;
+      const chunk = (data ?? []) as typeof all;
+      all.push(...chunk);
+      if (chunk.length < page) break;
+    }
     const bySuc = new Map<string, InventorySucursal>();
     let syncedAt: string | null = null;
-    for (const r of (all ?? []) as { sucursal_code: string; sucursal: string; synced_at: string }[]) {
+    for (const r of all) {
       const s = bySuc.get(r.sucursal_code) ?? {
         code: r.sucursal_code,
         label: r.sucursal || "Sin sucursal",
@@ -52,13 +61,19 @@ export async function getCpiInventory(sucursalCode?: string): Promise<InventoryV
     if (sucursales.length === 0) return empty;
 
     const code = sucursalCode ?? sucursales[0].code;
-    const { data } = await sb
-      .from("cpi_inventory")
-      .select("sucursal_code, sucursal, sku, descripcion, stock_qty")
-      .eq("sucursal_code", code)
-      .order("descripcion")
-      .limit(50000);
-    const rows = (data ?? []) as InventoryRow[];
+    const rows: InventoryRow[] = [];
+    for (let from = 0; from < 200000; from += page) {
+      const { data, error } = await sb
+        .from("cpi_inventory")
+        .select("sucursal_code, sucursal, sku, descripcion, stock_qty")
+        .eq("sucursal_code", code)
+        .order("descripcion")
+        .range(from, from + page - 1);
+      if (error) break;
+      const chunk = (data ?? []) as InventoryRow[];
+      rows.push(...chunk);
+      if (chunk.length < page) break;
+    }
 
     return {
       sucursales,
