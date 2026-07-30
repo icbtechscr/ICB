@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { formatCRC } from "@/lib/utils";
 import type {
+import { toWebp } from "@/lib/image-optimize";
   SiteContent,
   SectionKey,
   HeroContent,
@@ -258,7 +259,9 @@ function ImageUpload({
     setBusy(true);
     try {
       const fd = new FormData();
-      fd.append("file", file);
+      // Convertir a WebP en el navegador: menos peso en Storage.
+      const optimizado = await toWebp(file, { maxSize: 1600, quality: 0.82 });
+      fd.append("file", optimizado);
       const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
       if (!res.ok) throw new Error((await res.text()) || "Error al subir");
       const json = (await res.json()) as { url: string };

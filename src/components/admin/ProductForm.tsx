@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { ArrowLeft, Loader2, Plus, Trash2, Upload } from "lucide-react";
 import {
+import { toWebp } from "@/lib/image-optimize";
   STOCK_LABELS,
   STOCK_STATUSES,
   stockStatusToLegacyInStock,
@@ -135,7 +136,9 @@ export function ProductForm({
 
   async function uploadFile(file: File): Promise<string> {
     const fd = new FormData();
-    fd.append("file", file);
+    // Convertir a WebP en el navegador: menos peso en Storage.
+    const optimizado = await toWebp(file, { maxSize: 1600, quality: 0.82 });
+    fd.append("file", optimizado);
     const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
     if (!res.ok) throw new Error((await res.text()) || "Error al subir");
     const json = (await res.json()) as { url: string };

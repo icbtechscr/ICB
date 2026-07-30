@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Loader2, Trash2 } from "lucide-react";
+import { toWebp } from "@/lib/image-optimize";
 
 export function AvatarUploader({
   initialUrl,
@@ -24,7 +25,9 @@ export function AvatarUploader({
     setBusy(true);
     try {
       const fd = new FormData();
-      fd.append("file", file);
+      // Convertir a WebP en el navegador: menos peso en Storage.
+      const optimizado = await toWebp(file, { maxSize: 800, quality: 0.85 });
+      fd.append("file", optimizado);
       const res = await fetch("/api/portal/avatar", { method: "POST", body: fd });
       if (!res.ok) throw new Error(await res.text());
       const { url: newUrl } = (await res.json()) as { url: string };

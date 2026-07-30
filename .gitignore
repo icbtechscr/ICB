@@ -52,3 +52,7 @@ scripts/sync-cpi-quotes.log
 scripts/sync-cpi-all.log
 scripts/whatsapp-agent.log
 /.agent-auth/
+
+# Documentacion pesada de CyberSource (no se usa en el sitio)
+public/unified-checkout.pdf
+public/auth.pdf

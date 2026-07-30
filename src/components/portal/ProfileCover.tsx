@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BadgeCheck, Camera, Loader2, Trash2 } from "lucide-react";
+import { toWebp } from "@/lib/image-optimize";
 
 // Cabecera del perfil con la foto del colaborador como PORTADA de fondo.
 export function ProfileCover({
@@ -29,7 +30,9 @@ export function ProfileCover({
     setBusy(true);
     try {
       const fd = new FormData();
-      fd.append("file", file);
+      // Convertir a WebP en el navegador: menos peso en Storage.
+      const optimizado = await toWebp(file, { maxSize: 1400, quality: 0.82 });
+      fd.append("file", optimizado);
       const res = await fetch("/api/portal/avatar", { method: "POST", body: fd });
       if (!res.ok) throw new Error(await res.text());
       const { url: newUrl } = (await res.json()) as { url: string };
