@@ -17,7 +17,8 @@ import {
 import { getQuoteDayAnalytics, getQuoteRangeAnalytics } from "@/lib/cpi-quotes";
 import { BarList, DayBars, StatCard, type BarItem } from "@/components/admin/SalesCharts";
 
-export const dynamic = "force-dynamic";
+// Se recalcula cada 3 minutos en vez de en cada visita (baja el egress).
+export const revalidate = 180;
 export const metadata = { title: "Cotizaciones CPI - ICB Admin" };
 
 const CRC = new Intl.NumberFormat("es-CR", {

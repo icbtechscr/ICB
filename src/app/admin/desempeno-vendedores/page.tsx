@@ -7,7 +7,8 @@ import { formatCRC } from "@/lib/utils";
 import { StatCard, BarList, type BarItem } from "@/components/admin/SalesCharts";
 import { ReportExportButtons } from "@/components/admin/ReportExportButtons";
 
-export const dynamic = "force-dynamic";
+// Se recalcula cada 3 minutos en vez de en cada visita (baja el egress).
+export const revalidate = 180;
 export const metadata = { title: "Desempeño de vendedores — ICB Admin" };
 
 function fmtUSD(n: number) { return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }

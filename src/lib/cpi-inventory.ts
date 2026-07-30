@@ -1,4 +1,6 @@
 // Lectura del inventario de CPI guardado en Supabase. SOLO servidor.
+// Los conteos se hacen DENTRO de Postgres (funciones RPC) para no transferir
+// la tabla completa en cada visita: eso disparaba el egress de Supabase.
 import { createAdminClient } from "@/lib/supabase";
 
 export type InventoryRow = {
@@ -22,80 +24,83 @@ export type InventoryView = {
   rows: InventoryRow[];
   totalItems: number;
   totalUnits: number;
+  conStock: number;
   syncedAt: string | null;
 };
 
-/** Inventario de una sucursal (o de todas si no se pasa codigo). */
+const EMPTY: InventoryView = {
+  sucursales: [],
+  rows: [],
+  totalItems: 0,
+  totalUnits: 0,
+  conStock: 0,
+  syncedAt: null,
+};
+
+type SucursalRpc = {
+  sucursal_code: string;
+  sucursal: string;
+  items: number;
+  con_stock: number;
+  synced_at: string | null;
+};
+
+type TotalesRpc = { items: number; con_stock: number; unidades: number };
+
+/** Inventario de una sucursal (o de la primera si no se pasa codigo). */
 export async function getCpiInventory(sucursalCode?: string): Promise<InventoryView> {
-  const empty: InventoryView = {
-    sucursales: [],
-    rows: [],
-    totalItems: 0,
-    totalUnits: 0,
-    syncedAt: null,
-  };
   try {
     const sb = createAdminClient();
 
-    // Sucursales disponibles (con su conteo). Se pagina porque Supabase
-    // limita cada consulta a 1000 filas.
-    const page = 1000;
-    const all: {
-      sucursal_code: string;
-      sucursal: string;
-      stock_qty: number;
-      synced_at: string;
-    }[] = [];
-    for (let from = 0; from < 200000; from += page) {
-      const { data, error } = await sb
-        .from("cpi_inventory")
-        .select("sucursal_code, sucursal, stock_qty, synced_at")
-        .range(from, from + page - 1);
-      if (error) break;
-      const chunk = (data ?? []) as typeof all;
-      all.push(...chunk);
-      if (chunk.length < page) break;
-    }
-    const bySuc = new Map<string, InventorySucursal>();
-    let syncedAt: string | null = null;
-    for (const r of all) {
-      const s = bySuc.get(r.sucursal_code) ?? {
-        code: r.sucursal_code,
-        label: r.sucursal || "Sin sucursal",
-        items: 0,
-        conStock: 0,
-      };
-      s.items += 1;
-      if ((Number(r.stock_qty) || 0) > 0) s.conStock += 1;
-      bySuc.set(r.sucursal_code, s);
-      if (!syncedAt || r.synced_at > syncedAt) syncedAt = r.synced_at;
-    }
-    const sucursales = [...bySuc.values()].sort((a, b) => a.label.localeCompare(b.label));
-    if (sucursales.length === 0) return empty;
+    // 1) Sucursales + conteos: una sola fila por sucursal (antes: toda la tabla).
+    const { data: sucData, error: sucErr } = await sb.rpc("cpi_inventory_sucursales");
+    if (sucErr || !sucData) return EMPTY;
+
+    const sucursales: InventorySucursal[] = (sucData as SucursalRpc[]).map((s) => ({
+      code: s.sucursal_code,
+      label: s.sucursal || "Sin sucursal",
+      items: Number(s.items) || 0,
+      conStock: Number(s.con_stock) || 0,
+    }));
+    if (sucursales.length === 0) return EMPTY;
+
+    const syncedAt =
+      (sucData as SucursalRpc[])
+        .map((s) => s.synced_at)
+        .filter((x): x is string => Boolean(x))
+        .sort()
+        .pop() ?? null;
 
     const code = sucursalCode ?? sucursales[0].code;
-    const rows: InventoryRow[] = [];
-    for (let from = 0; from < 200000; from += page) {
-      const { data, error } = await sb
-        .from("cpi_inventory")
-        .select("sucursal_code, sucursal, sku, descripcion, stock_qty")
-        .eq("sucursal_code", code)
-        .order("descripcion")
-        .range(from, from + page - 1);
-      if (error) break;
-      const chunk = (data ?? []) as InventoryRow[];
-      rows.push(...chunk);
-      if (chunk.length < page) break;
-    }
+
+    // 2) Totales de la sucursal: 1 fila, calculada por Postgres.
+    const { data: totData } = await sb.rpc("cpi_inventory_totales", {
+      p_sucursal: code,
+    });
+    const tot = (Array.isArray(totData) ? totData[0] : totData) as
+      | TotalesRpc
+      | undefined;
+
+    // 3) Filas visibles: solo las que tienen existencias (lo demas no aporta y
+    //    multiplicaba el trafico por 10).
+    const { data } = await sb
+      .from("cpi_inventory")
+      .select("sucursal_code, sucursal, sku, descripcion, stock_qty")
+      .eq("sucursal_code", code)
+      .gt("stock_qty", 0)
+      .order("descripcion")
+      .limit(5000);
+    const rows = (data ?? []) as InventoryRow[];
 
     return {
       sucursales,
       rows,
-      totalItems: rows.length,
-      totalUnits: rows.reduce((s, r) => s + (Number(r.stock_qty) || 0), 0),
+      totalItems: Number(tot?.items) || rows.length,
+      totalUnits: Number(tot?.unidades) || 0,
+      conStock: Number(tot?.con_stock) || rows.length,
       syncedAt,
     };
   } catch {
-    return empty;
+    return EMPTY;
   }
 }

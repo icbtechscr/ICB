@@ -156,7 +156,7 @@ export async function getSalesAnalytics(r: PeriodRange): Promise<SalesAnalytics>
       .select("fecha, origen, sucursal, vendedor, cliente, moneda, subtotal, estado, tipo")
       .gte("fecha", r.from)
       .lt("fecha", r.to)
-      .limit(20000);
+      .limit(5000);
     rows = (data ?? []) as Row[];
   } catch {
     return empty;
@@ -213,7 +213,7 @@ export async function getSalesAnalytics(r: PeriodRange): Promise<SalesAnalytics>
   let prevMonthCRC = 0;
   try {
     const sb = createAdminClient();
-    const { data } = await sb.from("cpi_sales").select("moneda, subtotal, estado").gte("fecha", r.prevFrom).lt("fecha", r.prevTo).limit(50000);
+    const { data } = await sb.from("cpi_sales").select("moneda, subtotal, estado").gte("fecha", r.prevFrom).lt("fecha", r.prevTo).limit(5000);
     for (const p of (data ?? []) as { moneda: string; subtotal: number; estado: string | null }[]) {
       if (isAnulada(p.estado)) continue;
       if (p.moneda !== "USD") prevMonthCRC += Number(p.subtotal) || 0;
@@ -279,7 +279,7 @@ export async function getUserSalesAnalytics(
       .select("fecha, origen, sucursal, vendedor, cliente, moneda, subtotal, estado, tipo, user_id")
       .gte("fecha", r.from)
       .lt("fecha", r.to)
-      .limit(50000);
+      .limit(5000);
     rows = (data ?? []) as (Row & { user_id: string | null })[];
   } catch {
     return empty;
@@ -360,7 +360,7 @@ export async function getUserMonthlyEvolution(
       .select("fecha, moneda, subtotal, estado")
       .eq("user_id", userId)
       .gte("fecha", from)
-      .limit(50000);
+      .limit(5000);
     const byMonth = new Map<string, { crc: number; count: number }>();
     for (const r of (data ?? []) as { fecha: string | null; moneda: string; subtotal: number; estado: string | null }[]) {
       const ym = (r.fecha || "").slice(0, 7);
@@ -425,7 +425,7 @@ export async function getVendorPerformance(r: PeriodRange): Promise<VendorPerfor
       .select("vendedor, moneda, subtotal, estado")
       .gte("fecha", r.from)
       .lt("fecha", r.to)
-      .limit(50000);
+      .limit(5000);
     rows = (data ?? []) as Row[];
   } catch {
     return empty;

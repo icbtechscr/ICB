@@ -4,7 +4,8 @@ import { getCpiInventory } from "@/lib/cpi-inventory";
 import { StatCard } from "@/components/admin/SalesCharts";
 import { InventoryTable } from "@/components/admin/InventoryTable";
 
-export const dynamic = "force-dynamic";
+// Se recalcula cada 5 minutos en vez de en cada visita (baja el egress).
+export const revalidate = 300;
 export const metadata = { title: "Inventario de CPI — ICB Admin" };
 
 export default async function InventarioCpiPage({
@@ -76,9 +77,7 @@ export default async function InventarioCpiPage({
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
             <StatCard
               label="Productos con existencias"
-              value={inv.rows
-                .filter((r) => (Number(r.stock_qty) || 0) > 0)
-                .length.toLocaleString("es-CR")}
+              value={inv.conStock.toLocaleString("es-CR")}
               sub={`de ${inv.totalItems.toLocaleString("es-CR")} en el catálogo`}
               Icon={PackageSearch}
               accent="brand"
