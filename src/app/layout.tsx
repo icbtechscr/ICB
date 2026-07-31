@@ -110,7 +110,7 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col text-ink-900">
+      <body className="relative min-h-full flex flex-col text-ink-900">
         <CartProvider>
           {seasonal === "mothers-day" && (
             <SiteChromeGate>

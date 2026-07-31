@@ -78,44 +78,49 @@ export function MothersDayBar() {
 }
 
 /**
- * Florecillas sueltas por toda la pagina. Van en una capa fija sobre el
- * contenido pero con opacidad muy baja, para que se vean incluso encima de las
- * secciones blancas sin estorbar la lectura. No recibe clics ni se lee en
- * lectores de pantalla, y en pantallas chicas se muestran menos.
+ * Florecillas sueltas en la parte de arriba de la pagina. La capa es ABSOLUTA
+ * (no fija): se queda pegada al inicio del documento y desaparece al bajar, en
+ * vez de seguir al lector. Va encima del contenido pero con poca opacidad, para
+ * que se vea incluso sobre las secciones blancas sin estorbar la lectura.
+ * No recibe clics ni se lee en lectores de pantalla; en pantallas chicas se
+ * muestran menos.
  */
 export function MothersDayPageDecor() {
+  // La opacidad va en la flor entera (no en el color) para que el centro
+  // amarillo se atenue igual que los petalos: antes solo se veia el puntito.
+  const soft = "opacity-[0.3] dark:opacity-[0.2]";
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 z-[5] select-none overflow-hidden"
+      className="pointer-events-none absolute inset-x-0 top-0 z-[5] h-[130vh] select-none overflow-hidden"
     >
       <Flower
         size={110}
-        className="absolute -left-8 top-[22vh] text-pink-400/[0.07] dark:text-pink-200/[0.05]"
+        className={`absolute -left-8 top-[26vh] text-pink-500 ${soft}`}
         style={{ transform: "rotate(-14deg)" }}
       />
       <Flower
         size={64}
-        className="absolute right-[4vw] top-[38vh] hidden text-rose-400/[0.08] sm:block dark:text-rose-200/[0.05]"
+        className={`absolute right-[4vw] top-[44vh] hidden text-rose-500 sm:block ${soft}`}
         style={{ transform: "rotate(22deg)" }}
       />
       <Flower
         size={46}
-        className="absolute left-[12vw] bottom-[14vh] hidden text-pink-400/[0.08] md:block dark:text-pink-200/[0.05]"
+        className={`absolute left-[14vw] top-[78vh] hidden text-pink-500 md:block ${soft}`}
         style={{ transform: "rotate(8deg)" }}
       />
       <Flower
         size={88}
-        className="absolute -right-6 bottom-[6vh] text-rose-400/[0.07] dark:text-rose-200/[0.05]"
+        className={`absolute -right-6 top-[96vh] text-rose-500 ${soft}`}
         style={{ transform: "rotate(-24deg)" }}
       />
       <Heart
         size={26}
-        className="absolute left-[6vw] top-[62vh] hidden text-rose-400/[0.09] lg:block dark:text-rose-200/[0.06]"
+        className={`absolute left-[6vw] top-[62vh] hidden text-rose-500 lg:block ${soft}`}
       />
       <Heart
         size={20}
-        className="absolute right-[16vw] bottom-[30vh] hidden text-pink-400/[0.09] lg:block dark:text-pink-200/[0.06]"
+        className={`absolute right-[18vw] top-[112vh] hidden text-pink-500 lg:block ${soft}`}
       />
     </div>
   );
@@ -139,33 +144,33 @@ export function MothersDayDecor() {
       {/* Ramillete izquierdo */}
       <Flower
         size={72}
-        className="absolute -left-5 -top-6 text-pink-400/25 dark:text-pink-300/15"
+        className="absolute -left-5 -top-6 text-pink-500 opacity-40 dark:opacity-25"
         style={{ transform: "rotate(-18deg)" }}
       />
       <Flower
         size={38}
-        className="absolute left-12 -top-3 text-rose-300/30 dark:text-rose-200/15"
+        className="absolute left-12 -top-3 text-rose-400 opacity-45 dark:opacity-25"
         style={{ transform: "rotate(12deg)" }}
       />
       <Heart
         size={16}
-        className="absolute left-24 top-8 text-rose-400/25 dark:text-rose-200/15"
+        className="absolute left-24 top-8 text-rose-500 opacity-40 dark:opacity-25"
       />
 
       {/* Ramillete derecho */}
       <Flower
         size={84}
-        className="absolute -right-7 -bottom-9 text-rose-400/20 dark:text-rose-300/12"
+        className="absolute -right-7 -bottom-9 text-rose-500 opacity-35 dark:opacity-20"
         style={{ transform: "rotate(24deg)" }}
       />
       <Flower
         size={40}
-        className="absolute right-16 -bottom-4 text-pink-300/28 dark:text-pink-200/15"
+        className="absolute right-16 -bottom-4 text-pink-500 opacity-40 dark:opacity-25"
         style={{ transform: "rotate(-10deg)" }}
       />
       <Heart
         size={14}
-        className="absolute right-36 bottom-6 hidden text-pink-400/25 sm:block dark:text-pink-200/15"
+        className="absolute right-36 bottom-6 hidden text-pink-500 opacity-40 sm:block dark:opacity-25"
       />
 
       {/* Hilo inferior en degradado, en vez del borde plano de siempre. */}
