@@ -8,16 +8,20 @@ import { NavHeader } from "@/components/ui/nav-header";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AuthButton } from "@/components/AuthButton";
 import { useCart } from "@/lib/cart";
+import { MothersDayDecor } from "@/components/seasonal/MothersDayDecor";
 import type { NavItem } from "@/lib/category-tree";
 
 export function Header({
   menu,
   initialDark = false,
   initialAuthed = false,
+  seasonal = null,
 }: {
   menu: NavItem[];
   initialDark?: boolean;
   initialAuthed?: boolean;
+  /** Temporada activa. Se decide en el servidor para no romper la hidratacion. */
+  seasonal?: "mothers-day" | null;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { count } = useCart();
@@ -25,7 +29,9 @@ export function Header({
 
   return (
     <header className="relative z-40 border-b border-ink-200 bg-white text-ink-900">
-      <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-3 sm:gap-4 sm:px-4 md:py-4">
+      <div className="relative">
+      {seasonal === "mothers-day" && <MothersDayDecor />}
+      <div className="relative mx-auto flex max-w-7xl items-center gap-2 px-3 py-3 sm:gap-4 sm:px-4 md:py-4">
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <Image
             src="/icb-logo.png"
@@ -82,7 +88,7 @@ export function Header({
         </div>
       </div>
 
-      <form action="/productos" className="mx-auto max-w-7xl px-3 pb-3 sm:px-4 md:hidden">
+      <form action="/productos" className="relative mx-auto max-w-7xl px-3 pb-3 sm:px-4 md:hidden">
         <label className="relative block">
           <span className="sr-only">Buscar productos</span>
           <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-ink-400" aria-hidden />
@@ -101,6 +107,7 @@ export function Header({
           </button>
         </label>
       </form>
+      </div>
 
       <div className="hidden border-t border-brand-700 bg-brand-900 md:block">
         <NavHeader items={menu} />
