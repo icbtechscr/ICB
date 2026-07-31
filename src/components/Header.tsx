@@ -8,7 +8,7 @@ import { NavHeader } from "@/components/ui/nav-header";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AuthButton } from "@/components/AuthButton";
 import { useCart } from "@/lib/cart";
-import { MothersDayDecor } from "@/components/seasonal/MothersDayDecor";
+import { MothersDayBar, MothersDayDecor } from "@/components/seasonal/MothersDayDecor";
 import type { NavItem } from "@/lib/category-tree";
 
 export function Header({
@@ -29,6 +29,8 @@ export function Header({
 
   return (
     <header className="relative z-40 border-b border-ink-200 bg-white text-ink-900">
+      {seasonal === "mothers-day" && <MothersDayBar />}
+
       <div className="relative">
       {seasonal === "mothers-day" && <MothersDayDecor />}
       <div className="relative mx-auto flex max-w-7xl items-center gap-2 px-3 py-3 sm:gap-4 sm:px-4 md:py-4">

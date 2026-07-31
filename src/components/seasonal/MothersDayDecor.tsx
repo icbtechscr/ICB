@@ -56,6 +56,27 @@ function Heart({ size, className, style }: { size: number; className?: string; s
   );
 }
 
+/** Franja delgada arriba de todo con el saludo de la temporada. */
+export function MothersDayBar() {
+  return (
+    <div
+      className="w-full border-b border-pink-200/60 dark:border-pink-300/15"
+      style={{
+        background:
+          "linear-gradient(90deg, rgba(252,231,243,0.55) 0%, rgba(251,207,232,0.85) 50%, rgba(252,231,243,0.55) 100%)",
+      }}
+    >
+      <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-3 py-1.5 sm:px-4">
+        <Flower size={14} className="text-pink-500/70" aria-hidden />
+        <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-pink-700 sm:text-xs dark:text-pink-300">
+          Mes de la mamá
+        </span>
+        <Flower size={14} className="text-pink-500/70" aria-hidden />
+      </div>
+    </div>
+  );
+}
+
 export function MothersDayDecor() {
   return (
     <div
