@@ -8,6 +8,7 @@ import { ChatWidget } from "@/components/ChatWidget";
 import { CartProvider } from "@/lib/cart";
 import { getNavMenu } from "@/lib/category-tree";
 import { isMothersDaySeason } from "@/lib/seasonal";
+import { MothersDayPageDecor } from "@/components/seasonal/MothersDayDecor";
 import {
   SITE_URL,
   SITE_NAME,
@@ -111,6 +112,11 @@ export default async function RootLayout({
       </head>
       <body className="min-h-full flex flex-col text-ink-900">
         <CartProvider>
+          {seasonal === "mothers-day" && (
+            <SiteChromeGate>
+              <MothersDayPageDecor />
+            </SiteChromeGate>
+          )}
           <SiteChromeGate>
             <Header menu={menu} seasonal={seasonal} />
           </SiteChromeGate>

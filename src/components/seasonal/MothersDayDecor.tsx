@@ -77,6 +77,50 @@ export function MothersDayBar() {
   );
 }
 
+/**
+ * Florecillas sueltas por toda la pagina. Van en una capa fija sobre el
+ * contenido pero con opacidad muy baja, para que se vean incluso encima de las
+ * secciones blancas sin estorbar la lectura. No recibe clics ni se lee en
+ * lectores de pantalla, y en pantallas chicas se muestran menos.
+ */
+export function MothersDayPageDecor() {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 z-[5] select-none overflow-hidden"
+    >
+      <Flower
+        size={110}
+        className="absolute -left-8 top-[22vh] text-pink-400/[0.07] dark:text-pink-200/[0.05]"
+        style={{ transform: "rotate(-14deg)" }}
+      />
+      <Flower
+        size={64}
+        className="absolute right-[4vw] top-[38vh] hidden text-rose-400/[0.08] sm:block dark:text-rose-200/[0.05]"
+        style={{ transform: "rotate(22deg)" }}
+      />
+      <Flower
+        size={46}
+        className="absolute left-[12vw] bottom-[14vh] hidden text-pink-400/[0.08] md:block dark:text-pink-200/[0.05]"
+        style={{ transform: "rotate(8deg)" }}
+      />
+      <Flower
+        size={88}
+        className="absolute -right-6 bottom-[6vh] text-rose-400/[0.07] dark:text-rose-200/[0.05]"
+        style={{ transform: "rotate(-24deg)" }}
+      />
+      <Heart
+        size={26}
+        className="absolute left-[6vw] top-[62vh] hidden text-rose-400/[0.09] lg:block dark:text-rose-200/[0.06]"
+      />
+      <Heart
+        size={20}
+        className="absolute right-[16vw] bottom-[30vh] hidden text-pink-400/[0.09] lg:block dark:text-pink-200/[0.06]"
+      />
+    </div>
+  );
+}
+
 export function MothersDayDecor() {
   return (
     <div
