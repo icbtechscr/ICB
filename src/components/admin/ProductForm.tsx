@@ -3,8 +3,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { ArrowLeft, Loader2, Plus, Trash2, Upload } from "lucide-react";
-import {
 import { toWebp } from "@/lib/image-optimize";
+import {
   STOCK_LABELS,
   STOCK_STATUSES,
   stockStatusToLegacyInStock,

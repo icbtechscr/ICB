@@ -12,8 +12,8 @@ import {
   Check,
 } from "lucide-react";
 import { formatCRC } from "@/lib/utils";
-import type {
 import { toWebp } from "@/lib/image-optimize";
+import type {
   SiteContent,
   SectionKey,
   HeroContent,
