@@ -11,7 +11,8 @@ export const metadata: Metadata = {
   alternates: { canonical: absoluteUrl("/contacto") },
 };
 
-export const revalidate = 60;
+// Cache de 60 min: cada visita ya no golpea la base (baja el egress).
+export const revalidate = 3600;
 
 export default async function ContactoPage() {
   const { footer } = await getSiteContent();

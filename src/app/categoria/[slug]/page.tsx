@@ -14,7 +14,8 @@ import {
 import { getCategoryGroup } from "@/lib/category-tree";
 import { absoluteUrl, SITE_NAME, SITE_OG_IMAGE_URL } from "@/lib/site";
 
-export const revalidate = 60;
+// Cache de 10 min: cada visita ya no golpea la base (baja el egress).
+export const revalidate = 600;
 
 function effectivePrice(p: Product) {
   return p.salePriceCRC ?? p.priceCRC;

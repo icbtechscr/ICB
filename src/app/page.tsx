@@ -32,7 +32,8 @@ export const metadata: Metadata = {
   openGraph: { url: SITE_URL },
 };
 
-export const revalidate = 60;
+// Cache de 10 min: cada visita ya no golpea la base (baja el egress).
+export const revalidate = 600;
 
 export default async function HomePage() {
   const content = await getSiteContent();

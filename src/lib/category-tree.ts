@@ -78,7 +78,20 @@ function navMenuFromJson(): NavItem[] {
 // Menú con subcategorías reales desde la base (jerarquía `parent_id`).
 // Mantiene las pestañas curadas pero las subcategorías salen de la base.
 // Si la jerarquía aún no está cargada (o falla la consulta), cae al JSON.
+// El menu se arma en el layout, o sea en CADA vista de CADA pagina. Sin cache
+// eso era una consulta a la base por visita (una de las mayores fuentes de
+// egress). Se guarda en memoria del servidor por 10 minutos.
+const NAV_TTL_MS = 10 * 60 * 1000;
+let navCache: { at: number; menu: NavItem[] } | null = null;
+
 export async function getNavMenu(): Promise<NavItem[]> {
+  if (navCache && Date.now() - navCache.at < NAV_TTL_MS) return navCache.menu;
+  const menu = await buildNavMenu();
+  navCache = { at: Date.now(), menu };
+  return menu;
+}
+
+async function buildNavMenu(): Promise<NavItem[]> {
   try {
     const [{ data, error }, navSetting] = await Promise.all([
       supabase

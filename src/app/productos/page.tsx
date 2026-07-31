@@ -43,7 +43,8 @@ export async function generateMetadata({
   };
 }
 
-export const revalidate = 60;
+// Cache de 10 min: cada visita ya no golpea la base (baja el egress).
+export const revalidate = 600;
 
 const SORTS: CatalogSort[] = [
   "relevancia",

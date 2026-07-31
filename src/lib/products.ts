@@ -64,6 +64,34 @@ const SELECT_LEGACY_STOCK = `
   product_categories ( category:categories ( id, name, slug ) )
 `;
 
+// LISTADOS: la descripcion larga (HTML de WooCommerce) y `attributes` pesan
+// muchisimo y no se usan en las tarjetas. Pedirlas en cada listado era la
+// causa principal del egress de Supabase. Solo el detalle usa el SELECT completo.
+const SELECT_LIST = `
+  id, woo_id, name, slug, sku, short_description,
+  on_sale, in_stock, stock_status, stock_qty, price_crc, sale_price_crc,
+  brand:brands ( name ),
+  product_images ( url, alt, position ),
+  product_categories ( category:categories ( id, name, slug ) )
+`;
+
+const SELECT_LIST_LEGACY = `
+  id, woo_id, name, slug, sku, short_description,
+  on_sale, in_stock, stock_qty, attributes, price_crc, sale_price_crc,
+  brand:brands ( name ),
+  product_images ( url, alt, position ),
+  product_categories ( category:categories ( id, name, slug ) )
+`;
+
+// Si la base falla (caida, cuota agotada, red), los LISTADOS publicos devuelven
+// vacio en vez de tumbar el build o la pagina entera. Queda el aviso en el log.
+function warnQuery(where: string, error: unknown): void {
+  console.warn(
+    `[products] ${where}:`,
+    error instanceof Error ? error.message : JSON.stringify(error)
+  );
+}
+
 type ProductQueryResult<T> = {
   data: T | null;
   error: unknown;
@@ -128,15 +156,21 @@ export async function getAllProducts(opts?: { page?: number; perPage?: number })
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
 
-  const { data, count, error } = await withStockStatusFallback((select) =>
-    supabase
-      .from("products")
-      .select(select, { count: "exact" })
-      .order("name")
-      .range(from, to)
+  const { data, count, error } = await withStockStatusFallback(
+    (select) =>
+      supabase
+        .from("products")
+        .select(select, { count: "exact" })
+        .order("name")
+        .range(from, to),
+    SELECT_LIST,
+    SELECT_LIST_LEGACY
   );
 
-  if (error) throw error;
+  if (error) {
+    warnQuery("getAllProducts", error);
+    return { products: [], total: 0 };
+  }
   return { products: (data as unknown as Row[]).map(rowToProduct), total: count ?? 0 };
 }
 
@@ -158,20 +192,29 @@ export async function getFeaturedProducts(limit = 10): Promise<Product[]> {
       .order("created_at", { ascending: false })
       .limit(limit);
     query =
-      select === SELECT_WITH_STOCK_STATUS
+      select === SELECT_LIST
         ? query.neq("stock_status", "out_of_stock")
         : query.eq("in_stock", true);
     return query;
-  });
-  if (error) throw error;
+  }, SELECT_LIST, SELECT_LIST_LEGACY);
+  if (error) {
+    warnQuery("getFeaturedProducts", error);
+    return [];
+  }
   return (data as unknown as Row[]).map(rowToProduct);
 }
 
 export async function getOnSaleProducts(limit = 8): Promise<Product[]> {
-  const { data, error } = await withStockStatusFallback((select) =>
-    supabase.from("products").select(select).eq("on_sale", true).limit(limit)
+  const { data, error } = await withStockStatusFallback(
+    (select) =>
+      supabase.from("products").select(select).eq("on_sale", true).limit(limit),
+    SELECT_LIST,
+    SELECT_LIST_LEGACY
   );
-  if (error) throw error;
+  if (error) {
+    warnQuery("getOnSaleProducts", error);
+    return [];
+  }
   return (data as unknown as Row[]).map(rowToProduct);
 }
 
@@ -270,7 +313,10 @@ export async function getTopCategories(limit = 12): Promise<CategoryGroup[]> {
   const { data, error } = await supabase
     .from("categories")
     .select("id, name, slug, product_categories(count)");
-  if (error) throw error;
+  if (error) {
+    warnQuery("getTopCategories", error);
+    return [];
+  }
   const rows = (data as unknown as Array<{
     id: string;
     name: string;
@@ -323,7 +369,10 @@ export async function getCategoryCountsMap(): Promise<
   const { data, error } = await supabase
     .from("categories")
     .select("id, name, slug, product_categories(count)");
-  if (error) throw error;
+  if (error) {
+    warnQuery("getCategoryCountsMap", error);
+    return new Map();
+  }
   const rows = (data as unknown as Array<{
     id: string;
     name: string;
@@ -344,16 +393,25 @@ export async function getProductsByCategory(slug: string): Promise<Product[]> {
     .select("id, name, slug")
     .eq("slug", slug)
     .maybeSingle();
-  if (e1) throw e1;
+  if (e1) {
+    warnQuery("getProductsByCategory", e1);
+    return [];
+  }
   if (!cat) return [];
 
-  const { data: pcs, error: e2 } = await withStockStatusFallback((select) =>
-    supabase
-      .from("product_categories")
-      .select("product:products(" + select + ")")
-      .eq("category_id", cat.id)
+  const { data: pcs, error: e2 } = await withStockStatusFallback(
+    (select) =>
+      supabase
+        .from("product_categories")
+        .select("product:products(" + select + ")")
+        .eq("category_id", cat.id),
+    SELECT_LIST,
+    SELECT_LIST_LEGACY
   );
-  if (e2) throw e2;
+  if (e2) {
+    warnQuery("getProductsByCategory", e2);
+    return [];
+  }
 
   return ((pcs ?? []) as unknown as { product: Row | null }[])
     .map((r) => r.product)
@@ -370,7 +428,10 @@ export async function getProductsByCategoryDeep(slug: string): Promise<Product[]
     .select("id")
     .eq("slug", slug)
     .maybeSingle();
-  if (e1) throw e1;
+  if (e1) {
+    warnQuery("getProductsByCategoryDeep", e1);
+    return [];
+  }
   if (!cat) return [];
 
   // Árbol completo (tabla chica) para juntar todos los descendientes.
@@ -391,11 +452,14 @@ export async function getProductsByCategoryDeep(slug: string): Promise<Product[]
     for (const ch of childrenMap.get(id) ?? []) stack.push(ch);
   }
 
-  const { data: pcs, error } = await withStockStatusFallback((select) =>
-    supabase
-      .from("product_categories")
-      .select("product:products(" + select + ")")
-      .in("category_id", ids)
+  const { data: pcs, error } = await withStockStatusFallback(
+    (select) =>
+      supabase
+        .from("product_categories")
+        .select("product:products(" + select + ")")
+        .in("category_id", ids),
+    SELECT_LIST,
+    SELECT_LIST_LEGACY
   );
   if (error) throw error;
 
@@ -447,11 +511,14 @@ export async function getProductsByCategorySlugs(
     .in("slug", slugs);
   const ids = (cats ?? []).map((c) => c.id);
   if (!ids.length) return [];
-  const { data: pcs, error } = await withStockStatusFallback((select) =>
-    supabase
-      .from("product_categories")
-      .select("product:products(" + select + ")")
-      .in("category_id", ids)
+  const { data: pcs, error } = await withStockStatusFallback(
+    (select) =>
+      supabase
+        .from("product_categories")
+        .select("product:products(" + select + ")")
+        .in("category_id", ids),
+    SELECT_LIST,
+    SELECT_LIST_LEGACY
   );
   if (error) throw error;
   const map = new Map<string, Product>();
@@ -491,7 +558,7 @@ export async function searchProducts(q: string, limit = 50): Promise<Product[]> 
       );
     }
     return stockQuery;
-  });
+  }, SELECT_LIST, SELECT_LIST_LEGACY);
   if (error) throw error;
   return (data as unknown as Row[]).map(rowToProduct);
 }
@@ -579,7 +646,7 @@ export async function searchProductsLoose(
         }
       }
       return query;
-    });
+    }, SELECT_LIST, SELECT_LIST_LEGACY);
     if (error) throw error;
     return (data as unknown as Row[]).map(rowToProduct);
   }
@@ -607,7 +674,10 @@ export async function searchProductsLoose(
 
 export async function getProductSlugs(limit = 100): Promise<string[]> {
   const { data, error } = await supabase.from("products").select("slug").limit(limit);
-  if (error) throw error;
+  if (error) {
+    warnQuery("getProductSlugs", error);
+    return [];
+  }
   return (data ?? []).map((r) => r.slug);
 }
 
@@ -619,7 +689,10 @@ export async function getAllProductSlugs(): Promise<
     .from("products")
     .select("slug, updated_at, product_images(url, position)")
     .range(0, 4999);
-  if (error) throw error;
+  if (error) {
+    warnQuery("getAllProductSlugs", error);
+    return [];
+  }
   return (
     (data ?? []) as {
       slug: string;
@@ -642,7 +715,10 @@ export async function getAllCategorySlugs(): Promise<string[]> {
     .from("categories")
     .select("slug, name")
     .range(0, 4999);
-  if (error) throw error;
+  if (error) {
+    warnQuery("getAllCategorySlugs", error);
+    return [];
+  }
   return ((data ?? []) as { slug: string; name: string }[])
     .filter((c) => c.name !== "Todas las Categorías")
     .map((c) => c.slug);
@@ -653,7 +729,10 @@ export async function getBrands(): Promise<string[]> {
     .from("brands")
     .select("name")
     .order("name");
-  if (error) throw error;
+  if (error) {
+    warnQuery("getBrands", error);
+    return [];
+  }
   return ((data ?? []) as { name: string | null }[])
     .map((b) => b.name)
     .filter((n): n is string => !!n);
@@ -685,15 +764,15 @@ export async function getCatalogProducts(params: CatalogParams): Promise<{
   const catInner = params.category ? "!inner" : "";
   const brandInner = params.brand ? "!inner" : "";
   const selectWithStockStatus = `
-    id, woo_id, name, slug, sku, short_description, description,
-    on_sale, in_stock, stock_status, stock_qty, attributes, price_crc, sale_price_crc,
+    id, woo_id, name, slug, sku, short_description,
+    on_sale, in_stock, stock_status, stock_qty, price_crc, sale_price_crc,
     brand:brands${brandInner} ( name ),
     product_images ( url, alt, position ),
     product_categories${catInner} ( category:categories${catInner} ( id, name, slug ) )
   `;
 
   const selectLegacyStock = `
-    id, woo_id, name, slug, sku, short_description, description,
+    id, woo_id, name, slug, sku, short_description,
     on_sale, in_stock, stock_qty, attributes, price_crc, sale_price_crc,
     brand:brands${brandInner} ( name ),
     product_images ( url, alt, position ),
@@ -799,7 +878,10 @@ export async function getCatalogProducts(params: CatalogParams): Promise<{
     result = await legacyQuery.range(from, to);
   }
   const { data, count, error } = result;
-  if (error) throw error;
+  if (error) {
+    warnQuery("getCatalogProducts", error);
+    return { products: [], total: 0 };
+  }
   return {
     products: (data as unknown as Row[]).map(rowToProduct),
     total: count ?? 0,

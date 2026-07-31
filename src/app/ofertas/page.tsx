@@ -12,7 +12,8 @@ export const metadata: Metadata = {
   alternates: { canonical: absoluteUrl("/ofertas") },
   openGraph: { url: absoluteUrl("/ofertas") },
 };
-export const revalidate = 60;
+// Cache de 10 min: cada visita ya no golpea la base (baja el egress).
+export const revalidate = 600;
 
 export default async function OfertasPage() {
   const onSale = await getOnSaleProducts(200);
