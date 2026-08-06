@@ -145,7 +145,7 @@ export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
         setVerifyMsg(
           `Se revisaron ${data.revisados}. Ninguno esta cobrado` +
             (sinRegistro
-              ? `; ${sinRegistro} ni siquiera llegaron a Cybersource (el cliente nunca completo el pago).`
+              ? `; de esos, ${sinRegistro} no tienen ninguna transaccion en Cybersource (lo mas probable: el cliente no llego a completar el formulario).`
               : ".")
         );
       }

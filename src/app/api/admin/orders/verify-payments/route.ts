@@ -83,6 +83,10 @@ export async function POST(req: Request) {
       const tx = await lookupTransactionByOrderNumber(o.order_number);
 
       if (!tx.found) {
+        // OJO: "sin registro" significa que Cybersource no tiene ninguna
+        // transaccion con ese numero de orden en los ultimos 90 dias. Lo mas
+        // probable es que el cliente nunca completo el formulario, pero no es
+        // una prueba de que no se le cobro por otra via.
         detalle.push({ pedido: o.order_number, resultado: "sin registro" });
         continue;
       }

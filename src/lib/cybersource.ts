@@ -358,30 +358,19 @@ export function summariesOf(data: unknown): Record<string, unknown>[] {
 export async function lookupTransactionByOrderNumber(
   orderNumber: string
 ): Promise<TransactionLookup> {
-  // Cybersource acota la busqueda si no se le da ventana de tiempo, asi que se
-  // pide explicitamente el ultimo trimestre. Se prueban dos formas del filtro
-  // por si el numero de orden (que lleva guiones) confunde al parser.
-  const queries = [
-    `clientReferenceInformation.code:"${orderNumber}" AND submitTimeUtc:[NOW-90DAYS TO NOW]`,
-    `clientReferenceInformation.code:"${orderNumber}"`,
-  ];
+  // La ventana de fechas NO es opcional: comprobado contra la cuenta real, la
+  // misma busqueda por codigo devuelve 0 resultados sin `submitTimeUtc` y el
+  // resultado correcto con ella.
+  const query = `clientReferenceInformation.code:"${orderNumber}" AND submitTimeUtc:[NOW-90DAYS TO NOW]`;
 
-  let list: Record<string, unknown>[] = [];
-  let lastRaw = "";
-  for (const query of queries) {
-    const { httpStatus, data, raw } = await rawTransactionSearch(query);
-    lastRaw = raw;
-    // 404 = "sin resultados" para este endpoint; no es un fallo real.
-    if (httpStatus === 404) continue;
-    if (httpStatus < 200 || httpStatus >= 300) {
-      throw new Error(`Cybersource /tss/v2/searches fallo (${httpStatus}): ${raw}`);
-    }
-    list = summariesOf(data);
-    if (list.length > 0) break;
+  const { httpStatus, data, raw } = await rawTransactionSearch(query);
+  // 404 = "sin resultados" en este endpoint; no es un fallo real.
+  if (httpStatus !== 404 && (httpStatus < 200 || httpStatus >= 300)) {
+    throw new Error(`Cybersource /tss/v2/searches fallo (${httpStatus}): ${raw}`);
   }
+  const list = httpStatus === 404 ? [] : summariesOf(data);
 
   if (list.length === 0) {
-    void lastRaw;
     return { found: false, ok: false, status: "NOT_FOUND", payload: null };
   }
 
