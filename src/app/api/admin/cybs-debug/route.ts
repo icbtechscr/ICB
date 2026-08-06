@@ -67,6 +67,18 @@ export async function GET(req: Request) {
             moneda: ad.currency,
             fecha: t.submitTimeUtc,
             cobrada: isPaidSummary(t),
+            // Clave para saber si la plata se movio de verdad:
+            //   ics_auth  -> solo se AUTORIZO (bloqueada en la tarjeta)
+            //   ics_bill  -> se CAPTURO (va camino a la cuenta del comercio)
+            // Si solo aparece ics_auth, el cargo se libera solo a los ~7 dias.
+            aplicaciones: Array.isArray(app.applications)
+              ? (app.applications as Record<string, unknown>[]).map((a) => ({
+                  nombre: a.name,
+                  reasonCode: a.reasonCode,
+                  rFlag: a.rFlag,
+                  status: a.status,
+                }))
+              : "(la busqueda no devolvio el detalle de aplicaciones)",
           };
         }),
         // Si no hubo resultados, el cuerpo crudo ayuda a ver el motivo.
