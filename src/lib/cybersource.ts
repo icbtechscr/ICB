@@ -291,32 +291,69 @@ const PAID_STATUSES = [
   "PENDING",
 ];
 
-export async function lookupTransactionByOrderNumber(
-  orderNumber: string
-): Promise<TransactionLookup> {
+/** Ejecuta una busqueda cruda y devuelve la respuesta tal cual (para depurar). */
+export async function rawTransactionSearch(
+  query: string,
+  limit = 20
+): Promise<{ httpStatus: number; data: unknown; raw: string }> {
   const body = {
     save: false,
     name: "ICB verificacion de cobro",
     timezone: "America/Costa_Rica",
-    query: `clientReferenceInformation.code:"${orderNumber}"`,
+    query,
     offset: 0,
-    limit: 20,
+    limit,
     sort: "submitTimeUtc:desc",
   };
+  const { status, data, raw } = await signedRequest("POST", "/tss/v2/searches", body);
+  return { httpStatus: status, data, raw };
+}
 
-  const { status: httpStatus, data, raw } = await signedRequest(
-    "POST",
-    "/tss/v2/searches",
-    body
-  );
-  if (httpStatus < 200 || httpStatus >= 300) {
-    throw new Error(`Cybersource /tss/v2/searches fallo (${httpStatus}): ${raw}`);
-  }
+/** Entorno activo, sin exponer credenciales. Solo para diagnostico. */
+export function currentEnv(): { env: string; host: string; merchantIdMasked: string } {
+  const { env, host, merchantId } = cfg();
+  return {
+    env,
+    host,
+    merchantIdMasked:
+      merchantId.length > 4 ? `${merchantId.slice(0, 3)}…${merchantId.slice(-2)}` : "****",
+  };
+}
 
+export function summariesOf(data: unknown): Record<string, unknown>[] {
   const root = (data ?? {}) as Record<string, unknown>;
   const embedded = (root._embedded ?? {}) as Record<string, unknown>;
-  const list = (embedded.transactionSummaries ?? []) as Record<string, unknown>[];
-  if (!Array.isArray(list) || list.length === 0) {
+  const list = embedded.transactionSummaries;
+  return Array.isArray(list) ? (list as Record<string, unknown>[]) : [];
+}
+
+export async function lookupTransactionByOrderNumber(
+  orderNumber: string
+): Promise<TransactionLookup> {
+  // Cybersource acota la busqueda si no se le da ventana de tiempo, asi que se
+  // pide explicitamente el ultimo trimestre. Se prueban dos formas del filtro
+  // por si el numero de orden (que lleva guiones) confunde al parser.
+  const queries = [
+    `clientReferenceInformation.code:"${orderNumber}" AND submitTimeUtc:[NOW-90DAYS TO NOW]`,
+    `clientReferenceInformation.code:"${orderNumber}"`,
+  ];
+
+  let list: Record<string, unknown>[] = [];
+  let lastRaw = "";
+  for (const query of queries) {
+    const { httpStatus, data, raw } = await rawTransactionSearch(query);
+    lastRaw = raw;
+    // 404 = "sin resultados" para este endpoint; no es un fallo real.
+    if (httpStatus === 404) continue;
+    if (httpStatus < 200 || httpStatus >= 300) {
+      throw new Error(`Cybersource /tss/v2/searches fallo (${httpStatus}): ${raw}`);
+    }
+    list = summariesOf(data);
+    if (list.length > 0) break;
+  }
+
+  if (list.length === 0) {
+    void lastRaw;
     return { found: false, ok: false, status: "NOT_FOUND", payload: null };
   }
 
