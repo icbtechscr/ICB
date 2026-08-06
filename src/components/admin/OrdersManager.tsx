@@ -1,8 +1,10 @@
 "use client";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Loader2,
   Package,
+  ShieldCheck,
   ChevronDown,
   Search,
   Phone,
@@ -62,6 +64,9 @@ export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyMsg, setVerifyMsg] = useState<string | null>(null);
+  const router = useRouter();
 
   const counts = useMemo(() => {
     const c: Record<Bucket, number> = { cobradas: 0, sincobro: 0 };
@@ -106,6 +111,52 @@ export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
     }
   }
 
+  // Le pregunta a Cybersource si la tarjeta se cobro de verdad. Sirve para los
+  // pedidos que quedaron "pendientes" porque el cliente cerro la pestana.
+  async function verifyPayments(orderId?: string) {
+    setVerifying(true);
+    setError(null);
+    setVerifyMsg(null);
+    try {
+      const res = await fetch("/api/admin/orders/verify-payments", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(orderId ? { orderId } : {}),
+      });
+      if (!res.ok) {
+        setError(await res.text());
+        return;
+      }
+      const data = (await res.json()) as {
+        revisados: number;
+        cobrados: number;
+        detalle: { pedido: string; resultado: string; estado?: string }[];
+      };
+      if (data.revisados === 0) {
+        setVerifyMsg("No hay pedidos de tarjeta pendientes por revisar.");
+      } else if (data.cobrados > 0) {
+        setVerifyMsg(
+          `${data.cobrados} de ${data.revisados} si estaban cobrados. Ya quedaron marcados como pagados y se les envio el comprobante al cliente.`
+        );
+      } else {
+        const sinRegistro = data.detalle.filter(
+          (d) => d.resultado === "sin registro"
+        ).length;
+        setVerifyMsg(
+          `Se revisaron ${data.revisados}. Ninguno esta cobrado` +
+            (sinRegistro
+              ? `; ${sinRegistro} ni siquiera llegaron a Cybersource (el cliente nunca completo el pago).`
+              : ".")
+        );
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setVerifying(false);
+    }
+  }
+
   async function deleteOrder(o: Order) {
     if (
       !window.confirm(
@@ -137,6 +188,32 @@ export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
           {error}
         </div>
       )}
+
+      {verifyMsg && (
+        <div className="mb-4 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2.5 text-sm text-brand-800">
+          {verifyMsg}
+        </div>
+      )}
+
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-ink-200 bg-ink-50 px-4 py-3">
+        <p className="text-xs text-ink-600">
+          Si un pedido de tarjeta quedo en <b>pendiente</b>, puede que la tarjeta si
+          se haya cobrado y el navegador del cliente nunca alcanzo a avisar.
+        </p>
+        <button
+          type="button"
+          onClick={() => verifyPayments()}
+          disabled={verifying}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-brand-600 bg-brand-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-brand-700 disabled:opacity-60"
+        >
+          {verifying ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <ShieldCheck className="size-3.5" />
+          )}
+          Verificar cobros con el banco
+        </button>
+      </div>
 
       {/* Pestanas por resultado del pago */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -359,6 +436,19 @@ export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
                             className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-60"
                           >
                             <Trash2 className="size-3.5" /> Borrar pedido
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => verifyPayments(o.id)}
+                            disabled={verifying}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-ink-200 px-3 py-2 text-xs font-bold text-ink-700 transition hover:bg-ink-100 disabled:opacity-60"
+                          >
+                            {verifying ? (
+                              <Loader2 className="size-3.5 animate-spin" />
+                            ) : (
+                              <ShieldCheck className="size-3.5" />
+                            )}
+                            Verificar cobro
                           </button>
                         </div>
                       </div>

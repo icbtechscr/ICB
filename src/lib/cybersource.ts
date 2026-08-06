@@ -257,6 +257,96 @@ export type PaymentVerification = {
   payload: Record<string, unknown> | null;
 };
 
+// ---------------------------------------------------------------------------
+// Consultar en Cybersource que paso REALMENTE con una orden.
+//
+// El flujo normal confirma el pago desde el navegador (/api/payments/confirm).
+// Si el cliente cierra la pestana, se le cae el internet o el redirect falla,
+// la tarjeta puede haberse cobrado y la orden quedarse en "pendiente". Esta
+// funcion pregunta directo a Cybersource usando el numero de orden, que se
+// envia como clientReferenceInformation.code al crear la sesion.
+// ---------------------------------------------------------------------------
+
+export type TransactionLookup = {
+  /** Cybersource no tiene ninguna transaccion con ese numero de orden. */
+  found: boolean;
+  /** true = el dinero se cobro. */
+  ok: boolean;
+  status: string;
+  id?: string;
+  reasonCode?: string;
+  amount?: string;
+  currency?: string;
+  submittedAt?: string;
+  payload: Record<string, unknown> | null;
+};
+
+const PAID_STATUSES = [
+  "AUTHORIZED",
+  "PARTIAL_AUTHORIZED",
+  "TRANSMITTED",
+  "ACCEPTED",
+  "COMPLETED",
+  "SETTLED",
+  "PENDING",
+];
+
+export async function lookupTransactionByOrderNumber(
+  orderNumber: string
+): Promise<TransactionLookup> {
+  const body = {
+    save: false,
+    name: "ICB verificacion de cobro",
+    timezone: "America/Costa_Rica",
+    query: `clientReferenceInformation.code:"${orderNumber}"`,
+    offset: 0,
+    limit: 20,
+    sort: "submitTimeUtc:desc",
+  };
+
+  const { status: httpStatus, data, raw } = await signedRequest(
+    "POST",
+    "/tss/v2/searches",
+    body
+  );
+  if (httpStatus < 200 || httpStatus >= 300) {
+    throw new Error(`Cybersource /tss/v2/searches fallo (${httpStatus}): ${raw}`);
+  }
+
+  const root = (data ?? {}) as Record<string, unknown>;
+  const embedded = (root._embedded ?? {}) as Record<string, unknown>;
+  const list = (embedded.transactionSummaries ?? []) as Record<string, unknown>[];
+  if (!Array.isArray(list) || list.length === 0) {
+    return { found: false, ok: false, status: "NOT_FOUND", payload: null };
+  }
+
+  // Si hay varios intentos, gana el que haya quedado cobrado; si ninguno,
+  // se reporta el mas reciente (la lista viene ordenada por fecha desc).
+  const statusOf = (t: Record<string, unknown>): string => {
+    const app = (t.applicationInformation ?? {}) as Record<string, unknown>;
+    return String(app.status ?? app.rCode ?? "").toUpperCase();
+  };
+  const paid = list.find((t) => PAID_STATUSES.includes(statusOf(t)));
+  const t = paid ?? list[0];
+
+  const app = (t.applicationInformation ?? {}) as Record<string, unknown>;
+  const orderInfo = (t.orderInformation ?? {}) as Record<string, unknown>;
+  const amountDetails = (orderInfo.amountDetails ?? {}) as Record<string, unknown>;
+  const st = statusOf(t);
+
+  return {
+    found: true,
+    ok: PAID_STATUSES.includes(st),
+    status: st || "UNKNOWN",
+    id: (t.id as string | undefined) ?? undefined,
+    reasonCode: (app.reasonCode as string | undefined) ?? undefined,
+    amount: (amountDetails.totalAmount as string | undefined) ?? undefined,
+    currency: (amountDetails.currency as string | undefined) ?? undefined,
+    submittedAt: (t.submitTimeUtc as string | undefined) ?? undefined,
+    payload: t,
+  };
+}
+
 export function verifyMountResult(resultJwt: string): PaymentVerification {
   const payload = decodeJwtPayload(resultJwt);
   if (!payload) {
