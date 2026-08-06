@@ -291,6 +291,34 @@ const PAID_STATUSES = [
   "PENDING",
 ];
 
+/**
+ * Decide si una transaccion quedo cobrada.
+ *
+ * OJO: en la busqueda de transacciones, `applicationInformation.status` viene
+ * VACIO. Lo que si llega es `reasonCode` ("100" = aprobada) y, a veces, la lista
+ * `applications` con `rFlag: "SOK"`. Por eso no se puede depender solo del
+ * status, como hacia la primera version de esto.
+ */
+export function isPaidSummary(t: Record<string, unknown>): boolean {
+  const app = (t.applicationInformation ?? {}) as Record<string, unknown>;
+
+  const status = String(app.status ?? "").toUpperCase();
+  if (status) return PAID_STATUSES.includes(status);
+
+  if (String(app.reasonCode ?? "") === "100") return true;
+  if (String(app.rFlag ?? "").toUpperCase() === "SOK") return true;
+
+  const apps = Array.isArray(app.applications)
+    ? (app.applications as Record<string, unknown>[])
+    : [];
+  return apps.some(
+    (a) =>
+      /auth|bill|sale|capture/i.test(String(a.name ?? "")) &&
+      (String(a.reasonCode ?? "") === "100" ||
+        String(a.rFlag ?? "").toUpperCase() === "SOK")
+  );
+}
+
 /** Ejecuta una busqueda cruda y devuelve la respuesta tal cual (para depurar). */
 export async function rawTransactionSearch(
   query: string,
@@ -359,22 +387,21 @@ export async function lookupTransactionByOrderNumber(
 
   // Si hay varios intentos, gana el que haya quedado cobrado; si ninguno,
   // se reporta el mas reciente (la lista viene ordenada por fecha desc).
-  const statusOf = (t: Record<string, unknown>): string => {
-    const app = (t.applicationInformation ?? {}) as Record<string, unknown>;
-    return String(app.status ?? app.rCode ?? "").toUpperCase();
-  };
-  const paid = list.find((t) => PAID_STATUSES.includes(statusOf(t)));
+  const paid = list.find(isPaidSummary);
   const t = paid ?? list[0];
 
   const app = (t.applicationInformation ?? {}) as Record<string, unknown>;
   const orderInfo = (t.orderInformation ?? {}) as Record<string, unknown>;
   const amountDetails = (orderInfo.amountDetails ?? {}) as Record<string, unknown>;
-  const st = statusOf(t);
+  const ok = isPaidSummary(t);
+  const st =
+    String(app.status ?? "").toUpperCase() ||
+    (ok ? "APROBADA" : `RECHAZADA (reasonCode ${app.reasonCode ?? "?"})`);
 
   return {
     found: true,
-    ok: PAID_STATUSES.includes(st),
-    status: st || "UNKNOWN",
+    ok,
+    status: st,
     id: (t.id as string | undefined) ?? undefined,
     reasonCode: (app.reasonCode as string | undefined) ?? undefined,
     amount: (amountDetails.totalAmount as string | undefined) ?? undefined,

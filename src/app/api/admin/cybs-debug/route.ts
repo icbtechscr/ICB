@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/supabase-server";
 import { getUserRole, isAdminLike } from "@/lib/roles";
 import {
   currentEnv,
+  isPaidSummary,
   rawTransactionSearch,
   summariesOf,
 } from "@/lib/cybersource";
@@ -65,6 +66,7 @@ export async function GET(req: Request) {
             monto: ad.totalAmount,
             moneda: ad.currency,
             fecha: t.submitTimeUtc,
+            cobrada: isPaidSummary(t),
           };
         }),
         // Si no hubo resultados, el cuerpo crudo ayuda a ver el motivo.
