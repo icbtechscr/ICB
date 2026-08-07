@@ -300,16 +300,26 @@ const PAID_STATUSES = [
  */
 export function isPaidSummary(t: Record<string, unknown>): boolean {
   const app = (t.applicationInformation ?? {}) as Record<string, unknown>;
-
-  const status = String(app.status ?? "").toUpperCase();
-  if (status) return PAID_STATUSES.includes(status);
-
-  if (String(app.reasonCode ?? "") === "100") return true;
-  if (String(app.rFlag ?? "").toUpperCase() === "SOK") return true;
-
   const apps = Array.isArray(app.applications)
     ? (app.applications as Record<string, unknown>[])
     : [];
+
+  const hasSuccessfulCapture = apps.some(
+    (a) =>
+      /bill|capture|sale/i.test(String(a.name ?? "")) &&
+      (String(a.reasonCode ?? "") === "100" ||
+        String(a.rFlag ?? "").toUpperCase() === "SOK")
+  );
+  if (hasSuccessfulCapture) return true;
+
+  const status = String(app.status ?? "").toUpperCase();
+  const reasonCode = String(app.reasonCode ?? "");
+  if (status === "PENDING") return reasonCode === "100";
+  if (status) return PAID_STATUSES.includes(status);
+
+  if (reasonCode === "100") return true;
+  if (String(app.rFlag ?? "").toUpperCase() === "SOK") return true;
+
   return apps.some(
     (a) =>
       /auth|bill|sale|capture/i.test(String(a.name ?? "")) &&
@@ -436,11 +446,12 @@ export function verifyMountResult(resultJwt: string): PaymentVerification {
     (paymentResponse.id as string | undefined);
 
   const okStatuses = ["AUTHORIZED", "PARTIAL_AUTHORIZED", "TRANSMITTED", "ACCEPTED", "COMPLETED", "SETTLED"];
-  const ok = okStatuses.includes(status);
+  const normalizedStatus = status.toUpperCase();
+  const ok = okStatuses.includes(normalizedStatus);
 
   return {
     ok,
-    status: status || "UNKNOWN",
+    status: normalizedStatus || "UNKNOWN",
     id,
     reasonCode,
     message,

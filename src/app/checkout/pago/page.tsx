@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   ChevronRight,
@@ -93,6 +93,9 @@ export default function PagoPage() {
     payerName: "",
     acceptTerms: false,
   });
+  const createdOrderRef = useRef<{ orderId: string; orderNumber: string } | null>(null);
+  const cardFlowInProgressRef = useRef(false);
+  const confirmingPaymentRef = useRef(false);
   const [submitting, setSubmitting] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
@@ -130,6 +133,9 @@ export default function PagoPage() {
 
   async function createOrder(): Promise<{ orderId: string; orderNumber: string } | null> {
     if (!shipping) return null;
+    if (form.method === "tarjeta" && createdOrderRef.current) {
+      return createdOrderRef.current;
+    }
     const fullName = `${shipping.firstName} ${shipping.lastName}`.trim();
     const noteParts = [shipping.reference?.trim()].filter(Boolean) as string[];
     // Para SINPE/transferencia, dejar registrado a nombre de quién se pagó.
@@ -196,12 +202,15 @@ export default function PagoPage() {
         paymentMethod: form.method,
       })
     );
-    return { orderId: data.orderId, orderNumber: data.orderNumber };
+    const created = { orderId: data.orderId, orderNumber: data.orderNumber };
+    if (form.method === "tarjeta") createdOrderRef.current = created;
+    return created;
   }
 
   // Flujo tarjeta: crear orden -> obtener capture context -> montar iframe.
   async function startCardFlow() {
-    if (!form.acceptTerms) return;
+    if (!form.acceptTerms || cardFlowInProgressRef.current) return;
+    cardFlowInProgressRef.current = true;
     setSubmitting(true);
     setError(null);
     try {
@@ -209,6 +218,7 @@ export default function PagoPage() {
       const ord = await createOrder();
       if (!ord) {
         setSubmitting(false);
+        cardFlowInProgressRef.current = false;
         return;
       }
       setOrderId(ord.orderId);
@@ -221,6 +231,7 @@ export default function PagoPage() {
       if (!ccRes.ok) {
         setError(await ccRes.text());
         setSubmitting(false);
+        cardFlowInProgressRef.current = false;
         return;
       }
       const ccJson = (await ccRes.json()) as {
@@ -235,6 +246,7 @@ export default function PagoPage() {
           "Cybersource no devolvió la URL del SDK. Verifica que el sessions API esté habilitado."
         );
         setSubmitting(false);
+        cardFlowInProgressRef.current = false;
         return;
       }
       setCaptureContext(ccJson.sessionJwt);
@@ -243,12 +255,14 @@ export default function PagoPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setSubmitting(false);
+      cardFlowInProgressRef.current = false;
     }
   }
 
   // Cuando UC termina, devuelve un JWT con el resultado del pago (autoProcessing).
   async function onResultJwt(resultJwt: string) {
-    if (!orderId) return;
+    if (!orderId || confirmingPaymentRef.current) return;
+    confirmingPaymentRef.current = true;
     setError(null);
     try {
       const res = await fetch("/api/payments/confirm", {
@@ -268,12 +282,15 @@ export default function PagoPage() {
         setError(data.message ?? `Pago rechazado (${data.status ?? res.status})`);
         setCaptureContext(null);
         setSubmitting(false);
+        cardFlowInProgressRef.current = false;
+        confirmingPaymentRef.current = false;
         return;
       }
       router.push("/checkout/confirmacion");
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setSubmitting(false);
+      confirmingPaymentRef.current = false;
     }
   }
 
@@ -374,6 +391,11 @@ export default function PagoPage() {
                         setForm({ ...form, method: m.id });
                         setCaptureContext(null);
                         setError(null);
+                        if (m.id !== "tarjeta") {
+                          createdOrderRef.current = null;
+                          cardFlowInProgressRef.current = false;
+                          confirmingPaymentRef.current = false;
+                        }
                       }}
                       className={`flex items-center justify-between gap-4 rounded-2xl border p-4 text-left transition-all ${
                         selected
