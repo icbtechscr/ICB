@@ -12,7 +12,7 @@ export default function CartPage() {
   const total = subtotal;
   const MIN_ORDER = 10000;
   const missing = Math.max(0, MIN_ORDER - subtotal);
-  const canCheckout = subtotal >= MIN_ORDER;
+  const canCheckout = true;
 
   return (
     <div className="bg-white">

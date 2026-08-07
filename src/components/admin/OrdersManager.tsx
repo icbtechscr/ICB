@@ -57,6 +57,13 @@ function bucketOf(o: Order): Bucket {
     : "sincobro";
 }
 
+function paymentStatusLabel(order: Order): string {
+  if (order.paymentMethod === "tarjeta") {
+    return order.paymentStatus.toLowerCase() === "pagado" ? "Aprobado" : "No aprobado";
+  }
+  return order.paymentStatus;
+}
+
 export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [bucket, setBucket] = useState<Bucket>("cobradas");
@@ -400,7 +407,9 @@ export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
                           <p className="flex items-center gap-1.5 text-ink-600">
                             <CreditCard className="size-3.5" />
                             {PAYMENT_LABEL[o.paymentMethod] ?? o.paymentMethod} ·{" "}
-                            <span className="font-semibold">{o.paymentStatus}</span>
+                            <span className={`font-semibold ${o.paymentMethod === "tarjeta" && o.paymentStatus.toLowerCase() === "pagado" ? "text-emerald-700" : o.paymentMethod === "tarjeta" ? "text-red-700" : ""}`}>
+                              {paymentStatusLabel(o)}
+                            </span>
                           </p>
                           <PaymentDetails order={o} />
                         </div>

@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { getProductsByIds } from "@/lib/products";
-import { computeShippingCost, generateOrderNumber } from "@/lib/orders";
+import {
+  computeShippingCost,
+  generateOrderNumber,
+  MINIMUM_SUBTOTAL_FOR_SHIPPING,
+  requiresShippingMinimum,
+} from "@/lib/orders";
 import { distanceKm, ORIGIN, getZone } from "@/lib/shipping";
 import { stockOrderLimit } from "@/lib/stock";
 import { notifyNewOrder } from "@/lib/email";
@@ -120,8 +125,8 @@ export async function POST(req: Request) {
     }
 
     const subtotal = lineItems.reduce((a, i) => a + i.line_total_crc, 0);
-    if (subtotal < 10000) {
-      return new NextResponse("El mínimo de compra es ₡10.000", {
+    if (requiresShippingMinimum(shippingMethod) && subtotal < MINIMUM_SUBTOTAL_FOR_SHIPPING) {
+      return new NextResponse("Para solicitar envío, el subtotal mínimo es de ₡10.000. También podés elegir recoger en sucursal para comprar cualquier monto.", {
         status: 400,
       });
     }
@@ -151,7 +156,7 @@ export async function POST(req: Request) {
         shipping_method: shippingMethod,
         shipping_notes: shippingNotes,
         payment_method: paymentMethod,
-        payment_status: "pendiente",
+        payment_status: paymentMethod === "tarjeta" ? "rechazado" : "pendiente",
         subtotal_crc: subtotal,
         shipping_crc: shippingCost,
         total_crc: total,

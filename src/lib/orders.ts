@@ -22,6 +22,12 @@ export const MANAGED_STATUSES = ["enviado", "entregado"] as const;
 
 import { distanceShippingCost, getZone, zoneRate } from "./shipping";
 
+export const MINIMUM_SUBTOTAL_FOR_SHIPPING = 10000;
+
+export function requiresShippingMinimum(method: string | null | undefined): boolean {
+  return method !== "recogida";
+}
+
 export const SHIPPING_LABEL: Record<string, string> = {
   express: "Express (24h)",
   estandar: "Estándar (2-4 días)",

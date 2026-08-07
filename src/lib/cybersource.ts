@@ -288,7 +288,6 @@ const PAID_STATUSES = [
   "ACCEPTED",
   "COMPLETED",
   "SETTLED",
-  "PENDING",
 ];
 
 /**
@@ -436,7 +435,7 @@ export function verifyMountResult(resultJwt: string): PaymentVerification {
     (payload.id as string | undefined) ??
     (paymentResponse.id as string | undefined);
 
-  const okStatuses = ["AUTHORIZED", "PARTIAL_AUTHORIZED", "PENDING", "TRANSMITTED", "ACCEPTED", "COMPLETED"];
+  const okStatuses = ["AUTHORIZED", "PARTIAL_AUTHORIZED", "TRANSMITTED", "ACCEPTED", "COMPLETED", "SETTLED"];
   const ok = okStatuses.includes(status);
 
   return {

@@ -32,6 +32,7 @@ import {
   PER_KM_RATE,
   type PackageSize,
 } from "@/lib/shipping";
+import { MINIMUM_SUBTOTAL_FOR_SHIPPING, requiresShippingMinimum } from "@/lib/orders";
 
 const STORAGE_KEY = "icb-checkout-v3";
 
@@ -87,6 +88,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { items, subtotal, count } = useCart();
   const [form, setForm] = useState<ShippingForm>(DEFAULT_FORM);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -147,6 +149,11 @@ export default function CheckoutPage() {
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (requiresShippingMinimum(form.method) && subtotal < MINIMUM_SUBTOTAL_FOR_SHIPPING) {
+      setFormError("Para enviar tu compra, el subtotal mínimo es de ₡10.000. También podés elegir recoger en sucursal para comprar cualquier monto.");
+      return;
+    }
+    setFormError(null);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
     } catch {}
@@ -196,6 +203,11 @@ export default function CheckoutPage() {
         <CheckoutStepper current={1} />
 
         <form onSubmit={onSubmit} className="mt-8 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+          {formError && (
+            <div className="lg:col-span-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              {formError}
+            </div>
+          )}
           <div className="space-y-6">
             <Card title="Información personal" Icon={User}>
               <div className="grid gap-4 sm:grid-cols-2">
