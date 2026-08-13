@@ -27,6 +27,7 @@ const DEBUG = process.argv.includes("--debug");
 const DRY_RUN = process.argv.includes("--dry-run");
 const REQUEST_TIMEOUT_MS = 45_000;
 const TABLE = "cpi_product_sales_daily";
+const BRANCH_TABLE = "cpi_product_sales_branch_daily";
 const BASE = (process.env.CPI_BASE_URL || "https://www.appcontadorcpi.com/gm/").replace(/\/*$/, "/");
 const USER = process.env.CPI_USER || "";
 const PASS = process.env.CPI_PASS || "";
@@ -202,6 +203,42 @@ async function fetchSoldProducts(cookie, day) {
   return response.body;
 }
 
+async function fetchSoldItemsHtml(cookie, day) {
+  const body = new URLSearchParams({
+    duser: USER,
+    d: USER,
+    e: "",
+    g: "",
+    h: "5000",
+    i: "",
+    j: "",
+    k: reportDate(day),
+    l: "",
+    m: reportDate(day, true),
+    str2: "",
+    str13: "",
+    str14: "",
+    str15: "Facturas.fec_factura DESC",
+    str88: "reporte",
+    str16: "FACTURADO",
+    SocaaID: ID,
+    idiomasistema: "Espanol",
+  }).toString();
+  const response = await request("ControlSpecFacturacionporitems.php", {
+    method: "POST",
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      "x-requested-with": "XMLHttpRequest",
+      origin: new URL(BASE).origin,
+      referer: `${BASE}Page Main 4.php`,
+      ...(cookie ? { cookie } : {}),
+    },
+    body,
+  });
+  if (response.status >= 400) throw new Error(`Reporte de facturación por items fallo (HTTP ${response.status})`);
+  return response.body;
+}
+
 function decodeHtml(value) {
   const named = {
     amp: "&", quot: '"', apos: "'", lt: "<", gt: ">", nbsp: " ",
@@ -287,6 +324,56 @@ function parseReport(html) {
   return products;
 }
 
+function parseSoldInvoiceItems(html) {
+  const rows = (html.match(/<tr\b[\s\S]*?<\/tr>/gi) || [])
+    .map((row) => (row.match(/<(?:th|td)\b[\s\S]*?<\/(?:th|td)>/gi) || []).map(cleanText))
+    .filter((cells) => cells.length > 0);
+  const findColumn = (headers, label) => headers.findIndex((header) => normalize(header) === normalize(label));
+  const headerAt = rows.findIndex(
+    (cells) =>
+      findColumn(cells, "Factura") >= 0 &&
+      findColumn(cells, "Origen") >= 0 &&
+      findColumn(cells, "Item") >= 0 &&
+      findColumn(cells, "Unidades") >= 0 &&
+      findColumn(cells, "Total") >= 0
+  );
+  if (headerAt < 0) {
+    if (/no se encontraron datos para los filtros seleccionados/i.test(cleanText(html))) return [];
+    throw new Error("CPI no devolvio la tabla esperada de facturación por items");
+  }
+  const headers = rows[headerAt];
+  const facturaAt = findColumn(headers, "Factura");
+  const origenAt = findColumn(headers, "Origen");
+  const puntoVentaAt = findColumn(headers, "Punto Venta");
+  const fechaAt = findColumn(headers, "Fecha");
+  const monedaAt = findColumn(headers, "Moneda");
+  const skuAt = findColumn(headers, "Item");
+  const cantidadAt = findColumn(headers, "Unidades");
+  const precioAt = findColumn(headers, "Valor Unitario");
+  const descuentoAt = findColumn(headers, "Descuentos");
+  const totalAt = findColumn(headers, "Total");
+  const items = [];
+  for (const cells of rows.slice(headerAt + 1)) {
+    const factura = (cells[facturaAt] || "").trim();
+    const sku = (cells[skuAt] || "").trim();
+    const cantidad = parseNumber(cells[cantidadAt] || "0");
+    if (!factura || !sku || !Number.isFinite(cantidad) || cantidad === 0) continue;
+    items.push({
+      factura,
+      origen: (cells[origenAt] || "").trim(),
+      puntoVenta: (cells[puntoVentaAt] || "").trim(),
+      fecha: (cells[fechaAt] || "").match(/\d{4}-\d{2}-\d{2}/)?.[0] || "",
+      moneda: currency(cells[monedaAt] || "CRC"),
+      sku,
+      cantidad,
+      precioUnit: parseNumber(cells[precioAt] || "0"),
+      descuento: parseNumber(cells[descuentoAt] || "0"),
+      total: parseNumber(cells[totalAt] || "0"),
+    });
+  }
+  return items;
+}
+
 function productKey(sku, description) {
   return normalize(sku || description).slice(0, 180);
 }
@@ -364,6 +451,59 @@ async function saveDay(sb, day, products) {
   return rows.length;
 }
 
+async function saveBranchProductSales(sb, day, items, products) {
+  const descriptions = new Map();
+  for (const product of products) {
+    const key = normalize(product.sku);
+    if (key && product.descripcion) descriptions.set(key, product.descripcion);
+  }
+
+  const merged = new Map();
+  for (const item of items) {
+    const skuKey = normalize(item.sku);
+    const origen = item.origen || "Sin sucursal";
+    const puntoVenta = item.puntoVenta || "Sin punto de venta";
+    const key = `${item.moneda}|${normalize(origen)}|${normalize(puntoVenta)}|${skuKey}`;
+    const current = merged.get(key) || {
+      sku: item.sku,
+      descripcion: descriptions.get(skuKey) || item.sku,
+      moneda: item.moneda,
+      origen,
+      punto_venta: puntoVenta,
+      cantidad: 0,
+      total_venta: 0,
+    };
+    current.cantidad += item.cantidad;
+    current.total_venta += item.total;
+    merged.set(key, current);
+  }
+
+  const rows = [...merged.values()].map((row) => {
+    return {
+      ...row,
+      cpi_key: `${day}|${row.moneda}|${normalize(row.origen)}|${normalize(row.punto_venta)}|${productKey(row.sku, row.descripcion)}`,
+      sale_date: day,
+      synced_at: new Date().toISOString(),
+    };
+  });
+  for (let index = 0; index < rows.length; index += 400) {
+    const { error } = await sb.from(BRANCH_TABLE).upsert(rows.slice(index, index + 400), { onConflict: "cpi_key" });
+    if (error) throw new Error(`Supabase (guardar productos por sucursal ${day}): ${error.message}`);
+  }
+  const { data: existing, error: readError } = await sb
+    .from(BRANCH_TABLE)
+    .select("cpi_key")
+    .eq("sale_date", day);
+  if (readError) throw new Error(`Supabase (leer productos por sucursal ${day}): ${readError.message}`);
+  const currentKeys = new Set(rows.map((row) => row.cpi_key));
+  const stale = (existing || []).map((row) => row.cpi_key).filter((key) => !currentKeys.has(key));
+  for (let index = 0; index < stale.length; index += 200) {
+    const { error } = await sb.from(BRANCH_TABLE).delete().in("cpi_key", stale.slice(index, index + 200));
+    if (error) throw new Error(`Supabase (limpiar productos por sucursal ${day}): ${error.message}`);
+  }
+  return rows.length;
+}
+
 async function mapLimit(items, limit, fn) {
   let next = 0;
   const results = new Array(items.length);
@@ -388,11 +528,12 @@ async function main() {
   console.log(`Productos vendidos CPI: ${range.from} a ${range.to} (${days.length} dia(s))`);
   console.log("Iniciando sesion en CPI...");
   const cookie = await login();
-  console.log("Sesion OK. Descargando Unidades vendidas...");
+  console.log("Sesion OK. Descargando productos y líneas por sucursal...");
   const daily = await mapLimit(days, 2, async (day) => {
     const products = parseReport(await fetchSoldProducts(cookie, day));
-    console.log(`  ${day}: ${products.length} producto(s)`);
-    return { day, products };
+    const items = parseSoldInvoiceItems(await fetchSoldItemsHtml(cookie, day));
+    console.log(`  ${day}: ${products.length} producto(s), ${items.length} línea(s)`);
+    return { day, products, items };
   });
 
   if (DRY_RUN) {
@@ -402,13 +543,18 @@ async function main() {
       to: range.to,
       days: daily.length,
       products: daily.reduce((sum, item) => sum + item.products.length, 0),
+      invoiceLines: daily.reduce((sum, item) => sum + item.items.length, 0),
     }, null, 2));
     return;
   }
 
   let saved = 0;
-  for (const item of daily) saved += await saveDay(sb, item.day, item.products);
-  console.log(`Listo. ${saved} productos/dia guardados para ${daily.length} dia(s).`);
+  let savedByBranch = 0;
+  for (const item of daily) {
+    saved += await saveDay(sb, item.day, item.products);
+    savedByBranch += await saveBranchProductSales(sb, item.day, item.items, item.products);
+  }
+  console.log(`Listo. ${saved} productos/día y ${savedByBranch} productos por sucursal guardados para ${daily.length} día(s).`);
 }
 
 main().catch((error) => {
