@@ -3,7 +3,7 @@ import {
   Store, BadgeCheck, CalendarDays, Users, PackageSearch, Trophy, FileSpreadsheet,
 } from "lucide-react";
 import { getSalesAnalytics, periodRange, type Period } from "@/lib/cpi-analytics";
-import { getAllTimeProductRanking, type ProductRankRow } from "@/lib/cpi-products";
+import { getAllTimeProductRanking, getBranchProductRankings, type ProductRankRow } from "@/lib/cpi-products";
 import { PeriodNav } from "@/components/PeriodNav";
 import { formatCRC } from "@/lib/utils";
 import { StatCard, BarList, DayBars, SplitBar, type BarItem } from "@/components/admin/SalesCharts";
@@ -82,23 +82,35 @@ function SoldProductsTable({
   );
 }
 
-function ProductRankingTable({ rows }: { rows: ProductRankRow[] }) {
+function ProductRankingTable({
+  rows,
+  title = "Ranking histórico de productos",
+  summary = `${rows.length} producto(s) facturado(s) - acumulado desde siempre`,
+  exportHref,
+}: {
+  rows: ProductRankRow[];
+  title?: string;
+  summary?: string;
+  exportHref?: string;
+}) {
   return (
     <section className="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft">
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-ink-100 px-5 py-3.5">
         <h2 className="inline-flex items-center gap-2 text-sm font-bold text-ink-900">
-          <Trophy className="size-4 text-brand-600" /> Ranking historico de productos
+          <Trophy className="size-4 text-brand-600" /> {title}
         </h2>
         <div className="flex items-center gap-3">
           <span className="text-xs text-ink-500">
-            {rows.length} producto(s) facturado(s) - acumulado desde siempre
+            {summary}
           </span>
-          <a
-            href="/api/admin/reports/products"
-            className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 bg-white px-3 py-1.5 text-xs font-bold text-ink-700 shadow-sm transition hover:border-accent-200 hover:bg-accent-50 hover:text-accent-700"
-          >
-            <FileSpreadsheet className="size-3.5" /> Excel
-          </a>
+          {exportHref && (
+            <a
+              href={exportHref}
+              className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 bg-white px-3 py-1.5 text-xs font-bold text-ink-700 shadow-sm transition hover:border-accent-200 hover:bg-accent-50 hover:text-accent-700"
+            >
+              <FileSpreadsheet className="size-3.5" /> Excel
+            </a>
+          )}
         </div>
       </div>
       {rows.length === 0 ? (
@@ -157,12 +169,20 @@ export default async function VentasSucursalesPage({
   const isMonth = period === "month";
 
   const a = await getSalesAnalytics(range);
-  const ranking = await getAllTimeProductRanking();
+  const [ranking, branchRankings] = await Promise.all([
+    getAllTimeProductRanking(),
+    getBranchProductRankings(40),
+  ]);
   const toMoney = (crc: number, usd: number) => (usd > 0 ? `${formatCRC(crc)} · ${fmtUSD(usd)}` : formatCRC(crc));
 
-  const diasConVentas = a.porDia.filter((d) => d.crc > 0).length;
-  const promedioDiario = diasConVentas ? Math.round(a.totalCRC / diasConVentas) : 0;
-  const mejorDia = a.porDia.reduce((mx, d) => (d.crc > mx.crc ? d : mx), { day: "", crc: 0, usd: 0, count: 0 });
+  const diasConVentas = a.porDia.filter((d) => d.crc > 0 || d.usd > 0).length;
+  const promedioDiarioCRC = diasConVentas ? Math.round(a.totalCRC / diasConVentas) : 0;
+  const promedioDiarioUSD = diasConVentas ? a.totalUSD / diasConVentas : 0;
+  const valorParaOrdenar = (crc: number, usd: number) => crc + usd * 520;
+  const mejorDia = a.porDia.reduce(
+    (mx, d) => (valorParaOrdenar(d.crc, d.usd) > valorParaOrdenar(mx.crc, mx.usd) ? d : mx),
+    { day: "", crc: 0, usd: 0, count: 0 }
+  );
   const growth = a.prevMonthCRC > 0 ? Math.round(((a.totalCRC - a.prevMonthCRC) / a.prevMonthCRC) * 1000) / 10 : null;
   const growthLabel = growth != null ? `${growth >= 0 ? "▲" : "▼"} ${Math.abs(growth)}% vs ${isMonth ? "mes" : "día"} anterior` : undefined;
 
@@ -198,8 +218,9 @@ export default async function VentasSucursalesPage({
             <StatCard label="Vendido (dólares)" value={fmtUSD(a.totalUSD)} Icon={DollarSign} accent="brand" />
             <StatCard label="Facturas" value={String(a.count)} sub={`${a.aceptadas} aceptadas · ${a.rechazadas} rechazadas`} Icon={ShoppingBag} accent="brand" />
             <StatCard label="Ticket promedio (₡)" value={formatCRC(a.ticketPromedioCRC)} Icon={Receipt} accent="warn" />
-            {isMonth && <StatCard label="Promedio diario (₡)" value={formatCRC(promedioDiario)} sub={`${diasConVentas} día(s) con ventas`} Icon={CalendarDays} accent="brand" />}
-            {isMonth && <StatCard label="Mejor día (₡)" value={formatCRC(mejorDia.crc)} sub={mejorDia.day ? mejorDia.day.slice(8, 10) + "/" + mejorDia.day.slice(5, 7) : undefined} Icon={TrendingUp} accent="accent" />}
+            {a.totalUSD > 0 && <StatCard label="Ticket promedio ($)" value={fmtUSD(a.ticketPromedioUSD)} Icon={Receipt} accent="warn" />}
+            {isMonth && <StatCard label="Promedio diario" value={toMoney(promedioDiarioCRC, promedioDiarioUSD)} sub={`${diasConVentas} día(s) con ventas`} Icon={CalendarDays} accent="brand" />}
+            {isMonth && <StatCard label="Mejor día" value={toMoney(mejorDia.crc, mejorDia.usd)} sub={mejorDia.day ? mejorDia.day.slice(8, 10) + "/" + mejorDia.day.slice(5, 7) : undefined} Icon={TrendingUp} accent="accent" />}
             <StatCard label="Sucursales activas" value={String(a.sucursales)} Icon={Building2} accent="brand" />
             <StatCard label="Unidades vendidas" value={a.productUnits.toLocaleString("es-CR", { maximumFractionDigits: 2 })} Icon={ShoppingBag} accent="accent" />
             <StatCard label="Productos vendidos" value={String(a.productCount)} Icon={PackageSearch} accent="brand" />
@@ -210,6 +231,12 @@ export default async function VentasSucursalesPage({
             <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft">
               <h2 className="mb-4 text-sm font-bold text-ink-900">Ventas por día (colones)</h2>
               <DayBars data={a.porDia.map((d) => ({ day: d.day, value: d.crc }))} fmt={formatCRC} />
+              {a.totalUSD > 0 && (
+                <>
+                  <h2 className="mb-4 mt-6 text-sm font-bold text-ink-900">Ventas por día (dólares)</h2>
+                  <DayBars data={a.porDia.map((d) => ({ day: d.day, value: d.usd }))} fmt={fmtUSD} />
+                </>
+              )}
             </section>
           )}
 
@@ -245,7 +272,7 @@ export default async function VentasSucursalesPage({
                   <tr className="border-b border-ink-100 text-left text-xs uppercase tracking-wider text-ink-500">
                     <th className="pb-2 font-bold">Tipo</th>
                     <th className="pb-2 text-right font-bold">Cantidad</th>
-                    <th className="pb-2 text-right font-bold">Monto (₡)</th>
+                    <th className="pb-2 text-right font-bold">Montos</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -253,7 +280,7 @@ export default async function VentasSucursalesPage({
                     <tr key={t.key} className="border-b border-ink-50 last:border-0">
                       <td className="py-2 font-semibold text-ink-800">{t.key}</td>
                       <td className="py-2 text-right text-ink-700">{t.count}</td>
-                      <td className="py-2 text-right font-bold text-ink-900">{formatCRC(t.crc)}</td>
+                      <td className="py-2 text-right font-bold text-ink-900">{toMoney(t.crc, t.usd)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -264,8 +291,27 @@ export default async function VentasSucursalesPage({
       )}
 
       <div className="mt-6">
-        <ProductRankingTable rows={ranking} />
+        <ProductRankingTable rows={ranking} exportHref="/api/admin/reports/products" />
       </div>
+
+      {branchRankings.length > 0 && (
+        <section className="mt-6">
+          <div className="mb-3 px-1">
+            <h2 className="text-lg font-black tracking-tight text-ink-900">Top 40 por sucursal</h2>
+            <p className="mt-1 text-sm text-ink-600">Productos facturados, acumulados por sede y ordenados por unidades vendidas.</p>
+          </div>
+          <div className="grid gap-6 xl:grid-cols-2">
+            {branchRankings.map(({ sucursal, rows }) => (
+              <ProductRankingTable
+                key={sucursal}
+                rows={rows}
+                title={`Top 40 · ${sucursal}`}
+                summary={`${rows.length} producto(s) facturado(s) - acumulado histórico de la sucursal`}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
