@@ -354,10 +354,15 @@ async function SalesPerformance({
             </div>
           </section>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <MetricCard label="Mis facturas" value={String(a.count)} Icon={ShoppingBag} accent="brand" />
-            <MetricCard label="Vendido (CRC)" value={formatCRC(a.amountCRC)} Icon={Wallet} accent="accent" />
-            <MetricCard label="Vendido (USD)" value={a.amountUSD > 0 ? fmtUSD(a.amountUSD) : "$0.00"} Icon={DollarSign} accent="brand" />
+            <MetricCard
+              label="Vendido"
+              value={formatCRC(a.amountCRC)}
+              sublabel={`${fmtUSD(a.amountUSD)} USD`}
+              Icon={Wallet}
+              accent="accent"
+            />
             <MetricCard label="Ticket promedio" value={formatCRC(a.ticketPromedioCRC)} Icon={Receipt} accent="warn" />
           </div>
 
