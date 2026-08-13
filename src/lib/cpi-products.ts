@@ -480,6 +480,11 @@ export type ProductRankRow = {
   lastSale: string | null;
 };
 
+export type BranchProductRanking = {
+  sucursal: string;
+  rows: ProductRankRow[];
+};
+
 /** Ranking historico (acumulado desde siempre) de TODOS los productos facturados.
  *  Sin limite: si un producto se facturo una sola vez, igual aparece. */
 export async function getAllTimeProductRanking(): Promise<ProductRankRow[]> {
@@ -508,6 +513,47 @@ export async function getAllTimeProductRanking(): Promise<ProductRankRow[]> {
       saleDays: Number(r.sale_days) || 0,
       lastSale: r.last_sale,
     }));
+  } catch {
+    return [];
+  }
+}
+
+/** Top de productos por sucursal, calculado sobre las líneas de factura CPI. */
+export async function getBranchProductRankings(limit = 40): Promise<BranchProductRanking[]> {
+  try {
+    const sb = createAdminClient();
+    const { data, error } = await sb.rpc("cpi_branch_product_ranking", {
+      p_limit: Math.max(1, Math.min(Math.floor(limit), 100)),
+    });
+    if (error || !data) return [];
+    type Rpc = {
+      sucursal: string;
+      product_rank: number;
+      sku: string;
+      descripcion: string;
+      cantidad: number;
+      crc: number;
+      usd: number;
+      sale_days: number;
+      last_sale: string | null;
+    };
+    const byBranch = new Map<string, ProductRankRow[]>();
+    for (const row of data as Rpc[]) {
+      const sucursal = row.sucursal || "Sin sucursal";
+      const rows = byBranch.get(sucursal) ?? [];
+      rows.push({
+        rank: Number(row.product_rank) || rows.length + 1,
+        sku: row.sku || "",
+        descripcion: row.descripcion || row.sku || "Producto",
+        cantidad: Number(row.cantidad) || 0,
+        crc: Number(row.crc) || 0,
+        usd: Number(row.usd) || 0,
+        saleDays: Number(row.sale_days) || 0,
+        lastSale: row.last_sale,
+      });
+      byBranch.set(sucursal, rows);
+    }
+    return [...byBranch.entries()].map(([sucursal, rows]) => ({ sucursal, rows }));
   } catch {
     return [];
   }
