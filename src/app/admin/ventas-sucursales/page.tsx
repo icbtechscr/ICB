@@ -1,5 +1,5 @@
 import {
-  Wallet, DollarSign, ShoppingBag, Receipt, Building2, TrendingUp,
+  Wallet, ShoppingBag, Receipt, Building2, TrendingUp,
   Store, BadgeCheck, CalendarDays, Users, PackageSearch, Trophy, FileSpreadsheet,
 } from "lucide-react";
 import { getSalesAnalytics, periodRange, type Period } from "@/lib/cpi-analytics";
@@ -214,11 +214,21 @@ export default async function VentasSucursalesPage({
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatCard label="Vendido (colones)" value={formatCRC(a.totalCRC)} sub={growthLabel} Icon={Wallet} accent="accent" />
-            <StatCard label="Vendido (dólares)" value={fmtUSD(a.totalUSD)} Icon={DollarSign} accent="brand" />
+            <StatCard
+              label="Vendido"
+              value={formatCRC(a.totalCRC)}
+              sub={[growthLabel, `${fmtUSD(a.totalUSD)} USD`].filter(Boolean).join(" · ")}
+              Icon={Wallet}
+              accent="accent"
+            />
             <StatCard label="Facturas" value={String(a.count)} sub={`${a.aceptadas} aceptadas · ${a.rechazadas} rechazadas`} Icon={ShoppingBag} accent="brand" />
-            <StatCard label="Ticket promedio (₡)" value={formatCRC(a.ticketPromedioCRC)} Icon={Receipt} accent="warn" />
-            {a.totalUSD > 0 && <StatCard label="Ticket promedio ($)" value={fmtUSD(a.ticketPromedioUSD)} Icon={Receipt} accent="warn" />}
+            <StatCard
+              label="Ticket promedio"
+              value={formatCRC(a.ticketPromedioCRC)}
+              sub={`${fmtUSD(a.ticketPromedioUSD)} USD`}
+              Icon={Receipt}
+              accent="warn"
+            />
             {isMonth && <StatCard label="Promedio diario" value={toMoney(promedioDiarioCRC, promedioDiarioUSD)} sub={`${diasConVentas} día(s) con ventas`} Icon={CalendarDays} accent="brand" />}
             {isMonth && <StatCard label="Mejor día" value={toMoney(mejorDia.crc, mejorDia.usd)} sub={mejorDia.day ? mejorDia.day.slice(8, 10) + "/" + mejorDia.day.slice(5, 7) : undefined} Icon={TrendingUp} accent="accent" />}
             <StatCard label="Sucursales activas" value={String(a.sucursales)} Icon={Building2} accent="brand" />
