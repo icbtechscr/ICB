@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { ShoppingBag, Wallet, DollarSign, TrendingUp } from "lucide-react";
+import { ShoppingBag, Wallet, TrendingUp } from "lucide-react";
 import { getCurrentUser } from "@/lib/supabase-server";
 import { getUserRole, isAdminLike } from "@/lib/roles";
 import { getUserSalesAnalytics, periodRange, type Period } from "@/lib/cpi-analytics";
@@ -70,7 +70,7 @@ export default async function VentasPage({
         <PeriodNav period={period} refValue={range.ref} label={range.label} />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3">
         <MetricCard
           label={period === "month" ? "Facturas del mes" : "Facturas de hoy"}
           value={String(a.count)}
@@ -78,16 +78,11 @@ export default async function VentasPage({
           accent="brand"
         />
         <MetricCard
-          label="Vendido (colones)"
+          label="Vendido"
           value={formatCRC(a.amountCRC)}
+          sublabel={`${fmtUSD(a.amountUSD)} USD`}
           Icon={Wallet}
           accent="accent"
-        />
-        <MetricCard
-          label="Vendido (dólares)"
-          value={a.amountUSD === 0 ? "$0.00" : fmtUSD(a.amountUSD)}
-          Icon={DollarSign}
-          accent="brand"
         />
       </div>
 
