@@ -121,7 +121,7 @@ export default async function PortalHomePage() {
                 : formatCRC(metrics.salesAmountCRC)
             }
             sublabel={
-              metrics.salesAmountUSD
+              metrics.salesAmountUSD != null
                 ? `+ $${metrics.salesAmountUSD.toLocaleString("en-US", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
