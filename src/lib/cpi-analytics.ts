@@ -14,6 +14,7 @@ export type SalesAnalytics = {
   aceptadas: number;
   rechazadas: number;
   ticketPromedioCRC: number; // sobre facturas en colones
+  ticketPromedioUSD: number; // sobre facturas en dólares
   vendedores: number;
   sucursales: number;
   porSucursal: Bucket[]; // origen (ciudad)
@@ -124,7 +125,9 @@ function bump(map: Map<string, Bucket>, key: string, crc: number, usd: number) {
   map.set(k, b);
 }
 
-const bySortCrc = (a: Bucket, b: Bucket) => b.crc - a.crc || b.count - a.count;
+const USD_RATE = 520; // solo para ordenar listas que contienen ambas monedas
+const bySortCrc = (a: Bucket, b: Bucket) =>
+  b.crc + b.usd * USD_RATE - (a.crc + a.usd * USD_RATE) || b.count - a.count;
 
 // Las facturas anuladas se muestran pero NO cuentan como venta.
 const isAnulada = (estado: string | null): boolean => /ANULA/i.test(estado || "");
@@ -142,7 +145,7 @@ async function fetchIgnored(): Promise<Set<string>> {
 export async function getSalesAnalytics(r: PeriodRange): Promise<SalesAnalytics> {
   const empty: SalesAnalytics = {
     totalCRC: 0, totalUSD: 0, count: 0, aceptadas: 0, rechazadas: 0,
-    ticketPromedioCRC: 0, vendedores: 0, sucursales: 0,
+    ticketPromedioCRC: 0, ticketPromedioUSD: 0, vendedores: 0, sucursales: 0,
     porSucursal: [], porVendedor: [], porPuntoVenta: [], porTipo: [], porCliente: [],
     porDia: [], productUnits: 0, productCount: 0, topProducts: [],
     prevMonthCRC: 0, hasData: false,
@@ -174,7 +177,7 @@ export async function getSalesAnalytics(r: PeriodRange): Promise<SalesAnalytics>
   const dia = new Map<string, { day: string; crc: number; usd: number; count: number }>();
 
   let totalCRC = 0, totalUSD = 0, aceptadas = 0, rechazadas = 0;
-  let crcCount = 0, counted = 0;
+  let crcCount = 0, usdCount = 0, counted = 0;
 
   for (const row of rows) {
     if (isAnulada(row.estado)) continue;
@@ -185,7 +188,8 @@ export async function getSalesAnalytics(r: PeriodRange): Promise<SalesAnalytics>
     const usd = isUSD ? val : 0;
     totalCRC += crc;
     totalUSD += usd;
-    if (!isUSD) crcCount += 1;
+    if (isUSD) usdCount += 1;
+    else crcCount += 1;
     if ((row.estado || "").toUpperCase() === "ACEPTADA") aceptadas += 1;
     else if ((row.estado || "").toUpperCase() === "RECHAZADA") rechazadas += 1;
 
@@ -223,6 +227,7 @@ export async function getSalesAnalytics(r: PeriodRange): Promise<SalesAnalytics>
   return {
     totalCRC, totalUSD, count: counted, aceptadas, rechazadas,
     ticketPromedioCRC: crcCount ? Math.round(totalCRC / crcCount) : 0,
+    ticketPromedioUSD: usdCount ? totalUSD / usdCount : 0,
     vendedores: ven.size,
     sucursales: suc.size,
     porSucursal: [...suc.values()].sort(bySortCrc),
@@ -258,8 +263,6 @@ export type UserSalesAnalytics = {
   leaderValor: number;
   hasData: boolean;
 };
-
-const USD_RATE = 520; // solo para ordenar el ranking mezclando monedas
 
 export async function getUserSalesAnalytics(
   userId: string,
