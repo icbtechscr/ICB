@@ -133,7 +133,7 @@ export default async function PerfilPage() {
                 : formatCRC(metrics.salesAmountCRC)
             }
             sublabel={
-              metrics.salesAmountUSD
+              metrics.salesAmountUSD != null
                 ? `+ $${metrics.salesAmountUSD.toLocaleString("en-US", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
