@@ -58,8 +58,20 @@ export default async function DesempenoVendedoresPage({
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatCard label="Vendedores activos" value={String(a.vendors.length)} Icon={Users} accent="brand" />
-            <StatCard label={isMonth ? "Líder del mes" : "Líder del día"} value={leader ? leader.vendedor.split(" ").slice(0, 2).join(" ") : "—"} sub={leader ? formatCRC(leader.crc) : undefined} Icon={Trophy} accent="accent" />
-            <StatCard label="Total vendido (₡)" value={formatCRC(a.totalCRC)} Icon={Wallet} accent="brand" />
+            <StatCard
+              label={isMonth ? "Líder del mes" : "Líder del día"}
+              value={leader ? leader.vendedor.split(" ").slice(0, 2).join(" ") : "—"}
+              sub={leader ? (leader.usd > 0 ? `${formatCRC(leader.crc)} · ${fmtUSD(leader.usd)}` : formatCRC(leader.crc)) : undefined}
+              Icon={Trophy}
+              accent="accent"
+            />
+            <StatCard
+              label="Total vendido"
+              value={formatCRC(a.totalCRC)}
+              sub={`${fmtUSD(a.totalUSD)} USD`}
+              Icon={Wallet}
+              accent="brand"
+            />
             <StatCard label="Facturas" value={String(a.count)} Icon={Receipt} accent="warn" />
           </div>
 
