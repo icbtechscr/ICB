@@ -1,5 +1,5 @@
 import {
-  Wallet, ShoppingBag, Receipt, Building2, TrendingUp,
+  Wallet, ShoppingBag, Receipt, Building2, TrendingUp, FileDown,
   Store, BadgeCheck, CalendarDays, Users, PackageSearch, Trophy, FileSpreadsheet,
 } from "lucide-react";
 import { getSalesAnalytics, periodRange, type Period } from "@/lib/cpi-analytics";
@@ -87,12 +87,18 @@ function ProductRankingTable({
   title = "Ranking histórico de productos",
   summary = `${rows.length} producto(s) facturado(s) - acumulado desde siempre`,
   exportHref,
+  branch,
 }: {
   rows: ProductRankRow[];
   title?: string;
   summary?: string;
   exportHref?: string;
+  branch?: string;
 }) {
+  const branchExportHref = (format: "pdf" | "xlsx") => {
+    const params = new URLSearchParams({ branch: branch ?? "", format });
+    return `/api/admin/reports/products-branch?${params.toString()}`;
+  };
   return (
     <section className="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft">
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-ink-100 px-5 py-3.5">
@@ -110,6 +116,22 @@ function ProductRankingTable({
             >
               <FileSpreadsheet className="size-3.5" /> Excel
             </a>
+          )}
+          {branch && (
+            <>
+              <a
+                href={branchExportHref("pdf")}
+                className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 bg-white px-3 py-1.5 text-xs font-bold text-ink-700 shadow-sm transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+              >
+                <FileDown className="size-3.5" /> PDF
+              </a>
+              <a
+                href={branchExportHref("xlsx")}
+                className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 bg-white px-3 py-1.5 text-xs font-bold text-ink-700 shadow-sm transition hover:border-accent-200 hover:bg-accent-50 hover:text-accent-700"
+              >
+                <FileSpreadsheet className="size-3.5" /> Excel
+              </a>
+            </>
           )}
         </div>
       </div>
@@ -317,6 +339,7 @@ export default async function VentasSucursalesPage({
                 rows={rows}
                 title={`Top 40 · ${sucursal}`}
                 summary={`${rows.length} producto(s) facturado(s) - acumulado histórico de la sucursal`}
+                branch={sucursal}
               />
             ))}
           </div>
