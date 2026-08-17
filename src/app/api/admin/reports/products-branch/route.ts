@@ -60,21 +60,28 @@ async function buildExcel(branch: string, rows: ProductRankRow[]) {
   sheet.getRow(2).height = 25;
 
   sheet.mergeCells("A3:H3");
-  sheet.getCell("A3").value = `Acumulado histórico de la sucursal. Generado el ${today()}.`;
+  sheet.getCell("A3").value = `${rows.length} productos exportados. Acumulado histórico de la sucursal. Generado el ${today()}.`;
   sheet.getCell("A3").font = { name: "Aptos", size: 10, italic: true, color: { argb: "FF667085" } };
   sheet.getCell("A3").alignment = { vertical: "middle" };
   sheet.getRow(3).height = 22;
 
-  const columns = ["#", "SKU", "Producto", "Unidades", "Monto CRC", "Monto USD", "Días con venta", "Última venta"];
-  sheet.addRow([]);
-  const header = sheet.addRow(columns);
-  header.font = { name: "Aptos", bold: true, color: { argb: "FFFFFFFF" } };
-  header.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF263AAF" } };
-  header.alignment = { vertical: "middle", horizontal: "center" };
-  header.height = 22;
-
-  rows.forEach((row) => {
-    const added = sheet.addRow([
+  sheet.addTable({
+    name: "Top40Products",
+    ref: "A5",
+    headerRow: true,
+    totalsRow: false,
+    style: { theme: "TableStyleMedium2", showRowStripes: true },
+    columns: [
+      { name: "#" },
+      { name: "SKU" },
+      { name: "Producto" },
+      { name: "Unidades" },
+      { name: "Monto CRC" },
+      { name: "Monto USD" },
+      { name: "Días con venta" },
+      { name: "Última venta" },
+    ],
+    rows: rows.map((row) => [
       row.rank,
       row.sku || "-",
       row.descripcion,
@@ -83,9 +90,20 @@ async function buildExcel(branch: string, rows: ProductRankRow[]) {
       Math.round(row.usd * 100) / 100,
       row.saleDays,
       row.lastSale || "-",
-    ]);
+    ]),
+  });
+
+  const header = sheet.getRow(5);
+  header.font = { name: "Aptos", bold: true, color: { argb: "FFFFFFFF" } };
+  header.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF263AAF" } };
+  header.alignment = { vertical: "middle", horizontal: "center" };
+  header.height = 22;
+
+  rows.forEach((_, index) => {
+    const added = sheet.getRow(6 + index);
     added.font = { name: "Aptos", size: 10 };
     added.alignment = { vertical: "middle" };
+    added.height = 22;
     added.getCell(3).alignment = { vertical: "middle", wrapText: true };
     [1, 4, 5, 6, 7, 8].forEach((index) => {
       added.getCell(index).alignment = { vertical: "middle", horizontal: "right" };
@@ -97,7 +115,8 @@ async function buildExcel(branch: string, rows: ProductRankRow[]) {
   [6, 18, 56, 13, 18, 17, 15, 15].forEach((width, index) => {
     sheet.getColumn(index + 1).width = width;
   });
-  sheet.autoFilter = "A5:H5";
+  sheet.pageSetup.printArea = `A1:H${5 + rows.length}`;
+  sheet.pageSetup.printTitlesRow = "1:5";
   sheet.pageSetup.margins = { left: 0.3, right: 0.3, top: 0.45, bottom: 0.45, header: 0.2, footer: 0.2 };
   const raw = await workbook.xlsx.writeBuffer();
   return new Uint8Array(raw as unknown as ArrayBuffer);
