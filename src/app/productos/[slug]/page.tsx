@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ChevronRight, Check, ShieldCheck, Truck, Headphones, Heart } from "lucide-react";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductGallery } from "@/components/ProductGallery";
-import { getProductBySlug } from "@/lib/products";
+import { getProductBySlug, getProductCategoryBreadcrumb } from "@/lib/products";
 import { formatCRC, decodeHtml, stripHtml } from "@/lib/utils";
 import { parseKitDescription } from "@/lib/parseKit";
 import { ProductTabs } from "@/components/ProductTabs";
@@ -77,6 +77,12 @@ export default async function ProductPage({
   const visibleCategories = product.categories.filter(
     (c) => c.name !== "Todas las Categorías"
   );
+  const categoryBreadcrumb = await getProductCategoryBreadcrumb(
+    visibleCategories.map((category) => category.id)
+  );
+  const breadcrumbCategories = categoryBreadcrumb.length
+    ? categoryBreadcrumb
+    : [{ id: "catalog", name: "Catálogo", slug: "" }];
   const displayStockStatus = effectiveStockStatus(product.stockStatus, product.stockQty);
   const canAddToCart = displayStockStatus !== "out_of_stock";
 
@@ -130,15 +136,17 @@ export default async function ProductPage({
         name: "Inicio",
         item: absoluteUrl("/"),
       },
+      ...breadcrumbCategories.map((category, index) => ({
+        "@type": "ListItem",
+        position: index + 2,
+        name: category.name,
+        item: absoluteUrl(
+          category.slug ? `/categoria/${category.slug}` : "/productos"
+        ),
+      })),
       {
         "@type": "ListItem",
-        position: 2,
-        name: "Catálogo",
-        item: absoluteUrl("/productos"),
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
+        position: breadcrumbCategories.length + 2,
         name: product.name,
         item: productUrl,
       },
@@ -162,10 +170,17 @@ export default async function ProductPage({
           <Link href="/" className="hover:text-brand-600">
             Inicio
           </Link>
-          <ChevronRight className="size-3.5 text-ink-300" />
-          <Link href="/productos" className="hover:text-brand-600">
-            Catálogo
-          </Link>
+          {breadcrumbCategories.map((category) => (
+            <span key={category.id} className="contents">
+              <ChevronRight className="size-3.5 shrink-0 text-ink-300" />
+              <Link
+                href={category.slug ? `/categoria/${category.slug}` : "/productos"}
+                className="hover:text-brand-600"
+              >
+                {category.name}
+              </Link>
+            </span>
+          ))}
           <ChevronRight className="size-3.5 text-ink-300" />
           <span className="line-clamp-1 text-ink-900">{product.name}</span>
         </nav>
