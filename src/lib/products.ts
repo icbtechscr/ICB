@@ -28,6 +28,12 @@ export type Product = {
   brand: string | null;
 };
 
+export type ProductCategoryBreadcrumb = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
 type Row = {
   id: string;
   woo_id: number | null;
@@ -181,6 +187,66 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   if (error) throw error;
   if (!data) return null;
   return rowToProduct(data as unknown as Row);
+}
+
+/**
+ * Ruta canónica de categorías para una ficha de producto.
+ *
+ * Un producto puede estar vinculado tanto a su categoría raíz como a la más
+ * específica. Se reconstruyen todas las rutas posibles y se elige la más
+ * profunda para mostrar Familia > Subgrupo > Categoría de forma determinista.
+ */
+export async function getProductCategoryBreadcrumb(
+  categoryIds: string[]
+): Promise<ProductCategoryBreadcrumb[]> {
+  const assignedIds = new Set(categoryIds.filter(Boolean));
+  if (assignedIds.size === 0) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("id, name, slug, parent_id");
+    if (error || !data) return [];
+
+    type CategoryRow = {
+      id: string;
+      name: string;
+      slug: string;
+      parent_id: string | null;
+    };
+    const rows = data as unknown as CategoryRow[];
+    const byId = new Map(rows.map((row) => [row.id, row]));
+
+    const paths = [...assignedIds]
+      .map((id) => {
+        const path: CategoryRow[] = [];
+        const visited = new Set<string>();
+        let current = byId.get(id);
+        while (current && !visited.has(current.id)) {
+          visited.add(current.id);
+          if (current.name !== "Todas las Categorías") path.unshift(current);
+          current = current.parent_id ? byId.get(current.parent_id) : undefined;
+        }
+        return path;
+      })
+      .filter((path) => path.length > 0)
+      .sort(
+        (a, b) =>
+          b.length - a.length ||
+          a.map((item) => item.name).join("/").localeCompare(
+            b.map((item) => item.name).join("/"),
+            "es"
+          )
+      );
+
+    return (paths[0] ?? []).map((item) => ({
+      id: item.id,
+      name: decodeHtml(item.name),
+      slug: item.slug,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 export async function getFeaturedProducts(limit = 10): Promise<Product[]> {
