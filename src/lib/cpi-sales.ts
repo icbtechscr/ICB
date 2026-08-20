@@ -2,6 +2,7 @@
 // usuario) y consultas de metricas. SOLO servidor (usa el admin client).
 import { createAdminClient } from "@/lib/supabase";
 import { cpiGetCompletadas, normalizeName, type CpiInvoice } from "@/lib/cpi";
+import { isUSDCurrency } from "@/lib/utils";
 
 export type VendorMapRow = { cpi_vendor: string; user_id: string | null };
 
@@ -136,7 +137,7 @@ export async function getMonthlySalesForUser(
   for (const r of rows) {
     if (/ANULA/i.test(r.estado || "")) continue; // anuladas no cuentan como venta
     count += 1;
-    if (r.moneda === "USD") amountUSD += Number(r.subtotal) || 0;
+    if (isUSDCurrency(r.moneda)) amountUSD += Number(r.subtotal) || 0;
     else amountCRC += Number(r.subtotal) || 0;
   }
   return { count, amountCRC, amountUSD };
@@ -192,7 +193,7 @@ export async function listVendorsWithStats(): Promise<VendorStat[]> {
     if (/ANULA/i.test(s.estado || "")) continue; // anuladas no cuentan
     const st = ensure(s.vendedor);
     st.count += 1;
-    if (s.moneda === "USD") st.usd += Number(s.subtotal) || 0;
+    if (isUSDCurrency(s.moneda)) st.usd += Number(s.subtotal) || 0;
     else st.crc += Number(s.subtotal) || 0;
   }
   return [...stats.values()].sort((a, b) => b.count - a.count || a.cpi_vendor.localeCompare(b.cpi_vendor));
