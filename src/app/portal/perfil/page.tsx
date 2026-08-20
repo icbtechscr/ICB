@@ -33,7 +33,7 @@ import {
   fmtPct,
 } from "@/lib/portal-metrics";
 import { getLocation, type Branch } from "@/lib/branches";
-import { formatCRC } from "@/lib/utils";
+import { formatCRCAmount, formatUSD } from "@/lib/utils";
 import { ProfileCover } from "@/components/portal/ProfileCover";
 import { Collapsible } from "@/components/portal/Collapsible";
 import { MetricCard } from "@/components/portal/MetricCard";
@@ -130,14 +130,11 @@ export default async function PerfilPage() {
             value={
               metrics.salesAmountCRC == null
                 ? "—"
-                : formatCRC(metrics.salesAmountCRC)
+                : formatCRCAmount(metrics.salesAmountCRC)
             }
             sublabel={
               metrics.salesAmountUSD != null
-                ? `+ $${metrics.salesAmountUSD.toLocaleString("en-US", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })} USD`
+                ? `${formatUSD(metrics.salesAmountUSD)} USD`
                 : undefined
             }
             Icon={Wallet}
