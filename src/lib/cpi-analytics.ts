@@ -4,6 +4,7 @@ import {
   getProductSalesAnalytics,
   type TopSoldProduct,
 } from "@/lib/cpi-products";
+import { isUSDCurrency } from "@/lib/utils";
 
 export type Bucket = { key: string; count: number; crc: number; usd: number };
 
@@ -27,6 +28,7 @@ export type SalesAnalytics = {
   productCount: number;
   topProducts: TopSoldProduct[];
   prevMonthCRC: number; // total del periodo anterior comparable (para el crecimiento)
+  prevMonthUSD: number;
   hasData: boolean;
 };
 
@@ -131,6 +133,8 @@ const bySortCrc = (a: Bucket, b: Bucket) =>
 
 // Las facturas anuladas se muestran pero NO cuentan como venta.
 const isAnulada = (estado: string | null): boolean => /ANULA/i.test(estado || "");
+const isAceptada = (estado: string | null): boolean => /ACEPTAD/i.test(estado || "");
+const isRechazada = (estado: string | null): boolean => /RECHAZAD/i.test(estado || "");
 
 async function fetchIgnored(): Promise<Set<string>> {
   try {
@@ -148,7 +152,7 @@ export async function getSalesAnalytics(r: PeriodRange): Promise<SalesAnalytics>
     ticketPromedioCRC: 0, ticketPromedioUSD: 0, vendedores: 0, sucursales: 0,
     porSucursal: [], porVendedor: [], porPuntoVenta: [], porTipo: [], porCliente: [],
     porDia: [], productUnits: 0, productCount: 0, topProducts: [],
-    prevMonthCRC: 0, hasData: false,
+    prevMonthCRC: 0, prevMonthUSD: 0, hasData: false,
   };
 
   let rows: Row[] = [];
@@ -183,15 +187,15 @@ export async function getSalesAnalytics(r: PeriodRange): Promise<SalesAnalytics>
     if (isAnulada(row.estado)) continue;
     counted += 1;
     const val = Number(row.subtotal) || 0;
-    const isUSD = row.moneda === "USD";
-    const crc = isUSD ? 0 : val;
-    const usd = isUSD ? val : 0;
+    const rowIsUSD = isUSDCurrency(row.moneda);
+    const crc = rowIsUSD ? 0 : val;
+    const usd = rowIsUSD ? val : 0;
     totalCRC += crc;
     totalUSD += usd;
-    if (isUSD) usdCount += 1;
+    if (rowIsUSD) usdCount += 1;
     else crcCount += 1;
-    if ((row.estado || "").toUpperCase() === "ACEPTADA") aceptadas += 1;
-    else if ((row.estado || "").toUpperCase() === "RECHAZADA") rechazadas += 1;
+    if (isAceptada(row.estado)) aceptadas += 1;
+    else if (isRechazada(row.estado)) rechazadas += 1;
 
     bump(suc, row.origen || "—", crc, usd);
     if (!ignored.has(row.vendedor || "—")) bump(ven, row.vendedor || "—", crc, usd);
@@ -215,12 +219,14 @@ export async function getSalesAnalytics(r: PeriodRange): Promise<SalesAnalytics>
 
   // Total del periodo anterior comparable (para el crecimiento).
   let prevMonthCRC = 0;
+  let prevMonthUSD = 0;
   try {
     const sb = createAdminClient();
     const { data } = await sb.from("cpi_sales").select("moneda, subtotal, estado").gte("fecha", r.prevFrom).lt("fecha", r.prevTo).limit(5000);
     for (const p of (data ?? []) as { moneda: string; subtotal: number; estado: string | null }[]) {
       if (isAnulada(p.estado)) continue;
-      if (p.moneda !== "USD") prevMonthCRC += Number(p.subtotal) || 0;
+      if (isUSDCurrency(p.moneda)) prevMonthUSD += Number(p.subtotal) || 0;
+      else prevMonthCRC += Number(p.subtotal) || 0;
     }
   } catch { /* ignore */ }
 
@@ -239,7 +245,7 @@ export async function getSalesAnalytics(r: PeriodRange): Promise<SalesAnalytics>
     productUnits: productSales.totalUnits,
     productCount: productSales.productCount,
     topProducts: productSales.topProducts,
-    prevMonthCRC,
+    prevMonthCRC, prevMonthUSD,
     hasData: true,
   };
 }
@@ -251,9 +257,10 @@ export type UserSalesAnalytics = {
   amountCRC: number;
   amountUSD: number;
   ticketPromedioCRC: number;
+  ticketPromedioUSD: number;
   aceptadas: number;
   rechazadas: number;
-  porDia: { day: string; crc: number }[];
+  porDia: { day: string; crc: number; usd: number }[];
   porSucursal: Bucket[];
   // Ranking (por "valor" = CRC + USD*520, un proxy para ordenar mezclando moneda)
   rank: number | null;
@@ -269,7 +276,7 @@ export async function getUserSalesAnalytics(
   r: PeriodRange
 ): Promise<UserSalesAnalytics> {
   const empty: UserSalesAnalytics = {
-    count: 0, amountCRC: 0, amountUSD: 0, ticketPromedioCRC: 0,
+    count: 0, amountCRC: 0, amountUSD: 0, ticketPromedioCRC: 0, ticketPromedioUSD: 0,
     aceptadas: 0, rechazadas: 0, porDia: [], porSucursal: [],
     rank: null, totalVendedores: 0, sharePct: null, myValor: 0, leaderValor: 0,
     hasData: false,
@@ -297,7 +304,7 @@ export async function getUserSalesAnalytics(
     if (ignored.has(row.vendedor || "")) continue;
     if (isAnulada(row.estado)) continue;
     const v = Number(row.subtotal) || 0;
-    const valor = row.moneda === "USD" ? v * USD_RATE : v;
+    const valor = isUSDCurrency(row.moneda) ? v * USD_RATE : v;
     valorByUser.set(row.user_id, (valorByUser.get(row.user_id) ?? 0) + valor);
   }
   const ranking = [...valorByUser.entries()].sort((a, b) => b[1] - a[1]);
@@ -310,28 +317,34 @@ export async function getUserSalesAnalytics(
 
   // Metricas propias.
   const mine = rows.filter((row) => row.user_id === userId && !isAnulada(row.estado));
-  let amountCRC = 0, amountUSD = 0, aceptadas = 0, rechazadas = 0, crcCount = 0;
+  let amountCRC = 0, amountUSD = 0, aceptadas = 0, rechazadas = 0, crcCount = 0, usdCount = 0;
   const suc = new Map<string, Bucket>();
-  const dia = new Map<string, number>();
+  const dia = new Map<string, { crc: number; usd: number }>();
   for (const row of mine) {
     const v = Number(row.subtotal) || 0;
-    const isUSD = row.moneda === "USD";
-    if (isUSD) amountUSD += v; else { amountCRC += v; crcCount += 1; }
-    const est = (row.estado || "").toUpperCase();
-    if (est === "ACEPTADA") aceptadas += 1;
-    else if (est === "RECHAZADA") rechazadas += 1;
-    bump(suc, row.origen || "—", isUSD ? 0 : v, isUSD ? v : 0);
+    const rowIsUSD = isUSDCurrency(row.moneda);
+    if (rowIsUSD) { amountUSD += v; usdCount += 1; } else { amountCRC += v; crcCount += 1; }
+    if (isAceptada(row.estado)) aceptadas += 1;
+    else if (isRechazada(row.estado)) rechazadas += 1;
+    bump(suc, row.origen || "—", rowIsUSD ? 0 : v, rowIsUSD ? v : 0);
     const dk = (row.fecha || "").slice(0, 10);
-    if (dk) dia.set(dk, (dia.get(dk) ?? 0) + (isUSD ? 0 : v));
+    if (dk) {
+      const amount = dia.get(dk) ?? { crc: 0, usd: 0 };
+      if (rowIsUSD) amount.usd += v;
+      else amount.crc += v;
+      dia.set(dk, amount);
+    }
   }
-  const porDia: { day: string; crc: number }[] = [];
+  const porDia: { day: string; crc: number; usd: number }[] = [];
   for (const key of r.buckets) {
-    porDia.push({ day: key, crc: dia.get(key) ?? 0 });
+    const amount = dia.get(key) ?? { crc: 0, usd: 0 };
+    porDia.push({ day: key, ...amount });
   }
 
   return {
     count: mine.length, amountCRC, amountUSD,
     ticketPromedioCRC: crcCount ? Math.round(amountCRC / crcCount) : 0,
+    ticketPromedioUSD: usdCount ? amountUSD / usdCount : 0,
     aceptadas, rechazadas, porDia,
     porSucursal: [...suc.values()].sort(bySortCrc),
     rank, totalVendedores,
@@ -341,7 +354,7 @@ export async function getUserSalesAnalytics(
   };
 }
 
-export type MonthPoint = { ym: string; label: string; crc: number; count: number };
+export type MonthPoint = { ym: string; label: string; crc: number; usd: number; count: number };
 
 /** Evolucion de los ultimos N meses (monto CRC) para un vendedor. */
 export async function getUserMonthlyEvolution(
@@ -364,27 +377,28 @@ export async function getUserMonthlyEvolution(
       .eq("user_id", userId)
       .gte("fecha", from)
       .limit(5000);
-    const byMonth = new Map<string, { crc: number; count: number }>();
+    const byMonth = new Map<string, { crc: number; usd: number; count: number }>();
     for (const r of (data ?? []) as { fecha: string | null; moneda: string; subtotal: number; estado: string | null }[]) {
       const ym = (r.fecha || "").slice(0, 7);
       if (!ym) continue;
       if (isAnulada(r.estado)) continue;
-      const m = byMonth.get(ym) ?? { crc: 0, count: 0 };
-      if (r.moneda !== "USD") m.crc += Number(r.subtotal) || 0;
+      const m = byMonth.get(ym) ?? { crc: 0, usd: 0, count: 0 };
+      if (isUSDCurrency(r.moneda)) m.usd += Number(r.subtotal) || 0;
+      else m.crc += Number(r.subtotal) || 0;
       m.count += 1;
       byMonth.set(ym, m);
     }
     for (const b of base) {
       const ym = `${b.year}-${String(b.month1).padStart(2, "0")}`;
       const label = new Intl.DateTimeFormat("es-CR", { month: "short" }).format(new Date(b.year, b.month1 - 1, 1));
-      const m = byMonth.get(ym) ?? { crc: 0, count: 0 };
-      points.push({ ym, label, crc: m.crc, count: m.count });
+      const m = byMonth.get(ym) ?? { crc: 0, usd: 0, count: 0 };
+      points.push({ ym, label, crc: m.crc, usd: m.usd, count: m.count });
     }
   } catch {
     return base.map((b) => ({
       ym: `${b.year}-${String(b.month1).padStart(2, "0")}`,
       label: new Intl.DateTimeFormat("es-CR", { month: "short" }).format(new Date(b.year, b.month1 - 1, 1)),
-      crc: 0, count: 0,
+      crc: 0, usd: 0, count: 0,
     }));
   }
   return points;
@@ -400,6 +414,7 @@ export type VendorPerf = {
   aceptadas: number;
   rechazadas: number;
   ticketCRC: number;
+  ticketUSD: number;
   valor: number; // crc + usd*USD_RATE (para ordenar)
   sharePct: number;
   rank: number;
@@ -435,7 +450,7 @@ export async function getVendorPerformance(r: PeriodRange): Promise<VendorPerfor
   }
   if (rows.length === 0) return empty;
   const ignored = await fetchIgnored();
-  type Agg = { crc: number; usd: number; count: number; crcCount: number; aceptadas: number; rechazadas: number };
+  type Agg = { crc: number; usd: number; count: number; crcCount: number; usdCount: number; aceptadas: number; rechazadas: number };
   const map = new Map<string, Agg>();
   let totalCRC = 0, totalUSD = 0, counted = 0;
   for (const row of rows) {
@@ -443,16 +458,15 @@ export async function getVendorPerformance(r: PeriodRange): Promise<VendorPerfor
     if (ignored.has(vend)) continue;
     if (isAnulada(row.estado)) continue;
     const v = Number(row.subtotal) || 0;
-    const isUSD = row.moneda === "USD";
-    totalCRC += isUSD ? 0 : v;
-    totalUSD += isUSD ? v : 0;
+    const rowIsUSD = isUSDCurrency(row.moneda);
+    totalCRC += rowIsUSD ? 0 : v;
+    totalUSD += rowIsUSD ? v : 0;
     counted += 1;
-    const a = map.get(vend) ?? { crc: 0, usd: 0, count: 0, crcCount: 0, aceptadas: 0, rechazadas: 0 };
-    if (isUSD) a.usd += v; else { a.crc += v; a.crcCount += 1; }
+    const a = map.get(vend) ?? { crc: 0, usd: 0, count: 0, crcCount: 0, usdCount: 0, aceptadas: 0, rechazadas: 0 };
+    if (rowIsUSD) { a.usd += v; a.usdCount += 1; } else { a.crc += v; a.crcCount += 1; }
     a.count += 1;
-    const est = (row.estado || "").toUpperCase();
-    if (est === "ACEPTADA") a.aceptadas += 1;
-    else if (est === "RECHAZADA") a.rechazadas += 1;
+    if (isAceptada(row.estado)) a.aceptadas += 1;
+    else if (isRechazada(row.estado)) a.rechazadas += 1;
     map.set(vend, a);
   }
 
@@ -460,6 +474,7 @@ export async function getVendorPerformance(r: PeriodRange): Promise<VendorPerfor
     vendedor, count: a.count, crc: a.crc, usd: a.usd,
     aceptadas: a.aceptadas, rechazadas: a.rechazadas,
     ticketCRC: a.crcCount ? Math.round(a.crc / a.crcCount) : 0,
+    ticketUSD: a.usdCount ? a.usd / a.usdCount : 0,
     valor: a.crc + a.usd * USD_RATE,
   }));
   list.sort((x, y) => y.valor - x.valor);
