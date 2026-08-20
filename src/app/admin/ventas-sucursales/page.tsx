@@ -5,15 +5,13 @@ import {
 import { getSalesAnalytics, periodRange, type Period } from "@/lib/cpi-analytics";
 import { getAllTimeProductRanking, getBranchProductRankings, type ProductRankRow } from "@/lib/cpi-products";
 import { PeriodNav } from "@/components/PeriodNav";
-import { formatCRC } from "@/lib/utils";
+import { formatCRCAmount, formatMoneyPair, formatUSD } from "@/lib/utils";
 import { StatCard, BarList, DayBars, SplitBar, type BarItem } from "@/components/admin/SalesCharts";
 import { ReportExportButtons } from "@/components/admin/ReportExportButtons";
 
 // Se recalcula cada 3 minutos en vez de en cada visita (baja el egress).
 export const revalidate = 180;
 export const metadata = { title: "Ventas de sucursal — ICB Admin" };
-
-function fmtUSD(n: number) { return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
 
 function SoldProductsTable({
   products,
@@ -68,9 +66,7 @@ function SoldProductsTable({
                     {product.cantidad.toLocaleString("es-CR", { maximumFractionDigits: 2 })}
                   </td>
                   <td className="px-3 py-2.5 text-right font-bold text-ink-900">
-                    {product.usd > 0
-                      ? `${formatCRC(product.crc)} \u00b7 ${fmtUSD(product.usd)}`
-                      : formatCRC(product.crc)}
+                    {formatMoneyPair(product.crc, product.usd)}
                   </td>
                 </tr>
               ))}
@@ -164,7 +160,7 @@ function ProductRankingTable({
                     {p.cantidad.toLocaleString("es-CR", { maximumFractionDigits: 2 })}
                   </td>
                   <td className="px-3 py-2.5 text-right font-bold text-ink-900">
-                    {p.usd > 0 ? `${formatCRC(p.crc)} - ${fmtUSD(p.usd)}` : formatCRC(p.crc)}
+                    {formatMoneyPair(p.crc, p.usd)}
                   </td>
                   <td className="px-3 py-2.5 text-right text-ink-600">{p.saleDays}</td>
                   <td className="px-3 py-2.5 text-right text-ink-500">
@@ -195,7 +191,7 @@ export default async function VentasSucursalesPage({
     getAllTimeProductRanking(),
     getBranchProductRankings(40),
   ]);
-  const toMoney = (crc: number, usd: number) => (usd > 0 ? `${formatCRC(crc)} · ${fmtUSD(usd)}` : formatCRC(crc));
+  const toMoney = (crc: number, usd: number) => formatMoneyPair(crc, usd);
 
   const diasConVentas = a.porDia.filter((d) => d.crc > 0 || d.usd > 0).length;
   const promedioDiarioCRC = diasConVentas ? Math.round(a.totalCRC / diasConVentas) : 0;
@@ -205,8 +201,15 @@ export default async function VentasSucursalesPage({
     (mx, d) => (valorParaOrdenar(d.crc, d.usd) > valorParaOrdenar(mx.crc, mx.usd) ? d : mx),
     { day: "", crc: 0, usd: 0, count: 0 }
   );
-  const growth = a.prevMonthCRC > 0 ? Math.round(((a.totalCRC - a.prevMonthCRC) / a.prevMonthCRC) * 1000) / 10 : null;
-  const growthLabel = growth != null ? `${growth >= 0 ? "▲" : "▼"} ${Math.abs(growth)}% vs ${isMonth ? "mes" : "día"} anterior` : undefined;
+  const percentageChange = (current: number, previous: number) =>
+    previous > 0 ? Math.round(((current - previous) / previous) * 1000) / 10 : null;
+  const crcGrowth = percentageChange(a.totalCRC, a.prevMonthCRC);
+  const usdGrowth = percentageChange(a.totalUSD, a.prevMonthUSD);
+  const trend = (currency: "CRC" | "USD", value: number | null) =>
+    value == null ? null : `${currency} ${value >= 0 ? "▲" : "▼"} ${Math.abs(value)}%`;
+  const growthLabel = [trend("CRC", crcGrowth), trend("USD", usdGrowth)]
+    .filter(Boolean)
+    .join(" · ") || undefined;
 
   const sucItems: BarItem[] = a.porSucursal.map((b) => ({ label: b.key, value: b.crc + b.usd * 520, display: toMoney(b.crc, b.usd), sub: `${b.count} factura(s)` }));
   const pvItems: BarItem[] = a.porPuntoVenta.map((b) => ({ label: b.key, value: b.crc + b.usd * 520, display: toMoney(b.crc, b.usd), sub: `${b.count} factura(s)` }));
@@ -238,16 +241,16 @@ export default async function VentasSucursalesPage({
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatCard
               label="Vendido"
-              value={formatCRC(a.totalCRC)}
-              sub={[growthLabel, `${fmtUSD(a.totalUSD)} USD`].filter(Boolean).join(" · ")}
+              value={formatCRCAmount(a.totalCRC)}
+              sub={[`${formatUSD(a.totalUSD)} USD`, growthLabel].filter(Boolean).join(" · ")}
               Icon={Wallet}
               accent="accent"
             />
             <StatCard label="Facturas" value={String(a.count)} sub={`${a.aceptadas} aceptadas · ${a.rechazadas} rechazadas`} Icon={ShoppingBag} accent="brand" />
             <StatCard
               label="Ticket promedio"
-              value={formatCRC(a.ticketPromedioCRC)}
-              sub={`${fmtUSD(a.ticketPromedioUSD)} USD`}
+              value={formatCRCAmount(a.ticketPromedioCRC)}
+              sub={`${formatUSD(a.ticketPromedioUSD)} USD`}
               Icon={Receipt}
               accent="warn"
             />
@@ -262,11 +265,11 @@ export default async function VentasSucursalesPage({
           {isMonth && (
             <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft">
               <h2 className="mb-4 text-sm font-bold text-ink-900">Ventas por día (colones)</h2>
-              <DayBars data={a.porDia.map((d) => ({ day: d.day, value: d.crc }))} fmt={formatCRC} />
+              <DayBars data={a.porDia.map((d) => ({ day: d.day, value: d.crc }))} fmt={formatCRCAmount} />
               {a.totalUSD > 0 && (
                 <>
                   <h2 className="mb-4 mt-6 text-sm font-bold text-ink-900">Ventas por día (dólares)</h2>
-                  <DayBars data={a.porDia.map((d) => ({ day: d.day, value: d.usd }))} fmt={fmtUSD} />
+                  <DayBars data={a.porDia.map((d) => ({ day: d.day, value: d.usd }))} fmt={formatUSD} />
                 </>
               )}
             </section>
