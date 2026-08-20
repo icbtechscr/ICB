@@ -22,7 +22,7 @@ import {
   currentMonthLabel,
   fmtPct,
 } from "@/lib/portal-metrics";
-import { formatCRC } from "@/lib/utils";
+import { formatCRCAmount, formatUSD } from "@/lib/utils";
 import { modulesForRole } from "@/components/portal/modules";
 import { MetricCard } from "@/components/portal/MetricCard";
 import { InstallAppHint } from "@/components/timeclock/InstallAppHint";
@@ -118,14 +118,11 @@ export default async function PortalHomePage() {
             value={
               metrics.salesAmountCRC == null
                 ? "—"
-                : formatCRC(metrics.salesAmountCRC)
+                : formatCRCAmount(metrics.salesAmountCRC)
             }
             sublabel={
               metrics.salesAmountUSD != null
-                ? `+ $${metrics.salesAmountUSD.toLocaleString("en-US", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })} USD`
+                ? `${formatUSD(metrics.salesAmountUSD)} USD`
                 : undefined
             }
             Icon={Wallet}
