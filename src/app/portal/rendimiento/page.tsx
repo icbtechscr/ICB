@@ -39,25 +39,19 @@ import {
   getUserQuoteMonthlyEvolution,
 } from "@/lib/cpi-quotes";
 import { getVendorsForUser } from "@/lib/cpi-sales";
-import { formatCRC } from "@/lib/utils";
+import { formatCRCAmount, formatMoneyPair, formatUSD } from "@/lib/utils";
 import { MetricCard } from "@/components/portal/MetricCard";
 import { BarList, DayBars, SplitBar, type BarItem } from "@/components/admin/SalesCharts";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Rendimiento" };
 
-const CRC_ZERO = new Intl.NumberFormat("es-CR", {
-  style: "currency",
-  currency: "CRC",
-  maximumFractionDigits: 0,
-});
-
 function fmtCRC(n: number) {
-  return CRC_ZERO.format(Math.round(n || 0));
+  return formatCRCAmount(n);
 }
 
 function fmtUSD(n: number) {
-  return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return formatUSD(n);
 }
 
 function money(crc: number, usd: number) {
@@ -306,14 +300,14 @@ async function SalesPerformance({
   ]);
   const evoItems: BarItem[] = evo.map((p) => ({
     label: p.label,
-    value: p.crc,
-    display: formatCRC(p.crc),
+    value: p.crc + p.usd * 520,
+    display: formatMoneyPair(p.crc, p.usd),
     sub: `${p.count} factura(s)`,
   }));
   const sucItems: BarItem[] = a.porSucursal.map((b) => ({
     label: b.key,
     value: b.crc + b.usd * 520,
-    display: b.usd > 0 ? `${formatCRC(b.crc)} / ${fmtUSD(b.usd)}` : formatCRC(b.crc),
+    display: formatMoneyPair(b.crc, b.usd, " / "),
     sub: `${b.count} factura(s)`,
   }));
   const faltaLider = a.rank && a.rank > 1 ? a.leaderValor - a.myValor : 0;
@@ -348,7 +342,7 @@ async function SalesPerformance({
                 </p>
                 <p className="mt-0.5 text-sm text-white/80">
                   {a.sharePct != null ? `Aportas el ${a.sharePct}% de las ventas de la empresa` : ""}
-                  {faltaLider > 0 ? ` / te faltan ${formatCRC(faltaLider)} para el 1ro` : a.rank === 1 ? " / vas de lider" : ""}
+                  {faltaLider > 0 ? ` / te faltan ${formatCRCAmount(faltaLider)} equivalentes para el 1ro` : a.rank === 1 ? " / vas de lider" : ""}
                 </p>
               </div>
             </div>
@@ -358,12 +352,18 @@ async function SalesPerformance({
             <MetricCard label="Mis facturas" value={String(a.count)} Icon={ShoppingBag} accent="brand" />
             <MetricCard
               label="Vendido"
-              value={formatCRC(a.amountCRC)}
-              sublabel={`${fmtUSD(a.amountUSD)} USD`}
+              value={formatCRCAmount(a.amountCRC)}
+              sublabel={`${formatUSD(a.amountUSD)} USD`}
               Icon={Wallet}
               accent="accent"
             />
-            <MetricCard label="Ticket promedio" value={formatCRC(a.ticketPromedioCRC)} Icon={Receipt} accent="warn" />
+            <MetricCard
+              label="Ticket promedio"
+              value={formatCRCAmount(a.ticketPromedioCRC)}
+              sublabel={`${formatUSD(a.ticketPromedioUSD)} USD`}
+              Icon={Receipt}
+              accent="warn"
+            />
           </div>
 
           {period === "month" && (
@@ -371,7 +371,15 @@ async function SalesPerformance({
               <h2 className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-ink-900">
                 <TrendingUp className="size-4 text-brand-600" /> Tus ventas por dia (CRC)
               </h2>
-              <DayBars data={a.porDia.map((d) => ({ day: d.day, value: d.crc }))} fmt={formatCRC} />
+              <DayBars data={a.porDia.map((d) => ({ day: d.day, value: d.crc }))} fmt={formatCRCAmount} />
+              {a.amountUSD > 0 && (
+                <>
+                  <h2 className="mb-4 mt-6 inline-flex items-center gap-2 text-sm font-bold text-ink-900">
+                    <DollarSign className="size-4 text-brand-600" /> Tus ventas por dia (USD)
+                  </h2>
+                  <DayBars data={a.porDia.map((d) => ({ day: d.day, value: d.usd }))} fmt={formatUSD} />
+                </>
+              )}
             </section>
           )}
 
@@ -426,7 +434,7 @@ async function SalesPerformance({
                     )}
                   </span>
                   <span className="shrink-0 text-right text-sm font-black text-ink-900">
-                    {formatCRC(v.crc)}
+                    {formatMoneyPair(v.crc, v.usd)}
                   </span>
                 </li>
               );
