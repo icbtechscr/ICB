@@ -14,6 +14,7 @@ import {
   writeStockStatusAttribute,
   type StockStatus,
 } from "@/lib/stock";
+import { isUSDCurrency } from "@/lib/utils";
 
 const PRODUCT_SALES_TABLE = "cpi_product_sales_daily";
 
@@ -273,12 +274,12 @@ export async function getProductSalesAnalytics(range: {
           days: new Set<string>(),
         };
       agg.cantidad += quantity;
-      if (row.moneda === "USD") agg.usd += amount;
+      if (isUSDCurrency(row.moneda)) agg.usd += amount;
       else agg.crc += amount;
       agg.days.add(row.sale_date);
       products.set(key, agg);
       totalUnits += quantity;
-      if (row.moneda === "USD") totalUSD += amount;
+      if (isUSDCurrency(row.moneda)) totalUSD += amount;
       else totalCRC += amount;
     }
 
