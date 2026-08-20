@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Loader2, Check, UserCheck, UserX, EyeOff, Eye } from "lucide-react";
-import { formatCRC } from "@/lib/utils";
+import { formatCRCAmount, formatUSD } from "@/lib/utils";
 
 type Vendor = { cpi_vendor: string; user_id: string | null; ignored: boolean; count: number; crc: number; usd: number };
 type User = { id: string; name: string; email: string };
@@ -97,7 +97,8 @@ export function VendorMapManager() {
             <tr className="border-b border-ink-100 text-left text-xs uppercase tracking-wider text-ink-500">
               <th className="px-5 py-2.5 font-bold">Vendedor en CPI</th>
               <th className="px-3 py-2.5 text-right font-bold">Facturas</th>
-              <th className="px-3 py-2.5 text-right font-bold">Monto (₡)</th>
+              <th className="px-3 py-2.5 text-right font-bold">Monto CRC</th>
+              <th className="px-3 py-2.5 text-right font-bold">Monto USD</th>
               <th className="px-5 py-2.5 font-bold">Usuario del portal</th>
               <th className="px-3 py-2.5 text-center font-bold">Ranking</th>
             </tr>
@@ -116,7 +117,8 @@ export function VendorMapManager() {
                   </span>
                 </td>
                 <td className="px-3 py-2.5 text-right text-ink-700">{v.count}</td>
-                <td className="px-3 py-2.5 text-right font-bold text-ink-900">{formatCRC(v.crc)}</td>
+                <td className="px-3 py-2.5 text-right font-bold text-ink-900">{formatCRCAmount(v.crc)}</td>
+                <td className="px-3 py-2.5 text-right font-bold text-ink-900">{formatUSD(v.usd)}</td>
                 <td className="px-5 py-2.5">
                   <div className="flex items-center gap-2">
                     <select
