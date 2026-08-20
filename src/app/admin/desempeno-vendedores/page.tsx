@@ -3,15 +3,13 @@ import {
 } from "lucide-react";
 import { getVendorPerformance, periodRange, type Period } from "@/lib/cpi-analytics";
 import { PeriodNav } from "@/components/PeriodNav";
-import { formatCRC } from "@/lib/utils";
+import { formatCRCAmount, formatMoneyPair, formatUSD } from "@/lib/utils";
 import { StatCard, BarList, type BarItem } from "@/components/admin/SalesCharts";
 import { ReportExportButtons } from "@/components/admin/ReportExportButtons";
 
 // Se recalcula cada 3 minutos en vez de en cada visita (baja el egress).
 export const revalidate = 180;
 export const metadata = { title: "Desempeño de vendedores — ICB Admin" };
-
-function fmtUSD(n: number) { return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
 
 export default async function DesempenoVendedoresPage({
   searchParams,
@@ -29,7 +27,7 @@ export default async function DesempenoVendedoresPage({
   const rankItems: BarItem[] = a.vendors.slice(0, 15).map((v) => ({
     label: v.vendedor,
     value: v.valor,
-    display: v.usd > 0 ? `${formatCRC(v.crc)} · ${fmtUSD(v.usd)}` : formatCRC(v.crc),
+    display: formatMoneyPair(v.crc, v.usd),
     sub: `${v.count} factura(s) · ${v.sharePct}% del total`,
   }));
 
@@ -61,14 +59,14 @@ export default async function DesempenoVendedoresPage({
             <StatCard
               label={isMonth ? "Líder del mes" : "Líder del día"}
               value={leader ? leader.vendedor.split(" ").slice(0, 2).join(" ") : "—"}
-              sub={leader ? (leader.usd > 0 ? `${formatCRC(leader.crc)} · ${fmtUSD(leader.usd)}` : formatCRC(leader.crc)) : undefined}
+              sub={leader ? formatMoneyPair(leader.crc, leader.usd) : undefined}
               Icon={Trophy}
               accent="accent"
             />
             <StatCard
               label="Total vendido"
-              value={formatCRC(a.totalCRC)}
-              sub={`${fmtUSD(a.totalUSD)} USD`}
+              value={formatCRCAmount(a.totalCRC)}
+              sub={`${formatUSD(a.totalUSD)} USD`}
               Icon={Wallet}
               accent="brand"
             />
@@ -89,8 +87,10 @@ export default async function DesempenoVendedoresPage({
                     <th className="px-4 py-2.5 font-bold">#</th>
                     <th className="px-4 py-2.5 font-bold">Vendedor</th>
                     <th className="px-3 py-2.5 text-right font-bold">Facturas</th>
-                    <th className="px-3 py-2.5 text-right font-bold">Monto (₡)</th>
-                    <th className="px-3 py-2.5 text-right font-bold">Ticket (₡)</th>
+                    <th className="px-3 py-2.5 text-right font-bold">Monto CRC</th>
+                    <th className="px-3 py-2.5 text-right font-bold">Monto USD</th>
+                    <th className="px-3 py-2.5 text-right font-bold">Ticket CRC</th>
+                    <th className="px-3 py-2.5 text-right font-bold">Ticket USD</th>
                     <th className="px-3 py-2.5 text-right font-bold">Aceptación</th>
                     <th className="px-3 py-2.5 text-right font-bold">% total</th>
                   </tr>
@@ -102,9 +102,11 @@ export default async function DesempenoVendedoresPage({
                       <td className="px-4 py-2.5 font-semibold text-ink-800">{v.vendedor}</td>
                       <td className="px-3 py-2.5 text-right text-ink-700">{v.count}</td>
                       <td className="px-3 py-2.5 text-right font-bold text-ink-900">
-                        {formatCRC(v.crc)}{v.usd > 0 ? ` · ${fmtUSD(v.usd)}` : ""}
+                        {formatCRCAmount(v.crc)}
                       </td>
-                      <td className="px-3 py-2.5 text-right text-ink-700">{formatCRC(v.ticketCRC)}</td>
+                      <td className="px-3 py-2.5 text-right font-bold text-ink-900">{formatUSD(v.usd)}</td>
+                      <td className="px-3 py-2.5 text-right text-ink-700">{formatCRCAmount(v.ticketCRC)}</td>
+                      <td className="px-3 py-2.5 text-right text-ink-700">{formatUSD(v.ticketUSD)}</td>
                       <td className="px-3 py-2.5 text-right text-ink-700">
                         {v.count ? `${Math.round((v.aceptadas / v.count) * 100)}%` : "—"}
                       </td>
