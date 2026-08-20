@@ -17,6 +17,37 @@ export function formatCRC(value: number | string | null | undefined): string {
   return CRC.format(n);
 }
 
+/** Montos contables: a diferencia de precios de catálogo, cero sí es un valor. */
+export function formatCRCAmount(value: number | string | null | undefined): string {
+  const n = typeof value === "string" ? Number(value) : Number(value ?? 0);
+  return CRC.format(Number.isFinite(n) ? n : 0);
+}
+
+export function formatUSD(value: number | string | null | undefined): string {
+  const n = typeof value === "string" ? Number(value) : Number(value ?? 0);
+  return `$${(Number.isFinite(n) ? n : 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+export function formatMoneyPair(
+  crc: number | string | null | undefined,
+  usd: number | string | null | undefined,
+  separator = " · "
+): string {
+  return `${formatCRCAmount(crc)}${separator}${formatUSD(usd)}`;
+}
+
+export function isUSDCurrency(value: string | null | undefined): boolean {
+  const normalized = (value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
+  return normalized === "USD" || normalized.includes("DOLAR");
+}
+
 export function decodeHtml(s: string | null | undefined): string {
   if (!s) return "";
   const namedEntities: Record<string, string> = {
