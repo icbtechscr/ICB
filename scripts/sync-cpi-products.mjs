@@ -396,6 +396,38 @@ function mergeProducts(products) {
   return [...merged.values()];
 }
 
+// El reporte agregado de "Unidades vendidas" de CPI omite algunas líneas en
+// dólares. El reporte por ítems sí trae cada factura con su moneda real, así
+// que se usa como fuente de verdad para cantidades y montos del ranking global.
+function productsFromInvoiceItems(items, reportProducts) {
+  const metadata = new Map();
+  for (const product of reportProducts) {
+    const key = normalize(product.sku);
+    if (key && !metadata.has(key)) metadata.set(key, product);
+  }
+  const merged = new Map();
+  for (const item of items) {
+    const skuKey = normalize(item.sku);
+    if (!skuKey) continue;
+    const key = `${item.moneda}|${skuKey}`;
+    const source = metadata.get(skuKey);
+    const current = merged.get(key) || {
+      sku: item.sku,
+      descripcion: source?.descripcion || item.sku,
+      moneda: item.moneda,
+      cantidad: 0,
+      totalVenta: 0,
+      costoVenta: 0,
+      utilidad: 0,
+      stockQty: source?.stockQty ?? null,
+    };
+    current.cantidad += item.cantidad;
+    current.totalVenta += item.total;
+    merged.set(key, current);
+  }
+  return [...merged.values()];
+}
+
 async function smartRange(sb) {
   const today = crToday();
   const day = argument("day");
@@ -532,8 +564,10 @@ async function main() {
   const daily = await mapLimit(days, 2, async (day) => {
     const products = parseReport(await fetchSoldProducts(cookie, day));
     const items = parseSoldInvoiceItems(await fetchSoldItemsHtml(cookie, day));
-    console.log(`  ${day}: ${products.length} producto(s), ${items.length} línea(s)`);
-    return { day, products, items };
+    const invoiceProducts = productsFromInvoiceItems(items, products);
+    const usdLines = items.filter((item) => item.moneda === "USD").length;
+    console.log(`  ${day}: ${invoiceProducts.length} producto(s), ${items.length} línea(s), ${usdLines} línea(s) USD`);
+    return { day, products, invoiceProducts, items };
   });
 
   if (DRY_RUN) {
@@ -542,8 +576,12 @@ async function main() {
       from: range.from,
       to: range.to,
       days: daily.length,
-      products: daily.reduce((sum, item) => sum + item.products.length, 0),
+      products: daily.reduce((sum, item) => sum + item.invoiceProducts.length, 0),
       invoiceLines: daily.reduce((sum, item) => sum + item.items.length, 0),
+      usdInvoiceLines: daily.reduce(
+        (sum, item) => sum + item.items.filter((line) => line.moneda === "USD").length,
+        0
+      ),
     }, null, 2));
     return;
   }
@@ -551,7 +589,7 @@ async function main() {
   let saved = 0;
   let savedByBranch = 0;
   for (const item of daily) {
-    saved += await saveDay(sb, item.day, item.products);
+    saved += await saveDay(sb, item.day, item.invoiceProducts);
     savedByBranch += await saveBranchProductSales(sb, item.day, item.items, item.products);
   }
   console.log(`Listo. ${saved} productos/día y ${savedByBranch} productos por sucursal guardados para ${daily.length} día(s).`);
