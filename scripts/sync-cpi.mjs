@@ -3,6 +3,7 @@
 // Usa el modulo https nativo (cookies confiables, sin el bug de undici en Windows).
 //
 //   node scripts/sync-cpi.mjs           -> sincroniza
+//   node scripts/sync-cpi.mjs --from=2026-07-01 --to=2026-08-20
 //   node scripts/sync-cpi.mjs --debug   -> guarda cpi-get/post/lista.html
 //   node scripts/sync-cpi.mjs --dry-run -> consulta y parsea, sin escribir
 import { readFileSync, writeFileSync } from "node:fs";
@@ -107,13 +108,43 @@ async function login() {
 // Reporte -> Facturacion FE (ControlSpecFacturacion - Reportes.php).
 // Trae TODAS las facturas del rango de fechas (mes en curso) de todos los vendedores.
 // Parametros capturados de la app real (str22[] = columnas, str23 = group by).
-async function fetchReporte(cookie) {
-  const pad = (n) => String(n).padStart(2, "0");
-  const now = new Date();
-  const y = now.getFullYear();
-  const mo = pad(now.getMonth() + 1);
-  const desde = `${y}-${mo}-01 00:00:00`;
-  const hasta = `${y}-${mo}-${pad(now.getDate())} 23:59:59`;
+function argument(name) {
+  const prefix = `--${name}=`;
+  return process.argv.find((value) => value.startsWith(prefix))?.slice(prefix.length) || "";
+}
+
+function crToday() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Costa_Rica",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+function addDays(day, amount) {
+  const [year, month, date] = day.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, date + amount)).toISOString().slice(0, 10);
+}
+
+function requestedRange() {
+  const today = crToday();
+  const fromArg = argument("from");
+  const toArg = argument("to");
+  const from = fromArg || `${today.slice(0, 7)}-01`;
+  const to = toArg || today;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+    throw new Error("Las fechas deben usar el formato YYYY-MM-DD");
+  }
+  if (from > to) throw new Error("La fecha inicial no puede ser posterior a la final");
+  const days = Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86400000) + 1;
+  if (days > 62) throw new Error("El rango maximo es de 62 dias");
+  return { from, to };
+}
+
+async function fetchReporte(cookie, range) {
+  const desde = `${range.from} 00:00:00`;
+  const hasta = `${range.to} 23:59:59`;
 
   const p = new URLSearchParams();
   const add = (k, v) => p.append(k, v);
@@ -153,15 +184,11 @@ async function fetchReporte(cookie) {
   if (n < 1) throw new Error("El reporte no devolvio facturas. Revisá cpi-reporte.html.");
   return res.body;
 }
-const MONEDA = { Colones: "CRC", Dolares: "USD", "Dólares": "USD", Euros: "EUR" };
 const strip = (s) => s.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
-const amount = (s) => { const n = Number(s.replace(/[^\d.,-]/g, "").replace(/,/g, "")); return Number.isFinite(n) ? n : 0; };
 const norm = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 
-// Parser del reporte "Facturacion FE". Cada fila trae 25 columnas fijas:
-//  [0] tipo  [2] fecha(YYYY-MM-DD)  [3] factura  [4] origen  [5] sucursal
-//  [6] vendedor  [10] cliente(id - nombre)  [11] moneda  [16] SUBTOTAL
-//  [22] estado
+// Parser del reporte "Facturacion FE". CPI cambia el orden de las columnas
+// cuando se agregan campos al reporte, por eso se resuelven por encabezado.
 function parse(html) {
   const out = [];
   const seen = new Set();
@@ -170,32 +197,63 @@ function parse(html) {
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&");
   const money = (cell) => {
-    const n = Number(decodeEnt(String(cell)).replace(/[()]/g, "").replace(/[^\d.,-]/g, "").replace(/,/g, ""));
-    return Number.isFinite(n) ? n : 0;
+    const decoded = decodeEnt(String(cell));
+    const negative = /^\s*\([\s\S]*\)\s*$/.test(decoded);
+    const n = Number(decoded.replace(/[()]/g, "").replace(/[^\d.,-]/g, "").replace(/,/g, ""));
+    if (!Number.isFinite(n)) return 0;
+    return negative ? -Math.abs(n) : n;
   };
-  const chunks = html.split(/<tr[\s>]/i).slice(1);
-  for (const raw of chunks) {
-    const row = raw.split(/<\/tr>/i)[0];
-    const cells = (row.match(/<td[\s\S]*?<\/td>/gi) || []).map(strip);
-    if (cells.length < 23) continue;
+  const tableRows = (html.match(/<tr\b[\s\S]*?<\/tr>/gi) || [])
+    .map((row) => (row.match(/<(?:th|td)\b[\s\S]*?<\/(?:th|td)>/gi) || []).map(strip))
+    .filter((cells) => cells.length > 0);
+  const findColumn = (headers, label) => headers.findIndex((header) => norm(header) === norm(label));
+  const headerAt = tableRows.findIndex((cells) =>
+    findColumn(cells, "Fecha") >= 0 &&
+    findColumn(cells, "Factura") >= 0 &&
+    findColumn(cells, "Moneda") >= 0 &&
+    findColumn(cells, "Total Comprobante") >= 0
+  );
+  if (headerAt < 0) throw new Error("CPI no devolvio las columnas esperadas del reporte de facturacion");
+  const headers = tableRows[headerAt];
+  const column = (label) => findColumn(headers, label);
+  const typeAt = column("Tipo");
+  const dateAt = column("Fecha");
+  const invoiceAt = column("Factura");
+  const originAt = column("Origen");
+  const branchAt = column("Sucursal");
+  const vendorAt = column("Vendedor");
+  const clientAt = column("Cliente");
+  const currencyAt = column("Moneda");
+  const amountAt = column("Total Comprobante");
+  const statusAt = column("Estado");
+  const taxStatusAt = column("Respuesta Hacienda");
 
-    const fechaM = (cells[2] || "").match(/\d{4}-\d{2}-\d{2}/);
+  for (const cells of tableRows.slice(headerAt + 1)) {
+    const fechaM = (cells[dateAt] || "").match(/\d{4}-\d{2}-\d{2}/);
     if (!fechaM) continue;
     const fecha = fechaM[0];
 
-    const tipo = cells[0] || "Factura";
-    const factura = cells[3] || "";
-    const origen = cells[4] || "";
-    const sucursal = cells[5] || "";
-    const vendedor = cells[6] || "";
-    let cliente = cells[10] || "";
+    const tipo = cells[typeAt] || "Factura";
+    const factura = cells[invoiceAt] || "";
+    const origen = cells[originAt] || "";
+    const sucursal = cells[branchAt] || "";
+    const vendedor = cells[vendorAt] || "";
+    let cliente = cells[clientAt] || "";
     const cm = cliente.match(/^\s*\d+\s*-\s*(.+)$/);
     if (cm) cliente = cm[1].trim();
-    const monedaTxt = cells[11] || "";
+    const monedaTxt = cells[currencyAt] || "";
     const moneda = /Dolar|Dólar/i.test(monedaTxt) ? "USD"
       : /Euro/i.test(monedaTxt) ? "EUR" : "CRC";
-    const subtotal = money(cells[16] || "0");
-    const estado = cells[22] || "";
+    const subtotal = money(cells[amountAt] || "0");
+    const invoiceStatus = cells[statusAt] || "";
+    const taxStatus = cells[taxStatusAt] || "";
+    const estado = /ANULA/i.test(invoiceStatus)
+      ? "ANULADA"
+      : /RECHAZ/i.test(taxStatus)
+        ? "RECHAZADA"
+        : /ACEPT/i.test(taxStatus)
+          ? "ACEPTADA"
+          : (taxStatus || invoiceStatus).trim().toUpperCase();
 
     if (!factura) continue;
     const key = [tipo, factura, fecha].join("|");
@@ -212,7 +270,7 @@ function parse(html) {
 }
 
 // Guarda filas en Supabase con el mapeo vendedor->usuario.
-async function saveRows(rows) {
+async function saveRows(rows, range) {
   if (rows.length === 0) { console.log("Sin filas para guardar."); return; }
   if (!SB_URL || !SB_KEY) throw new Error("Faltan NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SECRET_KEY en .env.local");
   const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
@@ -235,17 +293,13 @@ async function saveRows(rows) {
   // El reporte es la fuente de verdad del mes. Primero hacemos upsert y solo
   // despues limpiamos claves obsoletas. Asi, una interrupcion conserva las
   // ventas que ya estaban visibles en vez de dejar el mes vacio.
-  const pad = (n) => String(n).padStart(2, "0");
-  const now = new Date();
-  const mStart = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`;
-  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const mEnd = `${nextMonth.getFullYear()}-${pad(nextMonth.getMonth() + 1)}-01`;
+  const rangeEnd = addDays(range.to, 1);
   const { data: existing, error: existingErr } = await sb
     .from("cpi_sales")
     .select("cpi_key")
-    .gte("fecha", mStart)
-    .lt("fecha", mEnd);
-  if (existingErr) throw new Error("Supabase (leer mes): " + existingErr.message);
+    .gte("fecha", range.from)
+    .lt("fecha", rangeEnd);
+  if (existingErr) throw new Error("Supabase (leer rango): " + existingErr.message);
 
   const { error } = await sb.from("cpi_sales").upsert(rows, { onConflict: "cpi_key" });
   if (error) throw new Error("Supabase: " + error.message);
@@ -281,7 +335,14 @@ function printDryRun(rows) {
     ? rows.filter((row) => row.fecha.startsWith(latestDay)).length
     : 0;
   console.log("Dry-run: no se guardo nada en Supabase.");
-  console.log(JSON.stringify({ rows: rows.length, latestDay, latestCount, days }, null, 2));
+  const currencies = {};
+  for (const row of rows) {
+    const current = currencies[row.moneda] ?? { invoices: 0, amount: 0 };
+    current.invoices += 1;
+    current.amount += Number(row.subtotal) || 0;
+    currencies[row.moneda] = current;
+  }
+  console.log(JSON.stringify({ rows: rows.length, latestDay, latestCount, days, currencies }, null, 2));
 }
 
 // Ruta del archivo a importar si se paso --import (o --import=RUTA).
@@ -294,6 +355,7 @@ function importPath() {
 }
 
 async function main() {
+  const range = requestedRange();
   const imp = importPath();
   if (imp) {
     console.log("Importando facturas desde archivo:", imp);
@@ -302,19 +364,23 @@ async function main() {
     console.log(`Parseadas ${rows.length} facturas del archivo.`);
     if (rows.length === 0) { console.log("0 filas. ¿Es el HTML del reporte correcto?"); return; }
     if (DRY_RUN) { printDryRun(rows); return; }
-    await saveRows(rows);
+    const importedDays = rows.map((row) => row.fecha.slice(0, 10)).sort();
+    const importRange = argument("from") || argument("to")
+      ? range
+      : { from: importedDays[0], to: importedDays.at(-1) };
+    await saveRows(rows, importRange);
     return;
   }
 
   console.log("Iniciando sesión en CPI…");
   const cookie = await login();
   console.log("Sesión OK. Descargando el reporte de facturación…");
-  const html = await fetchReporte(cookie);
+  const html = await fetchReporte(cookie, range);
   const rows = parse(html);
   console.log(`Parseadas ${rows.length} facturas.`);
   if (rows.length === 0) { console.log("0 filas. Revisa cpi-reporte.html (corré con --debug)."); return; }
   if (DRY_RUN) { printDryRun(rows); return; }
-  await saveRows(rows);
+  await saveRows(rows, range);
 }
 
 main().catch((e) => { console.error("ERROR:", e.message); process.exitCode = 1; });
