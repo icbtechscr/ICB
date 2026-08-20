@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/lib/supabase-server";
 import { getUserRole, isAdminLike } from "@/lib/roles";
 import { getUserSalesAnalytics, periodRange, type Period } from "@/lib/cpi-analytics";
 import { listSalesForUser, type SaleRow } from "@/lib/cpi-sales";
-import { formatCRC } from "@/lib/utils";
+import { formatCRCAmount, formatUSD, isUSDCurrency } from "@/lib/utils";
 import { MetricCard } from "@/components/portal/MetricCard";
 import { SyncSalesButton } from "@/components/portal/SyncSalesButton";
 import { PeriodNav } from "@/components/PeriodNav";
@@ -14,10 +14,6 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Ventas",
 };
-
-function fmtUSD(n: number): string {
-  return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
 
 function fmtFecha(iso: string | null): string {
   if (!iso) return "—";
@@ -79,8 +75,8 @@ export default async function VentasPage({
         />
         <MetricCard
           label="Vendido"
-          value={formatCRC(a.amountCRC)}
-          sublabel={`${fmtUSD(a.amountUSD)} USD`}
+          value={formatCRCAmount(a.amountCRC)}
+          sublabel={`${formatUSD(a.amountUSD)} USD`}
           Icon={Wallet}
           accent="accent"
         />
@@ -126,9 +122,9 @@ export default async function VentasPage({
                   {s.estado || "—"}
                 </span>
                 <span className="w-28 shrink-0 text-right text-sm font-black text-ink-900">
-                  {s.moneda === "USD"
-                    ? fmtUSD(Number(s.subtotal))
-                    : formatCRC(Number(s.subtotal))}
+                  {isUSDCurrency(s.moneda)
+                    ? formatUSD(Number(s.subtotal))
+                    : formatCRCAmount(Number(s.subtotal))}
                 </span>
               </li>
             ))}
