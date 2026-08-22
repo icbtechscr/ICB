@@ -20,6 +20,7 @@ import {
   ClipboardList,
   Bot,
   Boxes,
+  ChartNoAxesCombined,
   type LucideIcon,
 } from "lucide-react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
@@ -47,10 +48,12 @@ const GROUPS: Group[] = [
       "/admin/ventas-sucursales",
       "/admin/cotizaciones",
       "/admin/inventario-cpi",
+      "/admin/analitica",
     ],
     sub: [
       { href: "/admin/productos", label: "Inventario", Icon: Package },
       { href: "/admin/inventario-cpi", label: "Inventario de CPI", Icon: Boxes },
+      { href: "/admin/analitica", label: "Analítica", Icon: ChartNoAxesCombined },
       { href: "/admin/ventas-sucursales", label: "Ventas de sucursal", Icon: Store },
       { href: "/admin/cotizaciones", label: "Cotizaciones CPI", Icon: ClipboardList },
       { href: "/admin/pedidos", label: "Pedidos online", Icon: ShoppingBag },
