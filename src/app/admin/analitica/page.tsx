@@ -6,7 +6,7 @@ import {
 } from "@/lib/inventory-analytics";
 
 export const revalidate = 300;
-export const metadata = { title: "Analítica — ICB Admin" };
+export const metadata = { title: "Rotación de productos — ICB Admin" };
 
 export default async function AnaliticaPage({
   searchParams,
@@ -21,7 +21,7 @@ export default async function AnaliticaPage({
     <div>
       <div className="mb-6">
         <h1 className="inline-flex items-center gap-2 text-2xl font-black tracking-tight text-ink-900">
-          <ChartNoAxesCombined className="size-6 text-brand-600" /> Analítica
+          <ChartNoAxesCombined className="size-6 text-brand-600" /> Rotación de productos
         </h1>
         <p className="mt-1 max-w-3xl text-sm text-ink-600">
           Indicadores para tomar decisiones sobre inventario y movimiento de productos. Los datos cruzan las existencias actuales de CPI con las ventas facturadas por sucursal.
@@ -35,7 +35,7 @@ export default async function AnaliticaPage({
           </span>
           <h2 className="mt-4 text-lg font-black text-ink-900">Sin información para analizar</h2>
           <p className="mx-auto mt-1.5 max-w-md text-sm text-ink-600">
-            La analítica aparecerá cuando el inventario y las ventas de CPI estén sincronizados.
+            La rotación aparecerá cuando el inventario y las ventas de CPI estén sincronizados.
           </p>
         </div>
       ) : (
