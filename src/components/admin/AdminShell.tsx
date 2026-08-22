@@ -45,18 +45,44 @@ const GROUPS: Group[] = [
     prefixes: [
       "/admin/productos",
       "/admin/pedidos",
-      "/admin/ventas-sucursales",
-      "/admin/cotizaciones",
       "/admin/inventario-cpi",
-      "/admin/analitica",
     ],
     sub: [
       { href: "/admin/productos", label: "Inventario", Icon: Package },
       { href: "/admin/inventario-cpi", label: "Inventario de CPI", Icon: Boxes },
-      { href: "/admin/analitica", label: "Analítica", Icon: ChartNoAxesCombined },
-      { href: "/admin/ventas-sucursales", label: "Ventas de sucursal", Icon: Store },
-      { href: "/admin/cotizaciones", label: "Cotizaciones CPI", Icon: ClipboardList },
       { href: "/admin/pedidos", label: "Pedidos online", Icon: ShoppingBag },
+    ],
+  },
+  {
+    id: "analitica",
+    label: "Analítica",
+    Icon: ChartNoAxesCombined,
+    href: "/admin/analitica",
+    prefixes: [
+      "/admin/analitica",
+      "/admin/ventas-sucursales",
+      "/admin/desempeno-vendedores",
+      "/admin/cotizaciones",
+      "/admin/cotizaciones-vendedores",
+    ],
+    sub: [
+      {
+        href: "/admin/analitica",
+        label: "Rotación de productos",
+        Icon: ChartNoAxesCombined,
+      },
+      { href: "/admin/ventas-sucursales", label: "Ventas de sucursal", Icon: Store },
+      {
+        href: "/admin/desempeno-vendedores",
+        label: "Desempeño de los vendedores",
+        Icon: TrendingUp,
+      },
+      { href: "/admin/cotizaciones", label: "Cotizaciones", Icon: ClipboardList },
+      {
+        href: "/admin/cotizaciones-vendedores",
+        label: "Cotizaciones de vendedores",
+        Icon: ClipboardList,
+      },
     ],
   },
   {
@@ -75,21 +101,9 @@ const GROUPS: Group[] = [
     prefixes: [
       "/admin/equipo",
       "/admin/solicitudes",
-      "/admin/desempeno-vendedores",
-      "/admin/cotizaciones-vendedores",
     ],
     sub: [
       { href: "/admin/equipo", label: "Colaboradores", Icon: Users },
-      {
-        href: "/admin/desempeno-vendedores",
-        label: "Desempeño de vendedores",
-        Icon: TrendingUp,
-      },
-      {
-        href: "/admin/cotizaciones-vendedores",
-        label: "Cotizaciones vendedores",
-        Icon: ClipboardList,
-      },
       {
         href: "/admin/solicitudes",
         label: "Solicitudes de colaboradores",
