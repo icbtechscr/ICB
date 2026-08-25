@@ -48,7 +48,7 @@ const ACTION: Record<
     cls: "bg-brand-600 text-white hover:bg-brand-700",
   },
   salida: {
-    label: "Salir",
+    label: "Salida final",
     Icon: DoorOpen,
     cls: "bg-red-600 text-white hover:bg-red-700",
   },
@@ -173,6 +173,7 @@ export function PunchPanel({
 
   const todayRow = rows.find((r) => r.dayIso === todayIso)!;
   const startedToday = !!todayRow.cells.entrada;
+  const dayClosed = !!todayRow.cells.salida;
   const historyRows = rows.filter((r) => r.dayIso !== todayIso);
 
   async function punch(type: PunchType) {
@@ -341,8 +342,8 @@ export function PunchPanel({
         </p>
       )}
 
-      {/* Antes de comenzar el día: botón rojo protagonista */}
-      {!startedToday ? (
+      {/* Antes de comenzar el día se puede entrar o registrar la salida final. */}
+      {!startedToday && !dayClosed ? (
         <div className="mt-6 rounded-3xl border border-ink-200 bg-white p-8 text-center shadow-sm">
           <p className="text-sm font-medium text-ink-500">
             {fmtDayLabel(todayIso)}
@@ -350,21 +351,35 @@ export function PunchPanel({
           <h2 className="mt-1 text-xl font-black text-ink-900">
             ¿Listo para arrancar?
           </h2>
-          <button
-            onClick={() => punch("entrada")}
-            disabled={busy}
-            className="mt-5 inline-flex w-full max-w-sm items-center justify-center gap-2.5 rounded-2xl bg-red-600 px-8 py-5 text-lg font-black text-white shadow-xl shadow-red-600/30 transition-all hover:bg-red-700 hover:shadow-red-600/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loadingType === "entrada" || !hasCoords ? (
-              <Loader2 className="size-6 animate-spin" />
-            ) : (
-              <Sun className="size-6" />
-            )}
-            {!hasCoords ? "Obteniendo ubicación…" : "Comenzar Día"}
-          </button>
+          <div className="mx-auto mt-5 grid w-full max-w-xl gap-3 sm:grid-cols-2">
+            <button
+              onClick={() => punch("entrada")}
+              disabled={busy}
+              className="inline-flex w-full items-center justify-center gap-2.5 rounded-2xl bg-brand-600 px-6 py-5 text-base font-black text-white shadow-lg shadow-brand-600/25 transition-all hover:bg-brand-700 hover:shadow-brand-600/35 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loadingType === "entrada" || !hasCoords ? (
+                <Loader2 className="size-6 animate-spin" />
+              ) : (
+                <Sun className="size-6" />
+              )}
+              {!hasCoords ? "Obteniendo ubicación…" : "Comenzar día"}
+            </button>
+            <button
+              onClick={() => punch("salida")}
+              disabled={busy}
+              className="inline-flex w-full items-center justify-center gap-2.5 rounded-2xl bg-red-600 px-6 py-5 text-base font-black text-white shadow-lg shadow-red-600/25 transition-all hover:bg-red-700 hover:shadow-red-600/35 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loadingType === "salida" || !hasCoords ? (
+                <Loader2 className="size-6 animate-spin" />
+              ) : (
+                <DoorOpen className="size-6" />
+              )}
+              {!hasCoords ? "Obteniendo ubicación…" : "Salida final"}
+            </button>
+          </div>
           <p className="mt-3 text-xs text-ink-400">
             {hasCoords
-              ? "Se registrará tu hora y ubicación al tocar el botón."
+              ? "Podés registrar la salida final aunque no hayas marcado la entrada."
               : "Necesitamos tu ubicación para poder marcar."}
           </p>
         </div>
@@ -527,7 +542,7 @@ function isActionable(
     case "regreso_almuerzo":
       return !!cells.salida_almuerzo && !cells.regreso_almuerzo;
     case "salida":
-      return !!cells.entrada;
+      return true;
   }
 }
 

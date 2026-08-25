@@ -19,14 +19,14 @@ export const PUNCH_LABELS: Record<PunchType, string> = {
   entrada: "Marcar entrada",
   salida_almuerzo: "Salida a almuerzo",
   regreso_almuerzo: "Regreso de almuerzo",
-  salida: "Marcar salida",
+  salida: "Marcar salida final",
 };
 
 export const PUNCH_SHORT: Record<PunchType, string> = {
   entrada: "Entrada",
   salida_almuerzo: "Sale a almorzar",
   regreso_almuerzo: "Regresa de almuerzo",
-  salida: "Salida",
+  salida: "Salida final",
 };
 
 /** Encabezados de columna para la tabla tipo planilla. */
@@ -34,7 +34,7 @@ export const PUNCH_COL: Record<PunchType, string> = {
   entrada: "Entrada",
   salida_almuerzo: "Salida almuerzo",
   regreso_almuerzo: "Entrada almuerzo",
-  salida: "Salida",
+  salida: "Salida final",
 };
 
 export function isPunchType(v: unknown): v is PunchType {
