@@ -7,8 +7,8 @@ import { SiteChromeGate } from "@/components/SiteChromeGate";
 import { ChatWidget } from "@/components/ChatWidget";
 import { CartProvider } from "@/lib/cart";
 import { getNavMenu } from "@/lib/category-tree";
-import { isMothersDaySeason } from "@/lib/seasonal";
-import { MothersDayPageDecor } from "@/components/seasonal/MothersDayDecor";
+import { isPatrioticMonthSeason } from "@/lib/seasonal";
+import { PatrioticMonthPageDecor } from "@/components/seasonal/PatrioticMonthDecor";
 import {
   SITE_URL,
   SITE_NAME,
@@ -98,7 +98,7 @@ export default async function RootLayout({
   const menu = await getNavMenu();
   // La temporada se decide en el servidor: asi el HTML ya llega decorado y no
   // hay parpadeo ni diferencia con la hidratacion.
-  const seasonal = isMothersDaySeason() ? ("mothers-day" as const) : null;
+  const seasonal = isPatrioticMonthSeason() ? ("patriotic-month" as const) : null;
   return (
     <html lang="es" className="h-full antialiased" suppressHydrationWarning>
       <head>
@@ -112,9 +112,9 @@ export default async function RootLayout({
       </head>
       <body className="relative min-h-full flex flex-col text-ink-900">
         <CartProvider>
-          {seasonal === "mothers-day" && (
+          {seasonal === "patriotic-month" && (
             <SiteChromeGate>
-              <MothersDayPageDecor />
+              <PatrioticMonthPageDecor />
             </SiteChromeGate>
           )}
           <SiteChromeGate>

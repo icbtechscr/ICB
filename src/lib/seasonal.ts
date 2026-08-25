@@ -13,17 +13,18 @@ function crParts(ref: Date): { y: number; m: number; d: number } {
 }
 
 /**
- * Dia de la Madre en Costa Rica: 15 de agosto.
- * La decoracion se muestra del 1 al 16 de agosto (un dia despues, para que no
- * se caiga a medianoche del mismo dia), y se repite todos los anos sola.
+ * Mes de la Patria en Costa Rica: todo septiembre, alrededor de la celebracion
+ * de la Independencia del 15 de septiembre. Se repite todos los anos sola.
  */
-export function isMothersDaySeason(ref: Date = new Date()): boolean {
-  // Para ver el adorno fuera de fecha: SEASON_OVERRIDE=mothers-day (o "off"
-  // para apagarlo). Sirve en .env.local o como variable en Vercel.
+export function isPatrioticMonthSeason(ref: Date = new Date()): boolean {
+  // Para ver el adorno fuera de fecha: SEASON_OVERRIDE=patriotic-month (o
+  // "off" para apagarlo). "mothers-day" se conserva como alias temporal para
+  // que una configuracion anterior de Vercel muestre de inmediato el adorno
+  // nuevo en vez de desactivarlo.
   const override = (process.env.SEASON_OVERRIDE || "").trim().toLowerCase();
-  if (override === "mothers-day") return true;
+  if (["patriotic-month", "patria", "mothers-day"].includes(override)) return true;
   if (override === "off") return false;
 
-  const { m, d } = crParts(ref);
-  return m === 8 && d >= 1 && d <= 16;
+  const { m } = crParts(ref);
+  return m === 9;
 }

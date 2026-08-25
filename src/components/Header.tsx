@@ -8,7 +8,10 @@ import { NavHeader } from "@/components/ui/nav-header";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AuthButton } from "@/components/AuthButton";
 import { useCart } from "@/lib/cart";
-import { MothersDayBar, MothersDayDecor } from "@/components/seasonal/MothersDayDecor";
+import {
+  PatrioticMonthBar,
+  PatrioticMonthDecor,
+} from "@/components/seasonal/PatrioticMonthDecor";
 import type { NavItem } from "@/lib/category-tree";
 
 export function Header({
@@ -21,7 +24,7 @@ export function Header({
   initialDark?: boolean;
   initialAuthed?: boolean;
   /** Temporada activa. Se decide en el servidor para no romper la hidratacion. */
-  seasonal?: "mothers-day" | null;
+  seasonal?: "patriotic-month" | null;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { count } = useCart();
@@ -29,10 +32,10 @@ export function Header({
 
   return (
     <header className="relative z-40 border-b border-ink-200 bg-white text-ink-900">
-      {seasonal === "mothers-day" && <MothersDayBar />}
+      {seasonal === "patriotic-month" && <PatrioticMonthBar />}
 
       <div className="relative">
-      {seasonal === "mothers-day" && <MothersDayDecor />}
+      {seasonal === "patriotic-month" && <PatrioticMonthDecor />}
       <div className="relative mx-auto flex max-w-7xl items-center gap-2 px-3 py-3 sm:gap-4 sm:px-4 md:py-4">
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <Image
