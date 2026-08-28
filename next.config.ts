@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Permite ejecutar la aplicación como un contenedor autónomo en Coolify.
+  output: "standalone",
   poweredByHeader: false,
   async redirects() {
     return [
