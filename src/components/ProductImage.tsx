@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ImageOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { rewriteMediaUrl } from "@/lib/image-url";
 
 type ProductImageMode = "optimized" | "next-direct" | "native";
 
@@ -15,7 +16,7 @@ const NEXT_OPTIMIZED_HOSTS = new Set([
 ]);
 
 export function normalizeProductImageSrc(src: string | null | undefined): string {
-  return src?.trim() ?? "";
+  return rewriteMediaUrl(src);
 }
 
 function imageMode(src: string): ProductImageMode {
@@ -26,6 +27,12 @@ function imageMode(src: string): ProductImageMode {
     const host = url.hostname.toLowerCase();
 
     if (LEGACY_DIRECT_HOSTS.has(host)) return "next-direct";
+    const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (storageUrl && url.origin === new URL(storageUrl).origin &&
+        url.protocol === "https:" && !url.search &&
+        url.pathname.startsWith("/storage/v1/object/public/")) {
+      return "optimized";
+    }
     if (url.protocol === "https:" && NEXT_OPTIMIZED_HOSTS.has(host)) {
       return "optimized";
     }

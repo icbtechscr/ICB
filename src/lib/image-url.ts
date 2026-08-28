@@ -1,11 +1,28 @@
-// Las imágenes de productos se migran a Supabase Storage (ver
-// scripts/migrate-images-to-supabase.mjs). Tras la migración, las URLs en la
-// base de datos ya apuntan a Supabase, así que aquí no hay que reescribir nada.
-//
-// Se deja este helper como identidad por compatibilidad con los llamados
-// existentes; si alguna URL quedara sin migrar, se respeta tal cual (sigue
-// funcionando desde el host original mientras exista).
+// Las copias de la BD conservan URLs absolutas. Solo los objetos PUBLICOS
+// de los almacenes ICB conocidos se resuelven contra el entorno actual.
+// Las URLs firmadas y los recursos de terceros nunca se reescriben.
+const PREVIOUS_STORAGE_ORIGINS = new Set([
+  "https://fnnzlkvohsaxwnmdymvc.supabase.co",
+  "http://supabase-icb-pruebas.192.168.0.104.sslip.io",
+]);
 
-export function rewriteMediaUrl(url: string | null | undefined): string {
-  return url ?? "";
+export function rewriteMediaUrl(
+  value: string | null | undefined,
+  storageUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+): string {
+  const source = value?.trim() ?? "";
+  if (!source || !storageUrl) return source;
+  try {
+    const url = new URL(source);
+    const target = new URL(storageUrl);
+    if (
+      !PREVIOUS_STORAGE_ORIGINS.has(url.origin) ||
+      url.username || url.password || target.username || target.password ||
+      !["http:", "https:"].includes(target.protocol) ||
+      !url.pathname.startsWith("/storage/v1/object/public/")
+    ) return source;
+    return `${target.origin}${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return source;
+  }
 }

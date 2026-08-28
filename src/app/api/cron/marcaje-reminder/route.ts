@@ -3,20 +3,14 @@ import { createAdminClient } from "@/lib/supabase";
 import { getUserRole } from "@/lib/roles";
 import { crTodayIso, crDayRangeUtcFromIso } from "@/lib/timeclock";
 import { sendPush } from "@/lib/push";
+import { cronAuthorized } from "@/lib/cron-auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-  // Seguridad: Vercel Cron envía Authorization: Bearer <CRON_SECRET>.
-  // También se acepta ?secret= para pruebas manuales.
-  const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const auth = req.headers.get("authorization");
-    const qs = new URL(req.url).searchParams.get("secret");
-    if (auth !== `Bearer ${secret}` && qs !== secret) {
-      return new NextResponse("No autorizado", { status: 401 });
-    }
-  }
+  if (!cronAuthorized(req)) return new NextResponse("No autorizado", { status: 401 });
+  const dryRun = new URL(req.url).searchParams.get("dry_run") === "1" ||
+    process.env.ICB_EXTERNAL_EFFECTS_ENABLED === "false";
 
   try {
     const admin = createAdminClient();
@@ -31,26 +25,31 @@ export async function GET(req: Request) {
 
     // 2. Quiénes ya marcaron entrada hoy (hora CR).
     const { start, end } = crDayRangeUtcFromIso(crTodayIso());
-    const { data: entradas } = await admin
+    const { data: entradas, error: entriesError } = await admin
       .from("time_entries")
       .select("user_id")
       .eq("punch_type", "entrada")
       .gte("punched_at", start)
       .lt("punched_at", end);
+    if (entriesError) throw entriesError;
     const marked = new Set((entradas ?? []).map((e) => e.user_id as string));
 
     // 3. Colaboradores que NO han marcado.
     const pending = colaboradores.filter((u) => !marked.has(u.id));
     if (pending.length === 0) {
-      return NextResponse.json({ ok: true, pending: 0, sent: 0 });
+      return NextResponse.json({ ok: true, pending: 0, sent: 0, dryRun });
     }
 
     // 4. Suscripciones push de esos colaboradores.
     const ids = pending.map((u) => u.id);
-    const { data: subs } = await admin
+    const { data: subs, error: subscriptionsError } = await admin
       .from("push_subscriptions")
       .select("*")
       .in("user_id", ids);
+    if (subscriptionsError) throw subscriptionsError;
+    if (dryRun) return NextResponse.json({
+      ok: true, dryRun: true, pending: pending.length, subscriptions: subs?.length ?? 0, sent: 0,
+    });
 
     let sent = 0;
     let removed = 0;

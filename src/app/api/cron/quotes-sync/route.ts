@@ -1,19 +1,13 @@
 import { NextResponse } from "next/server";
 import { syncCpiQuotes } from "@/lib/cpi-quotes";
 import { cpiConfigured } from "@/lib/cpi";
+import { cronAuthorized } from "@/lib/cron-auth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const auth = req.headers.get("authorization");
-    const qs = new URL(req.url).searchParams.get("secret");
-    if (auth !== `Bearer ${secret}` && qs !== secret) {
-      return new NextResponse("No autorizado", { status: 401 });
-    }
-  }
+  if (!cronAuthorized(req)) return new NextResponse("No autorizado", { status: 401 });
   if (!cpiConfigured()) {
     return NextResponse.json({ skipped: true, reason: "CPI sin configurar" });
   }

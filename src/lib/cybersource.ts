@@ -40,6 +40,9 @@ async function signedRequest(
   path: string,
   body?: unknown
 ): Promise<{ status: number; data: unknown; raw: string }> {
+  if (process.env.ICB_EXTERNAL_EFFECTS_ENABLED === "false") {
+    throw new Error("Los pagos están desactivados en este entorno de pruebas");
+  }
   const { host, keyId, secretKey, merchantId } = cfg();
   const date = gmtDate();
   const bodyStr = body ? JSON.stringify(body) : "";

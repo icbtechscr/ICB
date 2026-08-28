@@ -1,5 +1,9 @@
 import type { NextConfig } from "next";
 
+const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL)
+  : null;
+
 const nextConfig: NextConfig = {
   // Permite ejecutar la aplicación como un contenedor autónomo en Coolify.
   output: "standalone",
@@ -56,11 +60,22 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
+    // En pruebas LAN servimos las imágenes directamente. No habilitar
+    // dangerouslyAllowLocalIP: expondría el optimizador a peticiones internas.
+    unoptimized: storageUrl?.protocol === "http:",
+    maximumDiskCacheSize: 512 * 1024 * 1024,
     // Sirve AVIF/WebP (mucho más livianos que los PNG originales).
     formats: ["image/avif", "image/webp"],
     // Cachea las imágenes optimizadas por 31 días.
     minimumCacheTTL: 60 * 60 * 24 * 31,
     remotePatterns: [
+      ...(storageUrl?.protocol === "https:" ? [{
+        protocol: "https" as const,
+        hostname: storageUrl.hostname,
+        port: storageUrl.port,
+        pathname: "/storage/v1/object/public/**",
+        search: "",
+      }] : []),
       { protocol: "https", hostname: "www.icbtechscr.com" },
       { protocol: "https", hostname: "icbtechscr.com" },
       // Host de medios (WordPress legacy): subdominio que se queda en el cPanel

@@ -20,6 +20,7 @@ async function send(
   html: string,
   toOverride?: string
 ): Promise<void> {
+  if (process.env.ICB_EXTERNAL_EFFECTS_ENABLED === "false") return;
   const c = cfg();
   const to = toOverride ?? c.to;
   if (!c.key || !to) return;

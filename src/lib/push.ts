@@ -38,6 +38,7 @@ export async function sendPush(
   sub: PushSub,
   payload: PushPayload
 ): Promise<"ok" | "gone" | "error"> {
+  if (process.env.ICB_EXTERNAL_EFFECTS_ENABLED === "false") return "error";
   ensureConfigured();
   try {
     await webpush.sendNotification(

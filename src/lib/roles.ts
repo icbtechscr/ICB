@@ -1,3 +1,5 @@
+import { rewriteMediaUrl } from "./image-url";
+
 // Rol y sedes de cada usuario viven en auth.users.user_metadata.
 // Roles:
 //   - admin: acceso al panel, NO marca.
@@ -68,7 +70,7 @@ export function getUserAvatar(
   const url =
     (user?.user_metadata?.avatar_url as string | undefined) ??
     (user?.user_metadata?.avatar as string | undefined);
-  return typeof url === "string" && url.length > 0 ? url : null;
+  return typeof url === "string" && url.length > 0 ? rewriteMediaUrl(url) : null;
 }
 
 /** Etiqueta legible del rol para mostrar en la interfaz. */

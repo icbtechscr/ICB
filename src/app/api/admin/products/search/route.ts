@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
+import { rewriteMediaUrl } from "@/lib/image-url";
 
 export async function GET(req: Request) {
   try {
@@ -52,7 +53,7 @@ export async function GET(req: Request) {
         sku: r.sku,
         priceCRC: r.price_crc,
         salePriceCRC: r.sale_price_crc,
-        image: img?.url ?? null,
+        image: img?.url ? rewriteMediaUrl(img.url) : null,
       };
     });
     return NextResponse.json({ products });
