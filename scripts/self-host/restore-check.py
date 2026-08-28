@@ -34,7 +34,7 @@ def digest(stream):
 
 
 def sql(query, database="postgres"):
-    return subprocess.check_output(["docker", "exec", name, "psql", "-X", "-h", "/tmp", "-p", "5544", "-U", "supabase_admin", "-d", database, "-At", "-v", "ON_ERROR_STOP=1", "-c", query], text=True).strip()
+    return subprocess.check_output(["docker", "exec", name, "psql", "-X", "-q", "-h", "/tmp", "-p", "5544", "-U", "supabase_admin", "-d", database, "-At", "-v", "ON_ERROR_STOP=1", "-c", "SET timezone='UTC'", "-c", "SET extra_float_digits=3", "-c", query], text=True).strip()
 
 
 started = False
@@ -97,7 +97,9 @@ try:
         if actual != count:
             raise RuntimeError(f"Row count mismatch for {table}: {actual} != {count}")
         if table in expected.get("table_hashes", {}):
-            actual_hash = sql(f'''SELECT md5(coalesce(string_agg(row_to_json(o)::text, '' order by row_to_json(o)::text),'')) FROM "{schema}"."{relation}" o''')
+            if expected.get("hash_format") != "utc-float3-binary-v1":
+                raise RuntimeError("Legacy content hashes depend on database locale; create a fresh backup with the current script")
+            actual_hash = sql(f'''SELECT md5(coalesce(string_agg(row_to_json(o)::text, '' order by row_to_json(o)::text COLLATE "C"),'')) FROM "{schema}"."{relation}" o''')
             if actual_hash != expected["table_hashes"][table]:
                 raise RuntimeError(f"Restored content mismatch for {table}")
     checks = {
@@ -109,7 +111,7 @@ try:
         if str(sql(query)) != str(expected[key]):
             raise RuntimeError(f"Restore mismatch: {key}")
     success = True
-    result = {"ok": True, "archive": archive.name, "tables_verified": len(expected["tables"]), "storage_files_verified": storage_files, "password_users": expected["password_users"], "rls_policies": expected["rls_policies"], "isolated_network": True}
+    result = {"ok": True, "archive": archive.name, "tables_verified": len(expected["tables"]), "content_hashes_verified": len(expected.get("table_hashes", {})), "storage_files_verified": storage_files, "password_users": expected["password_users"], "rls_policies": expected["rls_policies"], "isolated_network": True}
     (ROOT / f"{archive.name}.restore-check.json").write_text(json.dumps(result, indent=2))
     print(json.dumps(result))
 finally:

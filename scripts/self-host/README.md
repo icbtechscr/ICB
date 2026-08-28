@@ -1,5 +1,7 @@
 # Operación de ICB en el servidor propio
 
+Estado y evidencia de la preparación: [28/08/2026](ESTADO-2026-08-28.md).
+
 ## Entornos y límites
 
 - Servidor: `192.168.0.104`, Ubuntu, Coolify. No publicar su panel, SSH,
@@ -61,6 +63,11 @@ restaura sobre la base en uso. El archivo `*.restore-check.json` registra el
 resultado. El volcado de Coolify se incluye, pero esta prueba no restaura su
 panel ni certifica una recuperación completa de la máquina.
 
+Las huellas del contenido usan UTC, precisión de flotantes y orden binario
+explícitos: así no cambian por las diferencias de ordenación entre ICU/libc.
+La comprobación aislada verifica datos; una recuperación real también debe
+preservar la configuración regional de las bases (producción usa ICU en-US).
+
 `icb-backup.timer`: 02:40 Costa Rica, conserva 14 respaldos completos.
 Archivos en `/var/backups/icb`, permisos privados y SHA-256. Contienen datos
 personales y secretos: NO subirlos a Git ni compartirlos como enlaces públicos.
@@ -95,6 +102,17 @@ falta escoger un destino permanente para automatizarla.
 
 Pendientes externos: token de Cloudflare; clave de correo vigente; definición
 de copia externa automática. Tener UPS no elimina estos requisitos.
+
+El conector `cloudflared` 2026.8.2 está preparado con imagen fijada por digest.
+`icb-tunnel.service` permanece deshabilitado. El token se debe guardar como
+`/etc/icb/cloudflare.token`, propietario 65532:65532 y modo 400; el directorio
+permanece privado. El token nunca va en la línea de comandos ni en Git.
+El túnel usa HTTP/2 sobre TCP 7844 (conectividad saliente verificada). No
+habilitarlo hasta validar los destinos configurados en Cloudflare.
+
+La auditoría de dependencias del 28/08/2026 detectó cinco paquetes con avisos
+altos (Next.js y dependencias incluidas). Esta migración no cambia de versión
+el framework: planificar la actualización y pruebas antes del corte público.
 
 Referencias: [Supabase: migración a servidor propio](https://supabase.com/docs/guides/self-hosting/restore-from-platform),
 [Cloudflare Tunnel](https://developers.cloudflare.com/tunnel/).

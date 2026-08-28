@@ -28,8 +28,9 @@ def run(args, **kwargs):
 
 def sql(query, database="postgres"):
     return subprocess.check_output([
-        "docker", "exec", DB, "psql", "-X", "-U", "supabase_admin",
-        "-d", database, "-At", "-v", "ON_ERROR_STOP=1", "-c", query,
+        "docker", "exec", DB, "psql", "-X", "-q", "-U", "supabase_admin",
+        "-d", database, "-At", "-v", "ON_ERROR_STOP=1",
+        "-c", "SET timezone='UTC'", "-c", "SET extra_float_digits=3", "-c", query,
     ], text=True).strip()
 
 
@@ -46,8 +47,10 @@ def fingerprint():
             raise RuntimeError("Unexpected table name")
         schema, table = name.split(".")
         tables[name] = int(sql(f'SELECT count(*) FROM "{schema}"."{table}"'))
-        hashes[name] = sql(f'''SELECT md5(coalesce(string_agg(row_to_json(o)::text, '' order by row_to_json(o)::text),'')) FROM "{schema}"."{table}" o''')
+        # Binary ordering is identical with ICU/libc, regardless of database locale.
+        hashes[name] = sql(f'''SELECT md5(coalesce(string_agg(row_to_json(o)::text, '' order by row_to_json(o)::text COLLATE "C"),'')) FROM "{schema}"."{table}" o''')
     return {
+        "hash_format": "utc-float3-binary-v1",
         "tables": tables,
         "table_hashes": hashes,
         "rls_policies": int(sql("select count(*) from pg_policies where schemaname='public'")),
