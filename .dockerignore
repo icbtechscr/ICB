@@ -3,7 +3,6 @@
 .next
 node_modules
 backups
-data
 output
 outputs
 tmp
