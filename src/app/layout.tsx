@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -128,7 +127,6 @@ export default async function RootLayout({
             <ChatWidget />
           </SiteChromeGate>
         </CartProvider>
-        <Analytics />
       </body>
     </html>
   );
