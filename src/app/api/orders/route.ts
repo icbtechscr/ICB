@@ -84,7 +84,11 @@ export async function POST(req: Request) {
 
     for (const item of items) {
       const p = priceMap.get(item.id);
-      if (!p) continue;
+      if (!p) {
+        return new NextResponse("Uno de los productos ya no está disponible.", {
+          status: 409,
+        });
+      }
       const qty = Math.min(99, Math.max(1, Math.floor(item.qty)));
       const stockLimit = stockOrderLimit(p.stockStatus, p.stockQty);
       if (stockLimit === 0) {

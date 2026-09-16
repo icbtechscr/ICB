@@ -14,6 +14,8 @@ export async function GET(req: Request) {
       .select(
         "id, name, sku, price_crc, sale_price_crc, product_images ( url, position )"
       )
+      // Las selecciones de portada solo deben enlazar productos publicados.
+      .eq("is_visible", true)
       .limit(20);
 
     if (ids) {

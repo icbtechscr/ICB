@@ -167,6 +167,7 @@ export async function getAllProducts(opts?: { page?: number; perPage?: number })
       supabase
         .from("products")
         .select(select, { count: "exact" })
+        .eq("is_visible", true)
         .order("name")
         .range(from, to),
     SELECT_LIST,
@@ -182,7 +183,12 @@ export async function getAllProducts(opts?: { page?: number; perPage?: number })
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   const { data, error } = await withStockStatusFallback((select) =>
-    supabase.from("products").select(select).eq("slug", slug).maybeSingle()
+    supabase
+      .from("products")
+      .select(select)
+      .eq("slug", slug)
+      .eq("is_visible", true)
+      .maybeSingle()
   );
   if (error) throw error;
   if (!data) return null;
@@ -254,6 +260,7 @@ export async function getFeaturedProducts(limit = 10): Promise<Product[]> {
     let query = supabase
       .from("products")
       .select(select)
+      .eq("is_visible", true)
       .gt("price_crc", 0)
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -273,7 +280,12 @@ export async function getFeaturedProducts(limit = 10): Promise<Product[]> {
 export async function getOnSaleProducts(limit = 8): Promise<Product[]> {
   const { data, error } = await withStockStatusFallback(
     (select) =>
-      supabase.from("products").select(select).eq("on_sale", true).limit(limit),
+      supabase
+        .from("products")
+        .select(select)
+        .eq("on_sale", true)
+        .eq("is_visible", true)
+        .limit(limit),
     SELECT_LIST,
     SELECT_LIST_LEGACY
   );
@@ -286,7 +298,12 @@ export async function getOnSaleProducts(limit = 8): Promise<Product[]> {
 
 export async function getProductById(id: string): Promise<Product | null> {
   const { data, error } = await withStockStatusFallback((select) =>
-    supabase.from("products").select(select).eq("id", id).maybeSingle()
+    supabase
+      .from("products")
+      .select(select)
+      .eq("id", id)
+      .eq("is_visible", true)
+      .maybeSingle()
   );
   if (error) throw error;
   if (!data) return null;
@@ -296,7 +313,11 @@ export async function getProductById(id: string): Promise<Product | null> {
 export async function getProductsByIds(ids: string[]): Promise<Product[]> {
   if (ids.length === 0) return [];
   const { data, error } = await withStockStatusFallback((select) =>
-    supabase.from("products").select(select).in("id", ids)
+    supabase
+      .from("products")
+      .select(select)
+      .in("id", ids)
+      .eq("is_visible", true)
   );
   if (error) throw error;
   const map = new Map(
@@ -409,8 +430,9 @@ export async function getTopCategoriesWithImage(
     cats.map(async (c) => {
       const { data } = await supabase
         .from("product_categories")
-        .select("product:products(product_images(url, position))")
+        .select("product:products!inner(is_visible, product_images(url, position))")
         .eq("category_id", c.id)
+        .eq("product.is_visible", true)
         .limit(6);
       type Pc = { product: { product_images: { url: string; position: number }[] } | null };
       const rows = (data ?? []) as unknown as Pc[];
@@ -469,8 +491,9 @@ export async function getProductsByCategory(slug: string): Promise<Product[]> {
     (select) =>
       supabase
         .from("product_categories")
-        .select("product:products(" + select + ")")
-        .eq("category_id", cat.id),
+        .select("product:products!inner(" + select + ")")
+        .eq("category_id", cat.id)
+        .eq("product.is_visible", true),
     SELECT_LIST,
     SELECT_LIST_LEGACY
   );
@@ -522,8 +545,9 @@ export async function getProductsByCategoryDeep(slug: string): Promise<Product[]
     (select) =>
       supabase
         .from("product_categories")
-        .select("product:products(" + select + ")")
-        .in("category_id", ids),
+        .select("product:products!inner(" + select + ")")
+        .in("category_id", ids)
+        .eq("product.is_visible", true),
     SELECT_LIST,
     SELECT_LIST_LEGACY
   );
@@ -581,8 +605,9 @@ export async function getProductsByCategorySlugs(
     (select) =>
       supabase
         .from("product_categories")
-        .select("product:products(" + select + ")")
-        .in("category_id", ids),
+        .select("product:products!inner(" + select + ")")
+        .in("category_id", ids)
+        .eq("product.is_visible", true),
     SELECT_LIST,
     SELECT_LIST_LEGACY
   );
@@ -617,7 +642,11 @@ export async function searchProducts(q: string, limit = 50): Promise<Product[]> 
     .filter(Boolean)
     .slice(0, 6);
   const { data, error } = await withStockStatusFallback((select) => {
-    let stockQuery = supabase.from("products").select(select).limit(limit);
+    let stockQuery = supabase
+      .from("products")
+      .select(select)
+      .eq("is_visible", true)
+      .limit(limit);
     for (const w of words) {
       stockQuery = stockQuery.or(
         `name.ilike."%${w}%",sku.ilike."%${w}%",short_description.ilike."%${w}%"`
@@ -694,7 +723,11 @@ export async function searchProductsLoose(
 
   async function fetchBy(useLoose: boolean): Promise<Product[]> {
     const { data, error } = await withStockStatusFallback((select) => {
-      let query = supabase.from("products").select(select).limit(fetchLimit);
+      let query = supabase
+        .from("products")
+        .select(select)
+        .eq("is_visible", true)
+        .limit(fetchLimit);
       if (needle) {
         const words = needle
           .split(/\s+/)
@@ -739,7 +772,11 @@ export async function searchProductsLoose(
 }
 
 export async function getProductSlugs(limit = 100): Promise<string[]> {
-  const { data, error } = await supabase.from("products").select("slug").limit(limit);
+  const { data, error } = await supabase
+    .from("products")
+    .select("slug")
+    .eq("is_visible", true)
+    .limit(limit);
   if (error) {
     warnQuery("getProductSlugs", error);
     return [];
@@ -754,6 +791,7 @@ export async function getAllProductSlugs(): Promise<
   const { data, error } = await supabase
     .from("products")
     .select("slug, updated_at, product_images(url, position)")
+    .eq("is_visible", true)
     .range(0, 4999);
   if (error) {
     warnQuery("getAllProductSlugs", error);
@@ -845,7 +883,10 @@ export async function getCatalogProducts(params: CatalogParams): Promise<{
     product_categories${catInner} ( category:categories${catInner} ( id, name, slug ) )
   `;
 
-  let query = supabase.from("products").select(selectWithStockStatus, { count: "exact" });
+  let query = supabase
+    .from("products")
+    .select(selectWithStockStatus, { count: "exact" })
+    .eq("is_visible", true);
 
   if (params.category) {
     query = query.eq("product_categories.category.slug", params.category);
@@ -898,7 +939,8 @@ export async function getCatalogProducts(params: CatalogParams): Promise<{
   if (result.error && isMissingStockStatusError(result.error)) {
     let legacyQuery = supabase
       .from("products")
-      .select(selectLegacyStock, { count: "exact" });
+      .select(selectLegacyStock, { count: "exact" })
+      .eq("is_visible", true);
 
     if (params.category) {
       legacyQuery = legacyQuery.eq("product_categories.category.slug", params.category);

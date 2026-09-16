@@ -16,6 +16,7 @@ export default async function AdminProductsPage({
     on_sale?: string;
     out?: string;
     stock?: string;
+    visibility?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -24,6 +25,7 @@ export default async function AdminProductsPage({
   const stockStatus: StockStatus | undefined =
     params.stock === "backorder" ? "backorder" : undefined;
   const outOfStock = params.out === "1" && !stockStatus;
+  const visibility = params.visibility === "hidden" ? "hidden" : undefined;
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
   const perPage = 25;
   const { products, total } = await adminListProducts({
@@ -33,6 +35,7 @@ export default async function AdminProductsPage({
     onSale,
     outOfStock,
     stockStatus,
+    visibility,
   });
   const totalPages = Math.max(1, Math.ceil(total / perPage));
   const queryStr = (extra: Record<string, string | number>) => {
@@ -41,15 +44,19 @@ export default async function AdminProductsPage({
     if (onSale) sp.set("on_sale", "1");
     if (outOfStock) sp.set("out", "1");
     if (stockStatus) sp.set("stock", stockStatus);
+    if (visibility) sp.set("visibility", visibility);
     for (const [k, v] of Object.entries(extra)) sp.set(k, String(v));
     return sp.toString();
   };
-  const filterHref = (filter: "all" | "onSale" | "backorder" | "outOfStock") => {
+  const filterHref = (
+    filter: "all" | "onSale" | "backorder" | "outOfStock" | "hidden"
+  ) => {
     const sp = new URLSearchParams();
     if (q) sp.set("q", q);
     if (filter === "onSale") sp.set("on_sale", "1");
     if (filter === "backorder") sp.set("stock", "backorder");
     if (filter === "outOfStock") sp.set("out", "1");
+    if (filter === "hidden") sp.set("visibility", "hidden");
     const s = sp.toString();
     return s ? `/admin/productos?${s}` : "/admin/productos";
   };
@@ -65,7 +72,9 @@ export default async function AdminProductsPage({
       ? "Contrapedido"
       : outOfStock
         ? "Agotados"
-        : null;
+        : visibility === "hidden"
+          ? "Ocultos"
+          : null;
 
   return (
     <div>
@@ -99,13 +108,16 @@ export default async function AdminProductsPage({
         {onSale && <input type="hidden" name="on_sale" value="1" />}
         {outOfStock && <input type="hidden" name="out" value="1" />}
         {stockStatus && <input type="hidden" name="stock" value={stockStatus} />}
+        {visibility && <input type="hidden" name="visibility" value={visibility} />}
       </form>
 
       <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
         <span className="text-ink-500">Ver:</span>
         <Link
           href={filterHref("all")}
-          className={filterLinkClass(!onSale && !outOfStock && !stockStatus)}
+          className={filterLinkClass(
+            !onSale && !outOfStock && !stockStatus && !visibility
+          )}
         >
           Todos
         </Link>
@@ -120,6 +132,12 @@ export default async function AdminProductsPage({
         </Link>
         <Link href={filterHref("outOfStock")} className={filterLinkClass(outOfStock)}>
           Agotados
+        </Link>
+        <Link
+          href={filterHref("hidden")}
+          className={filterLinkClass(visibility === "hidden")}
+        >
+          Ocultos
         </Link>
       </div>
 
@@ -192,6 +210,11 @@ export default async function AdminProductsPage({
                           <div className="text-xs text-ink-500">
                             {p.brand?.name ?? "—"} ·{" "}
                             <span className="font-mono">{p.slug}</span>
+                            {!p.is_visible && (
+                              <span className="ml-2 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 ring-1 ring-amber-200">
+                                Oculto de tienda
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -239,7 +262,12 @@ export default async function AdminProductsPage({
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <ProductRowActions id={p.id} slug={p.slug} name={p.name} />
+                      <ProductRowActions
+                        id={p.id}
+                        slug={p.slug}
+                        name={p.name}
+                        isVisible={p.is_visible}
+                      />
                     </td>
                   </tr>
                 );
