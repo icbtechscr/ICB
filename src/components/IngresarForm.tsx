@@ -5,7 +5,7 @@ import { Loader2, Lock, Mail, LogIn } from "lucide-react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { getUserRole } from "@/lib/roles";
 
-export function IngresarForm() {
+export function IngresarForm({ nextHref }: { nextHref?: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,7 +31,7 @@ export function IngresarForm() {
         return;
       }
       // Redirección según rol: admin -> panel, colaborador -> su portal.
-      const dest = getUserRole(data.user) === "admin" ? "/admin" : "/portal";
+      const dest = nextHref || (getUserRole(data.user) === "admin" ? "/admin" : "/portal");
       router.replace(dest);
       router.refresh();
     } catch (e) {

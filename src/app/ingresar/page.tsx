@@ -11,14 +11,20 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false, noarchive: true },
 };
 
-export default async function IngresarPage() {
+export default async function IngresarPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const params = await searchParams;
+  const nextHref = params.next?.startsWith("/api/portal/sgi?") ? params.next : undefined;
   const user = await getCurrentUser();
   if (user) {
-    redirect(getUserRole(user) === "admin" ? "/admin" : "/portal");
+    redirect(nextHref || (getUserRole(user) === "admin" ? "/admin" : "/portal"));
   }
   return (
     <div className="flex min-h-[70vh] items-center justify-center bg-white px-4 py-16">
-      <IngresarForm />
+      <IngresarForm nextHref={nextHref} />
     </div>
   );
 }

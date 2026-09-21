@@ -10,6 +10,7 @@ import {
   ShoppingBag,
   User,
   Store,
+  FileText,
   type LucideIcon,
 } from "lucide-react";
 import { canSell, type UserRole } from "@/lib/roles";
@@ -68,6 +69,15 @@ export const PORTAL_MODULES: PortalModule[] = [
     navLabel: "Marcar",
     description: "Entrada, almuerzo y salida del día.",
     Icon: Clock,
+  },
+  {
+    id: "sgi",
+    href: "/api/portal/sgi?next=https%3A%2F%2Fsgi.icbtechscr.com%2F",
+    label: "Cotizar y facturar",
+    navLabel: "SGI",
+    description: "Abrí SGI con tu misma sesión para crear cotizaciones y ventas.",
+    Icon: FileText,
+    requires: "sell",
   },
   {
     id: "vender",
