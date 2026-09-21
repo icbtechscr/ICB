@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    const login = new URL("/ingresar", request.url);
+    const login = new URL("https://icbtechscr.com/ingresar");
     login.searchParams.set("next", `/api/portal/sgi?next=${encodeURIComponent(destination)}`);
     return NextResponse.redirect(login);
   }
