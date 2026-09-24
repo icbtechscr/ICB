@@ -24,9 +24,26 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const result = await supabase.auth.getUser();
+    user = result.data.user;
+  } catch (error) {
+    // La rotación de refresh tokens puede dejar una cookie vieja en otra
+    // pestaña. No permitimos que esa excepción rompa el middleware ni deje el
+    // formulario de inicio de sesión cargando indefinidamente.
+    const message = error instanceof Error ? error.message : String(error);
+    if (/refresh token|already used|not found/i.test(message)) {
+      for (const cookie of request.cookies.getAll()) {
+        if (cookie.name.startsWith("sb-")) {
+          request.cookies.delete(cookie.name);
+          response.cookies.delete(cookie.name);
+        }
+      }
+    } else {
+      throw error;
+    }
+  }
 
   const path = request.nextUrl.pathname;
   const isLogin = path === "/admin/login";
