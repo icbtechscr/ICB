@@ -1,8 +1,9 @@
 import { createBrowserClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 // Se comparte una única instancia para evitar carreras de refresh-token entre
 // componentes que montan el cliente al mismo tiempo.
-let browserClient: any = null;
+let browserClient: SupabaseClient | null = null;
 
 export function createSupabaseBrowser() {
   if (!browserClient) {
