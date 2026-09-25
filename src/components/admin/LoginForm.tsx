@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Loader2, Lock, Mail, ShieldCheck } from "lucide-react";
+import { clearSupabaseCookies } from "@/lib/clear-supabase-cookies";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -13,6 +14,7 @@ export function LoginForm() {
     setError(null);
     setLoading(true);
     try {
+      clearSupabaseCookies();
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

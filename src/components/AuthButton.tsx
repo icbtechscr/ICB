@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LogIn, LogOut, Loader2 } from "lucide-react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
@@ -15,10 +15,12 @@ export function AuthButton({
   onNavigate?: () => void;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [authed, setAuthed] = useState(initialAuthed);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (pathname === "/ingresar") return;
     const sb = createSupabaseBrowser();
     let active = true;
     sb.auth.getUser().then(({ data }) => {
@@ -31,7 +33,7 @@ export function AuthButton({
       active = false;
       sub.subscription.unsubscribe();
     };
-  }, []);
+  }, [pathname]);
 
   async function logout() {
     setLoading(true);
