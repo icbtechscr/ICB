@@ -25,24 +25,28 @@ export async function proxy(request: NextRequest) {
   );
 
   let user = null;
+  let authError: string | null = null;
   try {
     const result = await supabase.auth.getUser();
     user = result.data.user;
+    authError = result.error?.message ?? null;
   } catch (error) {
-    // La rotación de refresh tokens puede dejar una cookie vieja en otra
-    // pestaña. No permitimos que esa excepción rompa el middleware ni deje el
-    // formulario de inicio de sesión cargando indefinidamente.
-    const message = error instanceof Error ? error.message : String(error);
-    if (/refresh token|already used|not found/i.test(message)) {
-      for (const cookie of request.cookies.getAll()) {
-        if (cookie.name.startsWith("sb-")) {
-          request.cookies.delete(cookie.name);
-          response.cookies.delete(cookie.name);
-        }
+    authError = error instanceof Error ? error.message : String(error);
+  }
+
+  if (authError && /refresh token|already used|not found/i.test(authError)) {
+    for (const cookie of request.cookies.getAll()) {
+      if (cookie.name.startsWith("sb-")) {
+        request.cookies.delete(cookie.name);
+        response.cookies.delete(cookie.name);
       }
-    } else {
-      throw error;
     }
+  }
+
+  function redirectWithCookies(url: URL) {
+    const redirect = NextResponse.redirect(url);
+    for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
+    return redirect;
   }
 
   const path = request.nextUrl.pathname;
@@ -67,7 +71,7 @@ export async function proxy(request: NextRequest) {
       }
       const url = request.nextUrl.clone();
       url.pathname = "/ingresar";
-      return NextResponse.redirect(url);
+      return redirectWithCookies(url);
     }
     if ((isPortalVender || isVendorApi) && !canSell(role!)) {
       if (isVendorApi) {
@@ -75,7 +79,7 @@ export async function proxy(request: NextRequest) {
       }
       const url = request.nextUrl.clone();
       url.pathname = "/portal";
-      return NextResponse.redirect(url);
+      return redirectWithCookies(url);
     }
     return response;
   }
@@ -87,7 +91,7 @@ export async function proxy(request: NextRequest) {
     }
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";
-    return NextResponse.redirect(url);
+    return redirectWithCookies(url);
   }
 
   // Colaborador autenticado intentando entrar al panel → a su portal.
@@ -97,14 +101,14 @@ export async function proxy(request: NextRequest) {
     }
     const url = request.nextUrl.clone();
     url.pathname = "/portal";
-    return NextResponse.redirect(url);
+    return redirectWithCookies(url);
   }
 
   // Ya logueado y entrando al login → mandar a su destino según rol.
   if (user && isLogin) {
     const url = request.nextUrl.clone();
     url.pathname = role === "colaborador" ? "/portal" : "/admin";
-    return NextResponse.redirect(url);
+    return redirectWithCookies(url);
   }
 
   return response;

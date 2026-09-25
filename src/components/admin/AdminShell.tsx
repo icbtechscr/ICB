@@ -161,6 +161,7 @@ export function AdminShell({
   const [isDev, setIsDev] = useState(false);
 
   useEffect(() => {
+    if (pathname === "/admin/login") return;
     let active = true;
     createSupabaseBrowser()
       .auth.getUser()

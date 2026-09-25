@@ -1,12 +1,8 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Loader2, Lock, Mail, LogIn } from "lucide-react";
-import { createSupabaseBrowser } from "@/lib/supabase-browser";
-import { getUserRole } from "@/lib/roles";
 
 export function IngresarForm({ nextHref }: { nextHref?: string }) {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,25 +13,25 @@ export function IngresarForm({ nextHref }: { nextHref?: string }) {
     setError(null);
     setLoading(true);
     try {
-      const sb = createSupabaseBrowser();
-      const { data, error } = await sb.auth.signInWithPassword({
-        email: email.trim(),
-        password,
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+        cache: "no-store",
+        signal: AbortSignal.timeout(20000),
       });
-      if (error) {
-        setError(
-          error.message === "Invalid login credentials"
-            ? "Correo o contraseña incorrectos."
-            : error.message
-        );
+      const result = await response.json();
+      if (!response.ok) {
+        setError(result.error || "No se pudo iniciar sesión.");
         return;
       }
-      // Redirección según rol: admin -> panel, colaborador -> su portal.
-      const dest = nextHref || (getUserRole(data.user) === "admin" ? "/admin" : "/portal");
-      router.replace(dest);
-      router.refresh();
+      window.location.assign(nextHref || "/admin");
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(
+        e instanceof Error && e.name === "TimeoutError"
+          ? "El servidor tardó demasiado. Intentá de nuevo."
+          : "No se pudo conectar con el servidor. Intentá de nuevo."
+      );
     } finally {
       setLoading(false);
     }
