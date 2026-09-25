@@ -1,6 +1,8 @@
 import { createBrowserClient } from "@supabase/ssr";
 
-let browserClient: ReturnType<typeof createBrowserClient> | null = null;
+// Se comparte una única instancia para evitar carreras de refresh-token entre
+// componentes que montan el cliente al mismo tiempo.
+let browserClient: any = null;
 
 export function createSupabaseBrowser() {
   if (!browserClient) {
