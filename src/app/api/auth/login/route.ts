@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { writeAuditEvent } from "@/lib/audit";
 
 export async function POST(request: NextRequest) {
   let credentials: { email?: unknown; password?: unknown };
@@ -39,7 +40,10 @@ export async function POST(request: NextRequest) {
   );
 
   try {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    await writeAuditEvent({ action: error ? "LOGIN_FAILED" : "LOGIN_OK", table_name: "authentication", source: "/api/auth/login",
+      request_id: request.headers.get("x-audit-request-id") || undefined, actor_id: data.user?.id, actor_email: data.user?.email,
+      details: { outcome: error ? "rejected" : "authenticated" } });
     if (error) {
       return NextResponse.json(
         {

@@ -1,9 +1,27 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { getUserRole, canSell } from "@/lib/roles";
+import { writeAuditEvent } from "@/lib/audit";
 
 export async function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  const requestId = crypto.randomUUID();
+  // Nunca confiar en identidad ni contexto enviados por el navegador.
+  request.headers.set("x-audit-path", path);
+  request.headers.set("x-audit-request-id", requestId);
+  request.headers.delete("x-audit-user-id");
+  request.headers.delete("x-audit-user-email");
   let response = NextResponse.next({ request });
+
+  const protectedPath = ["/admin", "/api/admin", "/portal", "/marcar", "/vendedor", "/api/vendor"].some(p => path === p || path.startsWith(p + "/"));
+  const authenticatedApi = ["/api/portal", "/api/timeclock", "/api/push"].some(p => path === p || path.startsWith(p + "/"));
+  if (!protectedPath && !authenticatedApi) {
+    if (!/\.[a-z0-9]+$/i.test(path) && !request.headers.has("next-router-prefetch")) {
+      await writeAuditEvent({ action: "REQUEST_RECEIVED", table_name: "website", source: path, request_id: requestId,
+        details: { method: request.method, outcome: "received", authenticated: false } });
+    }
+    return response;
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -43,13 +61,27 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  if (user) {
+    request.headers.set("x-audit-user-id", user.id);
+    request.headers.set("x-audit-user-email", user.email || "");
+    const savedCookies = response.cookies.getAll();
+    response = NextResponse.next({ request });
+    for (const cookie of savedCookies) response.cookies.set(cookie);
+  }
+  if (!request.headers.has("next-router-prefetch") && !path.startsWith("/admin/auditoria")) {
+    await writeAuditEvent({ action: user ? "REQUEST_RECEIVED" : "REQUEST_UNAUTHENTICATED", table_name: "website", source: path,
+      actor_id: user?.id, actor_email: user?.email, request_id: requestId,
+      details: { method: request.method, outcome: "received", authenticated: !!user } });
+  }
+
+  if (!protectedPath) return response;
+
   function redirectWithCookies(url: URL) {
     const redirect = NextResponse.redirect(url);
     for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
     return redirect;
   }
 
-  const path = request.nextUrl.pathname;
   const isLogin = path === "/admin/login";
   const isApi = path.startsWith("/api/admin");
   // Portal del colaborador (incluye rutas legadas /marcar y /vendedor,
@@ -116,11 +148,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/admin/:path*",
-    "/api/admin/:path*",
-    "/portal/:path*",
-    "/marcar/:path*",
-    "/vendedor/:path*",
-    "/api/vendor/:path*",
+    "/((?!_next/|favicon.ico|robots.txt|sitemap.xml).*)",
   ],
 };

@@ -16,7 +16,7 @@ import {
   KeyRound,
   Home,
 } from "lucide-react";
-import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { createSupabaseBrowser, signOutWithAudit } from "@/lib/supabase-browser";
 import {
   PUNCH_TYPES,
   PUNCH_COL,
@@ -251,7 +251,7 @@ export function PunchPanel({
           </button>
           <button
             onClick={async () => {
-              await createSupabaseBrowser().auth.signOut();
+              await signOutWithAudit();
               router.replace("/ingresar");
               router.refresh();
             }}

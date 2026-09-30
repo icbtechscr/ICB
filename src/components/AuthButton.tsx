@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { LogIn, LogOut, Loader2 } from "lucide-react";
-import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { createSupabaseBrowser, signOutWithAudit } from "@/lib/supabase-browser";
 
 export function AuthButton({
   initialAuthed = false,
@@ -37,7 +37,7 @@ export function AuthButton({
 
   async function logout() {
     setLoading(true);
-    await createSupabaseBrowser().auth.signOut();
+    await signOutWithAudit();
     setAuthed(false);
     onNavigate?.();
     router.push("/");

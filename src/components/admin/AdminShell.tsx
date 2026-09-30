@@ -23,7 +23,7 @@ import {
   ChartNoAxesCombined,
   type LucideIcon,
 } from "lucide-react";
-import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { createSupabaseBrowser, signOutWithAudit } from "@/lib/supabase-browser";
 
 type SubItem = { href: string; label: string; Icon: LucideIcon };
 type Group = {
@@ -37,6 +37,14 @@ type Group = {
 };
 
 const GROUPS: Group[] = [
+  {
+    id: "auditoria",
+    label: "Auditoría",
+    Icon: ClipboardList,
+    href: "/admin/auditoria",
+    prefixes: ["/admin/auditoria"],
+    sub: [],
+  },
   {
     id: "tienda",
     label: "Gestionar Tienda",
@@ -193,14 +201,14 @@ export function AdminShell({
   }
 
   async function logout() {
-    await createSupabaseBrowser().auth.signOut();
+    await signOutWithAudit();
     router.replace("/admin/login");
     router.refresh();
   }
 
   const activeGroup =
     GROUPS.find((g) => !g.disabled && matchesPrefix(pathname, g.prefixes)) ??
-    GROUPS[0];
+    GROUPS.find((g) => g.id === "tienda")!;
 
   return (
     <div

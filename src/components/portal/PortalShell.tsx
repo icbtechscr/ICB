@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Store, Moon, Sun } from "lucide-react";
-import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { createSupabaseBrowser, signOutWithAudit } from "@/lib/supabase-browser";
 import { navModulesForRole } from "@/components/portal/modules";
 import type { UserRole } from "@/lib/roles";
 
@@ -42,7 +42,7 @@ export function PortalShell({
   }
 
   async function logout() {
-    await createSupabaseBrowser().auth.signOut();
+    await signOutWithAudit();
     router.replace("/ingresar");
     router.refresh();
   }

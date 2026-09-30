@@ -14,3 +14,9 @@ export function createSupabaseBrowser() {
   }
   return browserClient;
 }
+
+export async function signOutWithAudit() {
+  try { await fetch("/api/auth/logout", { method: "POST", signal: AbortSignal.timeout(10000) }); }
+  catch { /* Mantener la posibilidad de salir si el servidor no responde. */ }
+  return createSupabaseBrowser().auth.signOut();
+}
