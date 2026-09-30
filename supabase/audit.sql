@@ -32,7 +32,7 @@ BEGIN
     result := '{}';
     FOR item IN SELECT key, val FROM jsonb_each(value) AS x(key,val) LOOP
       result := result || jsonb_build_object(item.key,
-        CASE WHEN item.key ~* '(password|secret|token|authorization|cookie|cvv|card_number|cardnumber|private_key)'
+        CASE WHEN item.key ~* '(password|secret|token|authorization|cookie|cvv|cvc|(^|_)pan$|card|security_code|private_key|api_key|access_key)'
           THEN '"[REDACTADO]"'::jsonb ELSE audit_private.redact(item.val) END);
     END LOOP;
     RETURN result;
