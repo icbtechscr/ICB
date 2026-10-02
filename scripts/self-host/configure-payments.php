@@ -20,7 +20,7 @@ if ($mode === 'enable') {
 } elseif ($mode === 'deploy') {
     $commit = $argv[2] ?? '';
     if (!preg_match('/^[a-f0-9]{40}$/', $commit)) throw new \Exception('Commit required');
-    $uuid = (string) \Illuminate\Support\Str::ulid();
+    $uuid = strtolower((string) \Illuminate\Support\Str::ulid());
     queue_application_deployment(application: $app, deployment_uuid: $uuid, commit: $commit, force_rebuild: false, is_api: true);
     echo json_encode(['deployment' => $uuid, 'commit' => $commit]) . PHP_EOL;
 } else {
