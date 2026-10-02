@@ -17,5 +17,7 @@ for (const table of ["products", "product_images", "cpi_sales", "cpi_inventory",
   counts[table] = { status: response.status, count: response.headers.get("content-range")?.split("/")[1] ?? null };
 }
 const health = await fetch("http://127.0.0.1:3000/api/health");
-console.log(JSON.stringify({ missing, counts, web: health.status, externalEffects: process.env.ICB_EXTERNAL_EFFECTS_ENABLED !== "false" }, null, 2));
+console.log(JSON.stringify({ missing, counts, web: health.status, externalEffects: process.env.ICB_EXTERNAL_EFFECTS_ENABLED !== "false",
+  paymentsEnabled: process.env.ICB_PAYMENTS_ENABLED !== "false" &&
+    (process.env.ICB_EXTERNAL_EFFECTS_ENABLED !== "false" || process.env.ICB_PAYMENTS_ENABLED === "true") }, null, 2));
 if (!health.ok || Object.values(counts).some(c => c.status >= 400) || Object.values(missing).some(keys => keys.length)) process.exitCode = 1;

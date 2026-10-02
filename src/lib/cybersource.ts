@@ -8,6 +8,23 @@ import crypto from "node:crypto";
 
 type Env = "apitest" | "api";
 
+export class CybersourceRequestError extends Error {
+  constructor(public httpStatus: number, public operation: string, data: unknown) {
+    const value = data && typeof data === "object" ? data as Record<string, unknown> : {};
+    const info = value.errorInformation as Record<string, unknown> | undefined;
+    const reason = String(value.reason ?? info?.reason ?? "PROVIDER_ERROR").replace(/[^A-Z0-9_]/gi, "").slice(0, 80);
+    super(`Cybersource ${operation} (${httpStatus}): ${reason}`);
+    this.name = "CybersourceRequestError";
+    this.reason = reason;
+  }
+  public reason: string;
+}
+
+export function paymentErrorDetails(error: unknown): Record<string, unknown> {
+  return { error_type: error instanceof Error ? error.name : "Error",
+    ...(error instanceof CybersourceRequestError ? { provider_http_status: error.httpStatus, provider_reason: error.reason, operation: error.operation } : {}) };
+}
+
 function cfg() {
   const env = (process.env.CYBS_RUN_ENV ?? "apitest") as Env;
   const merchantId = process.env.CYBS_MERCHANT_ID;
@@ -40,7 +57,8 @@ async function signedRequest(
   path: string,
   body?: unknown
 ): Promise<{ status: number; data: unknown; raw: string }> {
-  if (process.env.ICB_EXTERNAL_EFFECTS_ENABLED === "false") {
+  if (process.env.ICB_PAYMENTS_ENABLED === "false" ||
+      (process.env.ICB_EXTERNAL_EFFECTS_ENABLED === "false" && process.env.ICB_PAYMENTS_ENABLED !== "true")) {
     throw new Error("Los pagos están desactivados en este entorno de pruebas");
   }
   const { host, keyId, secretKey, merchantId } = cfg();
@@ -85,6 +103,7 @@ async function signedRequest(
       ...(method === "POST" ? { "Content-Type": "application/json" } : {}),
     },
     body: method === "POST" ? bodyStr : undefined,
+    signal: AbortSignal.timeout(20000),
   });
 
   const text = await res.text();
@@ -202,7 +221,7 @@ export async function createSession(input: CreateSessionInput): Promise<string> 
   if (status >= 200 && status < 300) {
     return typeof data === "string" ? data.trim() : raw.trim();
   }
-  throw new Error(`Cybersource /uc/v1/sessions falló (${status}): ${raw}`);
+  throw new CybersourceRequestError(status, "session", data);
 }
 
 // ---------------------------------------------------------------------------
@@ -331,6 +350,14 @@ export function isPaidSummary(t: Record<string, unknown>): boolean {
   );
 }
 
+/** Una autorización no demuestra captura: no tratar fondos retenidos como cobro. */
+export function hasSuccessfulCapture(t: Record<string, unknown>): boolean {
+  const app = (t.applicationInformation ?? {}) as Record<string, unknown>;
+  const apps = Array.isArray(app.applications) ? app.applications as Record<string, unknown>[] : [];
+  return apps.some(a => /^(ics_bill|ics_sale|capture|sale)$/i.test(String(a.name ?? "")) &&
+    (String(a.reasonCode ?? "") === "100" || String(a.rFlag ?? "").toUpperCase() === "SOK"));
+}
+
 /** Ejecuta una busqueda cruda y devuelve la respuesta tal cual (para depurar). */
 export async function rawTransactionSearch(
   query: string,
@@ -368,7 +395,8 @@ export function summariesOf(data: unknown): Record<string, unknown>[] {
 }
 
 export async function lookupTransactionByOrderNumber(
-  orderNumber: string
+  orderNumber: string,
+  requireCapture = false
 ): Promise<TransactionLookup> {
   // La ventana de fechas NO es opcional: comprobado contra la cuenta real, la
   // misma busqueda por codigo devuelve 0 resultados sin `submitTimeUtc` y el
@@ -378,7 +406,7 @@ export async function lookupTransactionByOrderNumber(
   const { httpStatus, data, raw } = await rawTransactionSearch(query);
   // 404 = "sin resultados" en este endpoint; no es un fallo real.
   if (httpStatus !== 404 && (httpStatus < 200 || httpStatus >= 300)) {
-    throw new Error(`Cybersource /tss/v2/searches fallo (${httpStatus}): ${raw}`);
+    throw new CybersourceRequestError(httpStatus, "transaction_search", data);
   }
   const list = httpStatus === 404 ? [] : summariesOf(data);
 
@@ -388,13 +416,17 @@ export async function lookupTransactionByOrderNumber(
 
   // Si hay varios intentos, gana el que haya quedado cobrado; si ninguno,
   // se reporta el mas reciente (la lista viene ordenada por fecha desc).
-  const paid = list.find(isPaidSummary);
-  const t = paid ?? list[0];
+  // Nunca confiar en que el proveedor aplicó el filtro sin comprobar la referencia.
+  const matching = list.filter(t =>
+    (t.clientReferenceInformation as Record<string, unknown> | undefined)?.code === orderNumber);
+  if (!matching.length) return { found: false, ok: false, status: "NOT_FOUND", payload: null };
+  const paid = matching.find(requireCapture ? hasSuccessfulCapture : isPaidSummary);
+  const t = paid ?? matching[0];
 
   const app = (t.applicationInformation ?? {}) as Record<string, unknown>;
   const orderInfo = (t.orderInformation ?? {}) as Record<string, unknown>;
   const amountDetails = (orderInfo.amountDetails ?? {}) as Record<string, unknown>;
-  const ok = isPaidSummary(t);
+  const ok = requireCapture ? hasSuccessfulCapture(t) : isPaidSummary(t);
   const st =
     String(app.status ?? "").toUpperCase() ||
     (ok ? "APROBADA" : `RECHAZADA (reasonCode ${app.reasonCode ?? "?"})`);

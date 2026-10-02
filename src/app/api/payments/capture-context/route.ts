@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { createSession, getSdkAssets, decodeJwtPayload } from "@/lib/cybersource";
+import { createSession, getSdkAssets, paymentErrorDetails } from "@/lib/cybersource";
+import { writeAuditEvent } from "@/lib/audit";
 
 type Body = {
   orderId?: string;
@@ -17,13 +18,16 @@ export async function POST(req: Request) {
     const { data: order, error } = await sb
       .from("orders")
       .select(
-        "id, order_number, total_crc, customer_name, customer_email, customer_phone, shipping_address, shipping_canton, shipping_province"
+        "id, order_number, total_crc, payment_method, payment_status, customer_name, customer_email, customer_phone, shipping_address, shipping_canton, shipping_province"
       )
       .eq("id", orderId)
       .single();
 
     if (error || !order) {
       return new NextResponse("Orden no encontrada", { status: 404 });
+    }
+    if (order.payment_method !== "tarjeta" || order.payment_status === "pagado") {
+      return new NextResponse("Este pedido no admite un nuevo pago con tarjeta.", { status: 409 });
     }
 
     // Origen real desde donde se abrió el checkout (www o apex). Lo usamos como
@@ -48,16 +52,18 @@ export async function POST(req: Request) {
     });
 
     const { clientLibrary, clientLibraryIntegrity } = getSdkAssets(sessionJwt);
-    const debugPayload = decodeJwtPayload(sessionJwt);
+    await writeAuditEvent({ action: "PAYMENT_SESSION_CREATED", table_name: "orders", source: "/api/payments/capture-context",
+      details: { order_number: order.order_number, sdk_available: Boolean(clientLibrary) } });
 
     return NextResponse.json({
       sessionJwt,
       clientLibrary,
       clientLibraryIntegrity,
-      debugPayload,
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return new NextResponse(msg, { status: 500 });
+    console.error("[PAY] session creation failed", paymentErrorDetails(e));
+    await writeAuditEvent({ action: "PAYMENT_SESSION_ERROR", table_name: "orders", source: "/api/payments/capture-context",
+      details: paymentErrorDetails(e) });
+    return new NextResponse("No pudimos abrir la pasarela de tarjeta. No se realizó ningún cobro; intentá nuevamente o contactá a la tienda.", { status: 503 });
   }
 }

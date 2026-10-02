@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { verifyMountResult } from "@/lib/cybersource";
+import { lookupTransactionByOrderNumber, paymentErrorDetails } from "@/lib/cybersource";
+import { writeAuditEvent } from "@/lib/audit";
 import { notifyPaymentResult, sendCustomerReceipt } from "@/lib/email";
 
 type Body = {
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
     const sb = createAdminClient();
     const { data: order, error } = await sb
       .from("orders")
-      .select("id, order_number, payment_status, customer_name, customer_email, customer_phone, total_crc, payment_method, shipping_method")
+      .select("id, order_number, status, payment_status, customer_name, customer_email, customer_phone, total_crc, payment_method, shipping_method")
       .eq("id", orderId)
       .single();
 
@@ -36,23 +37,58 @@ export async function POST(req: Request) {
       });
     }
 
-    // El JWT trae el resultado del pago ya procesado por UC (autoProcessing).
-    const result = verifyMountResult(resultJwt);
-    console.log("[PAY] verifyMountResult:", JSON.stringify(result, null, 2));
+    if (order.payment_method !== "tarjeta") {
+      return NextResponse.json({ ok: false, message: "Este pedido no corresponde a un pago con tarjeta." }, { status: 409 });
+    }
+
+    // El navegador no es autoridad de pago. Consultar nuestra cuenta del proveedor;
+    // no confiar en el JWT, sus estados, IDs ni montos enviados por el cliente.
+    const result = await lookupTransactionByOrderNumber(order.order_number, true);
+    const pending = !result.found || (!result.ok &&
+      (result.reasonCode === "100" || ["PENDING", "AUTHORIZED", "PARTIAL_AUTHORIZED"].includes(result.status)));
+    if (pending) {
+      await writeAuditEvent({ action: "PAYMENT_VERIFICATION_PENDING", table_name: "orders", source: "/api/payments/confirm",
+        details: { order_number: order.order_number, provider_status: result.status } });
+      return NextResponse.json({ ok: false, pending: true, message: "Cybersource todavía no confirma la captura. No vuelvas a pagar; verificá el resultado nuevamente." }, { status: 202 });
+    }
+    if (!result.id || result.currency !== "CRC" || !Number.isFinite(Number(result.amount)) ||
+        Math.round(Number(result.amount) * 100) !== Math.round(Number(order.total_crc) * 100)) {
+      await writeAuditEvent({ action: "PAYMENT_VERIFICATION_MISMATCH", table_name: "orders", source: "/api/payments/confirm",
+        details: { order_number: order.order_number, provider_status: result.status } });
+      return NextResponse.json({ ok: false, message: "No se pudo validar el monto y la moneda del pago. Contactá a la tienda antes de volver a pagar." }, { status: 409 });
+    }
 
     const newPaymentStatus = result.ok ? "pagado" : "rechazado";
-    const newOrderStatus = result.ok ? "pagado" : "pendiente";
+    const newOrderStatus = !order.status || ["pendiente", "pagado"].includes(order.status)
+      ? (result.ok ? "pagado" : "pendiente") : order.status;
 
-    await sb
+    const { data: saved, error: saveError } = await sb
       .from("orders")
       .update({
         payment_status: newPaymentStatus,
         status: newOrderStatus,
         payment_reference: result.id ?? null,
-        payment_response: result.payload as object | null,
+        payment_response: { verified_by: "cybersource_server_search", status: result.status, reasonCode: result.reasonCode,
+          amount: result.amount, currency: result.currency, submittedAt: result.submittedAt },
         updated_at: new Date().toISOString(),
       })
-      .eq("id", orderId);
+      .eq("id", orderId)
+      .neq("payment_status", "pagado")
+      .select("id")
+      .maybeSingle();
+    if (saveError) {
+      console.error("[PAY] persistence failed", saveError.code);
+      return NextResponse.json({ ok: false, message: "No pudimos guardar la confirmación. No vuelvas a pagar; contactá a la tienda para verificar tu pedido." }, { status: 503 });
+    }
+    if (!saved) {
+      const { data: current } = await sb.from("orders").select("payment_status").eq("id", orderId).single();
+      if (current?.payment_status === "pagado") {
+        return NextResponse.json({ ok: true, alreadyPaid: true, orderNumber: order.order_number });
+      }
+      return NextResponse.json({ ok: false, message: "No pudimos guardar la confirmación. No vuelvas a pagar; contactá a la tienda." }, { status: 503 });
+    }
+    await writeAuditEvent({ action: result.ok ? "PAYMENT_CAPTURE_VERIFIED" : "PAYMENT_DECLINED_VERIFIED", table_name: "orders",
+      source: "/api/payments/confirm", details: { order_number: order.order_number, provider_status: result.status, reason_code: result.reasonCode } });
 
     // Comprobante al CLIENTE: solo si el pago fue aprobado (ya se rebajo).
     if (result.ok) {
@@ -112,7 +148,7 @@ export async function POST(req: Request) {
           shippingMethod: order.shipping_method ?? "",
         },
         result.ok,
-        result.message ?? undefined
+        result.ok ? undefined : "Pago no aprobado por Cybersource"
       );
     } catch {
       /* ignorar errores de correo */
@@ -124,8 +160,7 @@ export async function POST(req: Request) {
           ok: false,
           status: result.status,
           reasonCode: result.reasonCode,
-          message: result.message ?? "Pago rechazado",
-          payload: result.payload,
+          message: "Pago no aprobado por Cybersource",
         },
         { status: 402 }
       );
@@ -138,7 +173,9 @@ export async function POST(req: Request) {
       status: result.status,
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return new NextResponse(msg, { status: 500 });
+    console.error("[PAY] verification unavailable", paymentErrorDetails(e));
+    await writeAuditEvent({ action: "PAYMENT_VERIFICATION_ERROR", table_name: "orders", source: "/api/payments/confirm",
+      details: paymentErrorDetails(e) });
+    return NextResponse.json({ ok: false, message: "No pudimos verificar el pago con el proveedor. No vuelvas a pagar; intentá verificarlo nuevamente o contactá a la tienda." }, { status: 503 });
   }
 }

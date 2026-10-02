@@ -70,10 +70,11 @@ function loadSdk(url: string, integrity?: string | null) {
     s.dataset.cybsSdk = url;
     s.onload = () => resolve();
     s.onerror = () =>
-      reject(new Error(`No se pudo cargar el SDK de Unified Checkout: ${url}`));
+      { s.remove(); reject(new Error(`No se pudo cargar el SDK de Unified Checkout: ${url}`)); };
     document.head.appendChild(s);
   });
   sdkPromises.set(url, p);
+  void p.catch(() => sdkPromises.delete(url));
   return p;
 }
 
@@ -103,13 +104,12 @@ export function UnifiedCheckout({
   onResult,
   onError,
 }: Props) {
-  const initStartedRef = useRef(false);
+  const handlers = useRef({ onResult, onError });
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  useEffect(() => { handlers.current = { onResult, onError }; }, [onResult, onError]);
 
   useEffect(() => {
-    if (initStartedRef.current) return;
-    initStartedRef.current = true;
-
+    setStatus("loading");
     let cancelled = false;
     let client: UCClient | null = null;
     let checkout: UCCheckout | null = null;
@@ -127,17 +127,18 @@ export function UnifiedCheckout({
 
         console.log("[UC] inicializando VAS.UnifiedCheckout…");
         client = await window.VAS.UnifiedCheckout(sessionJwt);
-        if (cancelled) return;
+        if (cancelled) { client.destroy(); return; }
 
         // autoProcessing=true (default cuando hay completeMandate en la session).
         // mount() devolverá un JWT con el pago ya procesado.
         console.log("[UC] createCheckout()…");
         checkout = await client.createCheckout();
-        if (cancelled) return;
+        if (cancelled) { checkout.destroy(); client.destroy(); return; }
 
         setStatus("ready");
 
         await new Promise<void>((r) => requestAnimationFrame(() => r()));
+        if (cancelled) return;
 
         const buttons = document.querySelector("#payment-buttons");
         const form = document.querySelector("#payment-form");
@@ -160,9 +161,9 @@ export function UnifiedCheckout({
 
         if (cancelled) return;
         if (typeof resultJwt === "string" && resultJwt.length > 0) {
-          onResult(resultJwt);
+          handlers.current.onResult(resultJwt);
         } else {
-          onError(
+          handlers.current.onError(
             "El SDK no devolvió un JWT de resultado. Respuesta: " +
               JSON.stringify(resultJwt)
           );
@@ -173,7 +174,7 @@ export function UnifiedCheckout({
         console.error("[UC] error:", err);
         if (err?.reason) console.error("[UC] reason:", err.reason);
         setStatus("error");
-        onError(describeError(e));
+        handlers.current.onError(describeError(e));
       }
     })();
 
@@ -186,7 +187,7 @@ export function UnifiedCheckout({
         client?.destroy();
       } catch {}
     };
-  }, [sdkUrl, sdkIntegrity, sessionJwt, onResult, onError]);
+  }, [sdkUrl, sdkIntegrity, sessionJwt]);
 
   return (
     <div className="space-y-4">

@@ -96,6 +96,8 @@ export default function PagoPage() {
   const createdOrderRef = useRef<{ orderId: string; orderNumber: string } | null>(null);
   const cardFlowInProgressRef = useRef(false);
   const confirmingPaymentRef = useRef(false);
+  const paymentResultRef = useRef<string | null>(null);
+  const [needsVerification, setNeedsVerification] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
@@ -240,7 +242,6 @@ export default function PagoPage() {
         clientLibraryIntegrity: string | null;
         debugPayload?: unknown;
       };
-      console.log("[UC] session JWT payload:", ccJson.debugPayload);
       if (!ccJson.clientLibrary) {
         setError(
           "Cybersource no devolvió la URL del SDK. Verifica que el sessions API esté habilitado."
@@ -262,9 +263,13 @@ export default function PagoPage() {
   // Cuando UC termina, devuelve un JWT con el resultado del pago (autoProcessing).
   async function onResultJwt(resultJwt: string) {
     if (!orderId || confirmingPaymentRef.current) return;
+    paymentResultRef.current = resultJwt;
     confirmingPaymentRef.current = true;
+    setNeedsVerification(true);
+    setSubmitting(true);
     setError(null);
     try {
+      for (let attempt = 0; attempt < 6; attempt++) {
       const res = await fetch("/api/payments/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -277,18 +282,28 @@ export default function PagoPage() {
         reasonCode?: string;
         payload?: unknown;
       };
-      console.log("[PAY] /confirm response:", data);
+      if (res.status === 202) {
+        if (attempt < 5) { await new Promise(resolve => setTimeout(resolve, 2500)); continue; }
+        setError(data.message ?? "El pago sigue pendiente de verificación. No vuelvas a pagar.");
+        return;
+      }
       if (!res.ok || !data.ok) {
         setError(data.message ?? `Pago rechazado (${data.status ?? res.status})`);
-        setCaptureContext(null);
-        setSubmitting(false);
-        cardFlowInProgressRef.current = false;
-        confirmingPaymentRef.current = false;
+        // Solo un rechazo confirmado permite iniciar otro intento de tarjeta.
+        if (res.status === 402) {
+          setCaptureContext(null);
+          cardFlowInProgressRef.current = false;
+          setNeedsVerification(false);
+          paymentResultRef.current = null;
+        }
         return;
       }
       router.push("/checkout/confirmacion");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      return;
+      }
+    } catch {
+      setError("No pudimos verificar el pago. No vuelvas a pagar; verificá nuevamente o contactá a la tienda.");
+    } finally {
       setSubmitting(false);
       confirmingPaymentRef.current = false;
     }
@@ -297,7 +312,7 @@ export default function PagoPage() {
   // Flujo SINPE / transferencia: crear orden y mandar a confirmación.
   async function onSubmitOffline(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.acceptTerms || !shipping) return;
+    if (!form.acceptTerms || !shipping || needsVerification) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -387,7 +402,9 @@ export default function PagoPage() {
                     <button
                       key={m.id}
                       type="button"
+                      disabled={needsVerification || submitting}
                       onClick={() => {
+                        if (m.id === form.method) return;
                         setForm({ ...form, method: m.id });
                         setCaptureContext(null);
                         setError(null);
@@ -438,7 +455,15 @@ export default function PagoPage() {
               transition={{ duration: 0.25 }}
               className="rounded-3xl border border-ink-200 bg-white p-6 shadow-sm"
             >
-              {showUcIframe && captureContext && sdkUrl && (
+              {needsVerification ? (
+                <div className="space-y-3 text-sm">
+                  <p>Estamos verificando el resultado del pago. No realicés otro cobro.</p>
+                  <button type="button" disabled={submitting} className="rounded-full bg-brand-600 px-5 py-3 font-bold text-white disabled:opacity-50"
+                    onClick={() => { if (paymentResultRef.current) void onResultJwt(paymentResultRef.current); }}>
+                    {submitting ? "Verificando pago…" : "Verificar pago nuevamente"}
+                  </button>
+                </div>
+              ) : showUcIframe && captureContext && sdkUrl && (
                 <>
                   <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-ink-900">
                     Ingresá los datos de tu tarjeta
@@ -450,6 +475,8 @@ export default function PagoPage() {
                     onResult={onResultJwt}
                     onError={(msg) => {
                       setError(msg);
+                      setCaptureContext(null);
+                      cardFlowInProgressRef.current = false;
                       setSubmitting(false);
                     }}
                   />

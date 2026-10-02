@@ -80,7 +80,8 @@ export async function POST(req: Request) {
 
   for (const o of orders) {
     try {
-      const tx = await lookupTransactionByOrderNumber(o.order_number);
+      if (o.payment_method !== "tarjeta" || o.payment_status === "pagado") continue;
+      const tx = await lookupTransactionByOrderNumber(o.order_number, true);
 
       if (!tx.found) {
         // OJO: "sin registro" significa que Cybersource no tiene ninguna
@@ -90,22 +91,38 @@ export async function POST(req: Request) {
         detalle.push({ pedido: o.order_number, resultado: "sin registro" });
         continue;
       }
+      if (!tx.ok && (tx.reasonCode === "100" || ["PENDING", "AUTHORIZED", "PARTIAL_AUTHORIZED"].includes(tx.status))) {
+        detalle.push({ pedido: o.order_number, resultado: "error", estado: tx.status,
+          error: "Captura pendiente de confirmación; no se modificó el pedido." });
+        continue;
+      }
+      if (!tx.id || tx.currency !== "CRC" || !Number.isFinite(Number(tx.amount)) ||
+          Math.round(Number(tx.amount) * 100) !== Math.round(Number(o.total_crc) * 100)) {
+        detalle.push({ pedido: o.order_number, resultado: "error", error: "Monto o moneda no coinciden; no se modificó el pedido." });
+        continue;
+      }
 
       const nuevoPago = tx.ok ? "pagado" : "rechazado";
       const yaEstaba = o.payment_status === nuevoPago;
 
       if (!yaEstaba) {
-        await sb
+        const { data: saved, error: saveError } = await sb
           .from("orders")
           .update({
             payment_status: nuevoPago,
             // El estado del pedido no se toca si ya lo movio una persona.
             ...(o.status === "pendiente" && tx.ok ? { status: "pagado" } : {}),
             payment_reference: tx.id ?? null,
-            payment_response: tx.payload as object | null,
+            payment_response: { verified_by: "cybersource_server_search", status: tx.status, reasonCode: tx.reasonCode,
+              amount: tx.amount, currency: tx.currency, submittedAt: tx.submittedAt },
             updated_at: new Date().toISOString(),
           })
-          .eq("id", o.id);
+          .eq("id", o.id)
+          .neq("payment_status", "pagado")
+          .select("id")
+          .maybeSingle();
+        if (saveError) throw new Error("No se pudo guardar la verificación del pago.");
+        if (!saved) continue;
       }
 
       // Si descubrimos ahora que si se cobro, el cliente nunca recibio su

@@ -11,6 +11,17 @@ Estado y evidencia de la preparación: [28/08/2026](ESTADO-2026-08-28.md).
 - Producción continúa en Vercel/Supabase Cloud hasta validar el cambio.
 - `ICB_EXTERNAL_EFFECTS_ENABLED=false` bloquea pagos, correos y notificaciones
   salientes en la copia local. No iniciar un segundo worker de WhatsApp.
+- Producción puede habilitar únicamente pagos con `ICB_PAYMENTS_ENABLED=true`,
+  sin reactivar correo ni push. `ICB_PAYMENTS_ENABLED=false` bloquea siempre los pagos.
+  No llevar ese override a copias de prueba. La migración de confirmación está en
+  `supabase/payment-confirmation.sql`; no cambia pedidos existentes.
+- La confirmación consulta la cuenta del comercio en Cybersource y exige captura,
+  referencia exacta, importe completo y CRC. Una autorización aislada no cuenta como
+  cobro. Si el proveedor aún no indexó el resultado, se devuelve 202 y el cliente
+  puede verificar de nuevo sin enviar otro pago. Fallos de persistencia devuelven 503.
+- Pruebas aisladas: `node --test scripts/payment-tests.mjs`. Diagnóstico de proveedor
+  dentro del contenedor: `node scripts/self-host/payment-diagnostics.mjs`;
+  `--session` crea únicamente un contexto de formulario, nunca envía tarjeta ni cobra.
 - Los secretos solo están disponibles durante ejecución. Únicamente las
   variables `NEXT_PUBLIC_*` son argumentos de compilación.
 - Las claves recuperadas de archivos `.env` anteriores requieren validación
