@@ -32,3 +32,12 @@ test('decoración ligera, pausable y compatible con movimiento reducido', () => 
   assert.match(component, /Mes de terror/);
   assert.doesNotMatch(component, /https?:\/\/|<img|<canvas|setInterval/);
 });
+
+test('el catálogo limita sus adornos a la temporada y no anima cada producto', () => {
+  const component = fs.readFileSync(new URL('../../src/components/seasonal/HalloweenCatalogAccent.tsx', import.meta.url), 'utf8');
+  const css = fs.readFileSync(new URL('../../src/components/seasonal/HalloweenCatalogAccent.module.css', import.meta.url), 'utf8');
+  assert.match(css, /display: none/);
+  assert.match(css, /data-site-season="halloween"/);
+  assert.match(css, /pointer-events: none/);
+  assert.doesNotMatch(component + css, /https?:\/\/|<img|animation:|setInterval/);
+});

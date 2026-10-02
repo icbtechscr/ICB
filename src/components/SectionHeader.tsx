@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import { HalloweenCatalogAccent } from "@/components/seasonal/HalloweenCatalogAccent";
 
 export function SectionHeader({
   eyebrow,
@@ -28,6 +29,7 @@ export function SectionHeader({
       <div>
         {eyebrow && (
           <span className={`text-xs font-bold uppercase tracking-[0.2em] ${accentClass}`}>
+            <HalloweenCatalogAccent />
             {eyebrow}
           </span>
         )}

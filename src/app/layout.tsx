@@ -112,7 +112,7 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className="relative min-h-full flex flex-col text-ink-900">
+      <body data-site-season={seasonal || undefined} className="relative min-h-full flex flex-col text-ink-900">
         <CartProvider>
           {seasonal === "patriotic-month" && (
             <SiteChromeGate>

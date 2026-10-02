@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ProductImage } from "@/components/ProductImage";
+import { HalloweenCatalogAccent } from "@/components/seasonal/HalloweenCatalogAccent";
 
 type Cat = {
   id: string;
@@ -26,7 +27,7 @@ export function CategoryCarousel({
   const items = [...categories, ...categories];
 
   return (
-    <section className="bg-white py-14 md:py-20">
+    <section data-catalog-section className="bg-white py-14 md:py-20">
       <div className="mx-auto mb-10 max-w-7xl px-4 text-center">
         <motion.span
           initial={{ opacity: 0, y: 10 }}
@@ -34,6 +35,7 @@ export function CategoryCarousel({
           viewport={{ once: true }}
           className="text-xs font-bold uppercase tracking-[0.3em] text-brand-600"
         >
+          <HalloweenCatalogAccent />
           {eyebrow}
         </motion.span>
         <motion.h2

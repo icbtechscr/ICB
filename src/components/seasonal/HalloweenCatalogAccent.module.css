@@ -1,0 +1,7 @@
+.accent { display: none; pointer-events: none; user-select: none; flex-shrink: 0; }
+:global(body[data-site-season="halloween"]) .accent { display: inline-flex; align-items: center; gap: 9px; }
+.section { vertical-align: middle; margin-right: 10px; opacity: .72; }
+.bat { color: #89658d; transform: rotate(-9deg); }
+.card { margin-left: auto; opacity: .6; }
+.card svg { width: 19px; height: 17px; }
+@media (max-width: 640px) { .section { margin-right: 6px; gap: 5px; } .section > svg:first-child { width: 25px; height: 23px; } .bat { width: 24px; } }

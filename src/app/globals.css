@@ -196,6 +196,14 @@ body {
 }
 
 /* Mask gradient (for hero blob etc) */
+/* Detalles del catálogo únicamente durante octubre; no alteran interacción ni animaciones. */
+body[data-site-season="halloween"] [data-product-card] {
+  border-top-color: #e9a35080;
+}
+body[data-site-season="halloween"] [data-catalog-section] {
+  background-image: radial-gradient(ellipse at top left, #f3a44c0c, transparent 45%), radial-gradient(ellipse at bottom right, #8b629c09, transparent 40%);
+}
+
 .mask-fade-right {
   -webkit-mask-image: linear-gradient(to right, black 80%, transparent 100%);
   mask-image: linear-gradient(to right, black 80%, transparent 100%);
