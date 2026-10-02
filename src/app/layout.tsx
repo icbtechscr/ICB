@@ -89,6 +89,9 @@ export const viewport: Viewport = {
   themeColor: "#0f1840",
 };
 
+// Las páginas estáticas también deben volver a calcular la temporada al cambiar de mes.
+export const revalidate = 3600;
+
 export default async function RootLayout({
   children,
 }: Readonly<{
