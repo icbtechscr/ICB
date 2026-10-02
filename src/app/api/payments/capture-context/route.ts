@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { createSession, getSdkAssets, paymentErrorDetails } from "@/lib/cybersource";
+import { createSession, getSdkAssets, lookupTransactionByOrderNumber, paymentErrorDetails } from "@/lib/cybersource";
 import { writeAuditEvent } from "@/lib/audit";
 
 type Body = {
@@ -28,6 +28,14 @@ export async function POST(req: Request) {
     }
     if (order.payment_method !== "tarjeta" || order.payment_status === "pagado") {
       return new NextResponse("Este pedido no admite un nuevo pago con tarjeta.", { status: 409 });
+    }
+    // No iniciar otro cobro si el navegador perdió una confirmación anterior.
+    const previous = await lookupTransactionByOrderNumber(order.order_number, true);
+    if (previous.found && (previous.ok || previous.reasonCode === "100" ||
+        ["PENDING", "AUTHORIZED", "PARTIAL_AUTHORIZED"].includes(previous.status))) {
+      await writeAuditEvent({ action: "PAYMENT_RETRY_BLOCKED", table_name: "orders", source: "/api/payments/capture-context",
+        details: { order_number: order.order_number, provider_status: previous.status } });
+      return new NextResponse("Este pedido ya tiene un pago aprobado o pendiente de captura. No vuelvas a pagar; contactá a la tienda para verificarlo.", { status: 409 });
     }
 
     // Origen real desde donde se abrió el checkout (www o apex). Lo usamos como

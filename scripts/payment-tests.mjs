@@ -13,6 +13,11 @@ function load(path, overrides = {}, globals = {}) {
   return exports;
 }
 const cybs = load("src/lib/cybersource.ts");
+test("ID del resultado solo selecciona el intento y soporta completeResponse", () => {
+  const jwt = 'header.' + Buffer.from(JSON.stringify({content: {completeResponse: {id: "123456", status: "AUTHORIZED"}}})).toString('base64url') + '.fake';
+  assert.equal(cybs.mountResultPaymentId(jwt), "123456");
+  assert.equal(cybs.mountResultPaymentId("invalid"), undefined);
+});
 test("captura exige un servicio de captura exitoso; autorización no basta", () => {
   assert.equal(cybs.hasSuccessfulCapture({ applicationInformation: { reasonCode: "100", applications: [{ name: "ics_auth", reasonCode: "100" }] } }), false);
   assert.equal(cybs.hasSuccessfulCapture({ applicationInformation: { applications: [{ name: "ics_bill", reasonCode: "100" }] } }), true);
@@ -28,6 +33,8 @@ test("búsqueda comprueba referencia y no considera pagada una autorización", a
   assert.equal((await lib.lookupTransactionByOrderNumber("ICB-TEST", true)).ok, false);
   response[0].applicationInformation.applications.push({ name: "ics_bill", reasonCode: "100" });
   assert.equal((await lib.lookupTransactionByOrderNumber("ICB-TEST", true)).ok, true);
+  response[0].id = "111";
+  assert.equal((await lib.lookupTransactionByOrderNumber("ICB-TEST", true, "222")).found, false, "No confundir un intento viejo con el nuevo");
 });
 const order = { id: "order-test", order_number: "ICB-TEST", payment_status: "pendiente", payment_method: "tarjeta", total_crc: 100 };
 const verified = { found: true, ok: true, status: "APROBADA", id: "provider-test", amount: "100.00", currency: "CRC", reasonCode: "100", payload: {} };
@@ -40,7 +47,7 @@ async function confirm({ result = verified, row = order, saveError = null, saved
   const route = load("src/app/api/payments/confirm/route.ts", {
     "next/server": { NextResponse: class extends Response { static json(data, init) { return Response.json(data, init); } } },
     "@/lib/supabase": { createAdminClient: () => ({ from: () => builder }) },
-    "@/lib/cybersource": { paymentErrorDetails: () => ({ error_type: "Error" }), lookupTransactionByOrderNumber: async (code, strict) => { assert.equal(code, "ICB-TEST"); assert.equal(strict, true); if (result instanceof Error) throw result; return result; } },
+    "@/lib/cybersource": { mountResultPaymentId: () => "123", paymentErrorDetails: () => ({ error_type: "Error" }), lookupTransactionByOrderNumber: async (code, strict, id) => { assert.equal(code, "ICB-TEST"); assert.equal(strict, true); assert.equal(id, "123"); if (result instanceof Error) throw result; return result; } },
     "@/lib/audit": { writeAuditEvent: async event => { events.push(event); } },
     "@/lib/email": { sendCustomerReceipt: async () => mails.push("receipt"), notifyPaymentResult: async () => mails.push("admin") }
   }, { console: { error: () => {} } });

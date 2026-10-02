@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { lookupTransactionByOrderNumber, paymentErrorDetails } from "@/lib/cybersource";
+import { lookupTransactionByOrderNumber, mountResultPaymentId, paymentErrorDetails } from "@/lib/cybersource";
 import { writeAuditEvent } from "@/lib/audit";
 import { notifyPaymentResult, sendCustomerReceipt } from "@/lib/email";
 
@@ -43,9 +43,11 @@ export async function POST(req: Request) {
 
     // El navegador no es autoridad de pago. Consultar nuestra cuenta del proveedor;
     // no confiar en el JWT, sus estados, IDs ni montos enviados por el cliente.
-    const result = await lookupTransactionByOrderNumber(order.order_number, true);
-    const pending = !result.found || (!result.ok &&
-      (result.reasonCode === "100" || ["PENDING", "AUTHORIZED", "PARTIAL_AUTHORIZED"].includes(result.status)));
+    const paymentId = mountResultPaymentId(resultJwt);
+    const result = await lookupTransactionByOrderNumber(order.order_number, true, paymentId);
+    // Sin ID del intento actual, un rechazo viejo no demuestra el resultado nuevo.
+    const pending = !result.found || (!result.ok && (!paymentId ||
+      result.reasonCode === "100" || ["PENDING", "AUTHORIZED", "PARTIAL_AUTHORIZED"].includes(result.status)));
     if (pending) {
       await writeAuditEvent({ action: "PAYMENT_VERIFICATION_PENDING", table_name: "orders", source: "/api/payments/confirm",
         details: { order_number: order.order_number, provider_status: result.status } });

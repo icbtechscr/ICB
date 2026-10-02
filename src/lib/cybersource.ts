@@ -396,7 +396,8 @@ export function summariesOf(data: unknown): Record<string, unknown>[] {
 
 export async function lookupTransactionByOrderNumber(
   orderNumber: string,
-  requireCapture = false
+  requireCapture = false,
+  paymentId?: string
 ): Promise<TransactionLookup> {
   // La ventana de fechas NO es opcional: comprobado contra la cuenta real, la
   // misma busqueda por codigo devuelve 0 resultados sin `submitTimeUtc` y el
@@ -418,7 +419,8 @@ export async function lookupTransactionByOrderNumber(
   // se reporta el mas reciente (la lista viene ordenada por fecha desc).
   // Nunca confiar en que el proveedor aplicó el filtro sin comprobar la referencia.
   const matching = list.filter(t =>
-    (t.clientReferenceInformation as Record<string, unknown> | undefined)?.code === orderNumber);
+    (t.clientReferenceInformation as Record<string, unknown> | undefined)?.code === orderNumber &&
+    (!paymentId || String(t.id ?? "") === paymentId));
   if (!matching.length) return { found: false, ok: false, status: "NOT_FOUND", payload: null };
   const paid = matching.find(requireCapture ? hasSuccessfulCapture : isPaidSummary);
   const t = paid ?? matching[0];
@@ -444,6 +446,17 @@ export async function lookupTransactionByOrderNumber(
   };
 }
 
+/** Solo una pista para seleccionar el intento. Nunca valida ni aprueba el pago. */
+export function mountResultPaymentId(resultJwt: string): string | undefined {
+  const payload = decodeJwtPayload(resultJwt);
+  if (!payload) return undefined;
+  const content = (payload.content ?? {}) as Record<string, unknown>;
+  const response = (content.completeResponse ?? payload.completeResponse ?? content.paymentResponse ?? payload.paymentResponse ?? {}) as Record<string, unknown>;
+  const id = String(response.id ?? content.id ?? payload.id ?? "");
+  return /^\d{1,30}$/.test(id) ? id : undefined;
+}
+
+/** @deprecated Decodificación diagnóstica SIN firma. Nunca usar para aprobar un pago. */
 export function verifyMountResult(resultJwt: string): PaymentVerification {
   const payload = decodeJwtPayload(resultJwt);
   if (!payload) {
