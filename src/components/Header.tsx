@@ -13,6 +13,8 @@ import {
   PatrioticMonthDecor,
 } from "@/components/seasonal/PatrioticMonthDecor";
 import type { NavItem } from "@/lib/category-tree";
+import type { SiteSeason } from "@/lib/seasonal";
+import { HalloweenBar, HalloweenHeaderDecor } from "@/components/seasonal/HalloweenDecor";
 
 export function Header({
   menu,
@@ -24,18 +26,21 @@ export function Header({
   initialDark?: boolean;
   initialAuthed?: boolean;
   /** Temporada activa. Se decide en el servidor para no romper la hidratacion. */
-  seasonal?: "patriotic-month" | null;
+  seasonal?: SiteSeason;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [seasonalPaused, setSeasonalPaused] = useState(false);
   const { count } = useCart();
   const pathname = usePathname() ?? "/";
 
   return (
     <header className="relative z-40 border-b border-ink-200 bg-white text-ink-900">
       {seasonal === "patriotic-month" && <PatrioticMonthBar />}
+      {seasonal === "halloween" && <HalloweenBar paused={seasonalPaused} onToggle={() => setSeasonalPaused(value => !value)} />}
 
       <div className="relative">
       {seasonal === "patriotic-month" && <PatrioticMonthDecor />}
+      {seasonal === "halloween" && <HalloweenHeaderDecor paused={seasonalPaused} />}
       <div className="relative mx-auto flex max-w-7xl items-center gap-2 px-3 py-3 sm:gap-4 sm:px-4 md:py-4">
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <Image

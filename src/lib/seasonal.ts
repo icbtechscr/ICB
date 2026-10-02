@@ -24,7 +24,22 @@ export function isPatrioticMonthSeason(ref: Date = new Date()): boolean {
   const override = (process.env.SEASON_OVERRIDE || "").trim().toLowerCase();
   if (["patriotic-month", "patria", "mothers-day"].includes(override)) return true;
   if (override === "off") return false;
+  if (["halloween", "terror"].includes(override)) return false;
 
   const { m } = crParts(ref);
   return m === 9;
+}
+
+export function isHalloweenSeason(ref: Date = new Date()): boolean {
+  const override = (process.env.SEASON_OVERRIDE || "").trim().toLowerCase();
+  if (["halloween", "terror"].includes(override)) return true;
+  if (["off", "patriotic-month", "patria", "mothers-day"].includes(override)) return false;
+  return crParts(ref).m === 10;
+}
+
+export type SiteSeason = "patriotic-month" | "halloween" | null;
+
+export function getSiteSeason(ref: Date = new Date()): SiteSeason {
+  if (isHalloweenSeason(ref)) return "halloween";
+  return isPatrioticMonthSeason(ref) ? "patriotic-month" : null;
 }

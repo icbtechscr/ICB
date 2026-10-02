@@ -1,0 +1,21 @@
+.bar { background: linear-gradient(100deg, #17162d, #32203e 50%, #17162d); color: #ffe4bf; border-bottom: 1px solid #ef9a4538; }
+.barInner { position: relative; max-width: 1280px; min-height: 40px; margin: auto; padding: 3px 44px; display: flex; justify-content: center; align-items: center; }
+.greeting { display: flex; align-items: center; gap: 14px; }
+.greeting > span { font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+.pumpkin { width: 34px; height: 30px; flex-shrink: 0; }
+.eyes { animation: candlelight 4.8s ease-in-out infinite; opacity: .95; filter: drop-shadow(0 0 2px #ffd05f); }
+.secondPumpkin .eyes { animation-delay: -2.4s; }
+.toggle { position: absolute; right: 12px; padding: 7px; border-radius: 50%; color: #ffe4bf; cursor: pointer; border: 1px solid #ffe4bf45; }
+.toggle:hover { background: #ffffff18; }
+.toggle:focus-visible { outline: 2px solid #ffd181; outline-offset: 3px; }
+.headerDecor { pointer-events: none; position: absolute; inset: 0; overflow: hidden; color: #74517b; background: linear-gradient(100deg, #e9902310, transparent 30%, transparent 80%, #8057a014); }
+.web { position: absolute; top: 0; left: 0; opacity: .24; }
+.bat { position: absolute; width: 34px; height: 16px; opacity: .25; animation: batFloat 6s ease-in-out infinite; }
+.batLeft { left: 23%; top: 5px; }
+.batRight { right: 15%; bottom: 3px; animation-delay: -3s; width: 27px; }
+.cornerPumpkin { position: absolute; right: -10px; bottom: -13px; width: 58px; height: 52px; opacity: .32; }
+[data-paused="true"] .eyes, [data-paused="true"] .bat { animation-play-state: paused; }
+@keyframes candlelight { 0%, 100% { opacity: .65; } 40%, 65% { opacity: 1; } 52% { opacity: .85; } }
+@keyframes batFloat { 0%, 100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(4px) rotate(5deg); } }
+@media (max-width: 640px) { .greeting { gap: 10px; } .greeting > span { font-size: 11px; } .web { width: 60px; } .batRight, .cornerPumpkin { display: none; } }
+@media (prefers-reduced-motion: reduce) { .eyes, .bat { animation: none; } .toggle { display: none; } }
