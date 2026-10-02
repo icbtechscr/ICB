@@ -41,3 +41,12 @@ export function HalloweenHeaderDecor({ paused }: { paused: boolean }) {
     <Pumpkin className={styles.cornerPumpkin} />
   </div>;
 }
+
+/** Solo tres siluetas SVG, animadas con transform; no interceptan interacción. */
+export function HalloweenFlyingBats({ paused }: { paused: boolean }) {
+  return <div aria-hidden="true" data-halloween-flight data-paused={paused} className={styles.flightLayer}>
+    <span className={`${styles.flight} ${styles.flightOne}`}><Bat className={styles.flappingBat} /></span>
+    <span className={`${styles.flight} ${styles.flightTwo}`}><Bat className={styles.flappingBat} /></span>
+    <span className={`${styles.flight} ${styles.flightThree}`}><Bat className={styles.flappingBat} /></span>
+  </div>;
+}

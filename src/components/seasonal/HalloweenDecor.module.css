@@ -19,3 +19,16 @@
 @keyframes batFloat { 0%, 100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(4px) rotate(5deg); } }
 @media (max-width: 640px) { .greeting { gap: 10px; } .greeting > span { font-size: 11px; } .web { width: 60px; } .batRight, .cornerPumpkin { display: none; } }
 @media (prefers-reduced-motion: reduce) { .eyes, .bat { animation: none; } .toggle { display: none; } }
+
+.flightLayer { position: fixed; inset: 0; z-index: 45; pointer-events: none; overflow: hidden; color: #735279; }
+.flight { position: absolute; width: 32px; height: 18px; opacity: .34; }
+.flightOne { left: 2%; top: 30%; animation: flightLeft 24s ease-in-out infinite; }
+.flightTwo { right: 3%; top: 65%; animation: flightRight 29s ease-in-out -12s infinite; }
+.flightThree { right: 12%; top: 37%; animation: flightRight 34s ease-in-out -23s infinite; opacity: .22; }
+.flappingBat { position: static; width: 100%; height: 100%; opacity: 1; transform-origin: center; animation: flapWings 1.1s ease-in-out infinite; }
+[data-paused="true"] .flight, [data-paused="true"] .flappingBat { animation-play-state: paused; }
+@keyframes flightLeft { 0%, 100% { transform: translate3d(0, 0, 0) rotate(-12deg); } 25% { transform: translate3d(14vw, -12vh, 0) rotate(12deg); } 50% { transform: translate3d(27vw, 8vh, 0) rotate(-8deg); } 75% { transform: translate3d(8vw, 26vh, 0) rotate(16deg); } }
+@keyframes flightRight { 0%, 100% { transform: translate3d(0, 0, 0) rotate(10deg); } 30% { transform: translate3d(-20vw, -18vh, 0) rotate(-14deg); } 65% { transform: translate3d(-7vw, 14vh, 0) rotate(8deg); } }
+@keyframes flapWings { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.65); } }
+@media (max-width: 640px) { .flight { width: 23px; height: 13px; opacity: .24; } .flightThree { display: none; } }
+@media (prefers-reduced-motion: reduce) { .flightLayer { display: none; } .flight, .flappingBat { animation: none; } }

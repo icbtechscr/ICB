@@ -41,3 +41,14 @@ test('el catálogo limita sus adornos a la temporada y no anima cada producto', 
   assert.match(css, /pointer-events: none/);
   assert.doesNotMatch(component + css, /https?:\/\/|<img|animation:|setInterval/);
 });
+
+test('murciélagos con vuelo pausable y sin calabazas en tarjetas', () => {
+  const card = fs.readFileSync(new URL('../../src/components/ProductCard.tsx', import.meta.url), 'utf8');
+  const decor = fs.readFileSync(new URL('../../src/components/seasonal/HalloweenDecor.tsx', import.meta.url), 'utf8');
+  const css = fs.readFileSync(new URL('../../src/components/seasonal/HalloweenDecor.module.css', import.meta.url), 'utf8');
+  assert.doesNotMatch(card, /HalloweenCatalogAccent|Pumpkin/);
+  assert.match(decor, /data-halloween-flight/);
+  assert.match(css, /\[data-paused="true"\] \.flight/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
+  assert.match(css, /translate3d/);
+});

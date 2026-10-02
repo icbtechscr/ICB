@@ -14,7 +14,7 @@ import {
 } from "@/components/seasonal/PatrioticMonthDecor";
 import type { NavItem } from "@/lib/category-tree";
 import type { SiteSeason } from "@/lib/seasonal";
-import { HalloweenBar, HalloweenHeaderDecor } from "@/components/seasonal/HalloweenDecor";
+import { HalloweenBar, HalloweenHeaderDecor, HalloweenFlyingBats } from "@/components/seasonal/HalloweenDecor";
 
 export function Header({
   menu,
@@ -37,6 +37,7 @@ export function Header({
     <header className="relative z-40 border-b border-ink-200 bg-white text-ink-900">
       {seasonal === "patriotic-month" && <PatrioticMonthBar />}
       {seasonal === "halloween" && <HalloweenBar paused={seasonalPaused} onToggle={() => setSeasonalPaused(value => !value)} />}
+      {seasonal === "halloween" && <HalloweenFlyingBats paused={seasonalPaused} />}
 
       <div className="relative">
       {seasonal === "patriotic-month" && <PatrioticMonthDecor />}

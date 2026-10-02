@@ -11,7 +11,6 @@ import type { Product } from "@/lib/products";
 import { useCart } from "@/lib/cart";
 import { STOCK_LABELS, effectiveStockStatus } from "@/lib/stock";
 import { formatCRC } from "@/lib/utils";
-import { HalloweenCatalogAccent } from "@/components/seasonal/HalloweenCatalogAccent";
 
 export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const { add } = useCart();
@@ -108,14 +107,11 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
         </div>
 
         <div className="flex flex-1 flex-col gap-1 p-4">
-          <div className="flex items-center justify-between gap-2">
           {product.brand && (
             <span className="text-[10px] font-semibold uppercase tracking-wider text-brand-600">
               {product.brand}
             </span>
           )}
-          <HalloweenCatalogAccent variant="card" />
-          </div>
           <h3 className="line-clamp-2 min-h-[2.5em] text-sm font-medium leading-snug text-ink-900 transition-colors group-hover:text-brand-600">
             {product.name}
           </h3>
