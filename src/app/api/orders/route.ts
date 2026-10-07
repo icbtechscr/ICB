@@ -184,10 +184,9 @@ export async function POST(req: Request) {
       return new NextResponse(itemsErr.message, { status: 500 });
     }
 
-    // Aviso al admin. Con tarjeta el correo lo manda /api/payments/confirm
-    // cuando el banco responde; para SINPE/transferencia no hay confirmacion
-    // automatica, asi que avisamos aqui. Un correo por compra, sin duplicados.
-    if (paymentMethod !== "tarjeta") {
+    // Avisar al registrarse cualquier pedido, incluida tarjeta: todavía SIN pago.
+    // La confirmación del proveedor enviará otro aviso solo con el resultado real.
+    {
       try {
         await notifyNewOrder({
           orderNumber,

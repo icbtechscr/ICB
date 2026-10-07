@@ -18,34 +18,48 @@ export function emailConfigured(): boolean {
 async function send(
   subject: string,
   html: string,
-  toOverride?: string
+  toOverride?: string,
+  eventKey?: string
 ): Promise<void> {
-  if (process.env.ICB_EXTERNAL_EFFECTS_ENABLED === "false") return;
+  // Solo alertas administrativas: no habilitar recibos de clientes ni otros efectos.
+  const audience = toOverride === undefined ? "admin" : "customer";
+  const adminOverride = process.env.ORDER_ADMIN_NOTIFICATIONS_ENABLED;
+  const enabled = audience === "admin" && adminOverride !== undefined
+    ? adminOverride === "true"
+    : process.env.ICB_EXTERNAL_EFFECTS_ENABLED !== "false";
+  if (!enabled) return;
   const c = cfg();
   const to = toOverride ?? c.to;
-  if (!c.key || !to) return;
+  const recipients = [...new Set(to.split(",").map(s => s.trim()).filter(Boolean))];
+  const log = (event: string, details: Record<string, unknown> = {}) =>
+    console.info("ORDER_MAIL_EVENT", JSON.stringify({ shop: "ICB", audience, event, eventKey, ...details }));
+  if (!c.key || !recipients.length) {
+    log("configuration_missing", { keyPresent: Boolean(c.key), recipientsPresent: recipients.length > 0 });
+    return;
+  }
   try {
     const res = await fetch(RESEND_URL, {
       method: "POST",
       headers: {
         authorization: `Bearer ${c.key}`,
         "content-type": "application/json",
+        ...(eventKey ? { "Idempotency-Key": eventKey } : {}),
       },
       body: JSON.stringify({
         from: c.from,
-        to: to
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        to: recipients,
         subject,
         html,
       }),
+      signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) {
-      console.error("[MAIL] Resend fallo:", res.status, await res.text());
+      log("provider_rejected", { httpStatus: res.status });
+    } else {
+      log("provider_accepted", { httpStatus: res.status });
     }
   } catch (e) {
-    console.error("[MAIL] Error enviando correo:", e);
+    log("send_failed", { errorType: e instanceof Error ? e.name : "Error" });
   }
 }
 
@@ -83,7 +97,7 @@ function orderHtml(o: OrderMailInfo, headline: string, color: string): string {
   <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:560px;margin:0 auto">
     <div style="background:${color};color:#fff;padding:16px 20px;border-radius:12px 12px 0 0">
       <h2 style="margin:0;font-size:18px">${esc(headline)}</h2>
-      <p style="margin:4px 0 0;opacity:.85;font-size:13px">Pedido ${esc(o.orderNumber)}</p>
+      <p style="margin:4px 0 0;opacity:.85;font-size:13px">ICB · Pedido ${esc(o.orderNumber)}</p>
     </div>
     <div style="border:1px solid #e5e7eb;border-top:0;border-radius:0 0 12px 12px;padding:20px">
       <p style="margin:0 0 12px;font-size:22px;font-weight:800;color:#111">${money(o.total)}</p>
@@ -97,6 +111,7 @@ function orderHtml(o: OrderMailInfo, headline: string, color: string): string {
       <p style="margin:12px 0 0;font-size:13px;color:#667">
         Pago: <strong>${esc(o.paymentMethod)}</strong> · Entrega: <strong>${esc(o.shippingMethod)}</strong>
       </p>
+      <p style="margin:16px 0 0"><a href="https://icbtechscr.com/admin/pedidos" style="color:#1d4ed8">Abrir pedidos de ICB</a></p>
     </div>
   </div>`;
 }
@@ -104,10 +119,12 @@ function orderHtml(o: OrderMailInfo, headline: string, color: string): string {
 /** Aviso al admin: entro un pedido nuevo desde la tienda. */
 export async function notifyNewOrder(o: OrderMailInfo): Promise<void> {
   await send(
-    `Nuevo pedido ${o.orderNumber} — ${money(o.total)} (${o.paymentMethod})`,
+    `[ICB] Nuevo pedido ${o.orderNumber} — ${money(o.total)} (${o.paymentMethod})`,
     orderHtml(o, "Nuevo pedido — pendiente de pago", "#b45309") +
       `<p style="max-width:560px;margin:12px auto 0;font-family:system-ui,Segoe UI,Arial,sans-serif;font-size:13px;color:#667">` +
-      `El cliente eligió <strong>${esc(o.paymentMethod)}</strong>. Verificá que el dinero haya entrado antes de despachar.</p>`
+      `El cliente eligió <strong>${esc(o.paymentMethod)}</strong>. Este aviso confirma el pedido, no el pago. Verificá que el dinero haya entrado antes de despachar.</p>`,
+    undefined,
+    `icb/order-created/${o.orderNumber}`
   );
 }
 
@@ -123,8 +140,10 @@ export async function notifyPaymentResult(
     ? `<p style="margin:12px 0 0;font-size:13px;color:#667">Detalle: ${esc(message)}</p>`
     : "";
   await send(
-    `${headline} — pedido ${o.orderNumber}`,
-    orderHtml(o, headline, color) + extra
+    `[ICB] ${headline} — pedido ${o.orderNumber}`,
+    orderHtml(o, headline, color) + extra,
+    undefined,
+    `icb/payment-${ok ? "approved" : "rejected"}/${o.orderNumber}`
   );
 }
 
