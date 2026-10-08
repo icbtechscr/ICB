@@ -98,3 +98,9 @@ test("cliente y servidor siguen usando la tarifa común; TuStore no cambia direc
     assert.match(checkout, /Retirás en nuestra tienda de Barreal de Heredia/);
   }
 });
+
+test("la información pública de Correos coincide con la tarifa vigente", () => {
+  const policy = fs.readFileSync(new URL("../src/app/envios/page.tsx", import.meta.url), "utf8");
+  assert.match(policy, /12\.000\s+colones/);
+  assert.doesNotMatch(policy, /tarifa mínima será de 7\.000|sitio no promete una tarifa fija/);
+});

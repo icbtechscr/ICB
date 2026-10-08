@@ -14,7 +14,7 @@ export default function EnviosPage() {
     <LegalPage
       title="Política de Envíos"
       intro="En ICB Technologies Costa Rica nos comprometemos a gestionar los envíos de nuestros clientes de forma ordenada, responsable y transparente. La presente política establece las condiciones aplicables para el despacho, entrega y logística de productos adquiridos por nuestros clientes."
-      updated="Mayo 2026"
+      updated="Octubre 2026"
     >
       <LegalSection heading="1. Monto mínimo para aplicar envío">
         <p>
@@ -87,12 +87,9 @@ export default function EnviosPage() {
         </p>
         <p>
           En el caso de envíos realizados mediante Correos de Costa Rica, la
-          tarifa mínima será de 7.000 colones. Este monto se compone de la
-          tarifa mínima cobrada por Correos de Costa Rica para el envío de
-          nuestros productos, la cual es de aproximadamente 5.000 colones, más
-          un costo logístico interno de 2.000 colones correspondiente al
-          traslado del producto por medio de mensajero hasta el punto de
-          despacho correspondiente.
+          tarifa de envío cobrada por ICB será de 12.000 colones, tanto para
+          paquetes pequeños como grandes. Este monto incluye la gestión
+          logística interna y el traslado al punto de despacho.
         </p>
         <p>
           El cliente acepta que las tarifas de encomienda pueden variar según
