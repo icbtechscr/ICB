@@ -312,7 +312,7 @@ export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
                   <div className="border-t border-ink-100 bg-ink-50 px-5 py-4">
                     <div className="grid min-w-0 gap-5 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
                       {/* Artículos */}
-                      <div>
+                      <div className="min-w-0">
                         <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-ink-500">
                           Artículos
                         </h3>
@@ -320,17 +320,17 @@ export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
                           {o.items.map((i) => (
                             <li
                               key={i.id}
-                              className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
+                              className="flex items-start justify-between gap-3 px-3 py-2 text-sm"
                             >
-                              <div className="min-w-0">
-                                <p className="truncate text-ink-700">
+                              <div className="min-w-0 flex-1">
+                                <p className="whitespace-normal break-words text-ink-700">
                                   {i.qty}× {i.productName}
                                 </p>
                                 <p className="text-[11px] text-ink-400">
                                   {formatCRC(i.unitPrice)} c/u
                                 </p>
                               </div>
-                              <span className="shrink-0 font-semibold text-ink-900">
+                              <span className="shrink-0 whitespace-nowrap font-semibold text-ink-900">
                                 {formatCRC(i.lineTotal)}
                               </span>
                             </li>

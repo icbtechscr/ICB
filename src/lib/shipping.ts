@@ -1,4 +1,4 @@
-// Encomiendas de Costa Rica — basado 1:1 en "encomiendas_costa_rica.xlsx".
+// Encomiendas de Costa Rica — base "encomiendas_costa_rica.xlsx", con tarifas vigentes del comercio.
 // Cada servicio tiene su zona principal y dos tarifas:
 //   - motoRate: pedido pequeño (cabe en motocicleta)
 //   - carRate:  pedido grande (requiere carro)
@@ -21,8 +21,8 @@ export const SHIPPING_ZONES: ShippingZone[] = [
     label: "Correos de Costa Rica - Encomienda Nacional",
     zone: "Nacional",
     coverage: "Cobertura nacional: GAM y todo el país.",
-    motoRate: 8000,
-    carRate: 10000,
+    motoRate: 12000,
+    carRate: 12000,
   },
   {
     id: "bodega-anay",
