@@ -1,9 +1,9 @@
 import { History } from "lucide-react";
 import { crTodayIso, buildDayRows, fmtDayLabel } from "@/lib/timeclock";
 import { adminListEntries } from "@/lib/timeclock-server";
-import { createAdminClient } from "@/lib/supabase";
+import { listTimeclockEmployees, unassignedUsersForBranch } from "@/lib/timeclock-roster";
 import { getCurrentUser } from "@/lib/supabase-server";
-import { getUserRole, mustClockIn } from "@/lib/roles";
+import { getUserRole } from "@/lib/roles";
 import { BRANCHES } from "@/lib/branches";
 import { HorarioFilters } from "@/components/admin/HorarioFilters";
 import { HorarioTable } from "@/components/admin/HorarioTable";
@@ -30,11 +30,13 @@ export default async function HistorialPage({
   const branchId = sp.branch || "";
   const userId = sp.user || "";
 
+  const roster = await listTimeclockEmployees();
   const entries = await adminListEntries({
     from,
     to,
     branchId: branchId || undefined,
     userId: userId || undefined,
+    unassignedUserIds: unassignedUsersForBranch(roster, branchId),
   });
   // El historial son días pasados: excluimos el día de hoy.
   const rows = buildDayRows(entries).filter((r) => r.dayIso !== today);
@@ -42,23 +44,10 @@ export default async function HistorialPage({
   const currentUser = await getCurrentUser();
   const isDev = getUserRole(currentUser) === "dev";
 
-  let employees: { id: string; name: string }[] = [];
-  try {
-    const sb = createAdminClient();
-    const { data } = await sb.auth.admin.listUsers({ page: 1, perPage: 500 });
-    employees = data.users
-      .filter((u) => mustClockIn(getUserRole(u)))
-      .map((u) => ({
-        id: u.id,
-        name:
-          (u.user_metadata?.full_name as string) ||
-          u.email?.split("@")[0] ||
-          "—",
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  } catch {
-    employees = [];
-  }
+  const employees = roster.map(({ id, name }) => ({ id, name }));
+  // Las marcas siguen visibles aunque el perfil actual ya no deba marcar.
+  for (const row of rows) if (!employees.some(e => e.id === row.userId)) employees.push({ id: row.userId, name: row.employeeName || "—" });
+  employees.sort((a, b) => a.name.localeCompare(b.name));
 
   const rangeLabel = `Del ${fmtDayLabel(from)} al ${fmtDayLabel(to)}${
     branchId ? ` · ${BRANCHES.find((b) => b.id === branchId)?.city ?? ""}` : ""
@@ -79,6 +68,7 @@ export default async function HistorialPage({
         <TimeclockExport rows={rows} rangeLabel={rangeLabel} />
       </div>
 
+      {branchId && <p className="mt-3 text-xs text-ink-500">Se incluyen marcas sin sede registrada de usuarios actualmente asignados a esta sede. Su ubicación histórica no se modifica ni se considera validada.</p>}
       <div className="mt-5 overflow-hidden rounded-2xl border border-ink-200 bg-white">
         <div className="flex items-center gap-2 border-b border-ink-100 px-4 py-3">
           <History className="size-4 text-brand-600" />

@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MapPin, Home, Pencil, Plus, Trash2, Check, X, Loader2 } from "lucide-react";
+import { Pencil, Plus, Trash2, Check, X, Loader2 } from "lucide-react";
+import { LocationBadge } from "@/components/timeclock/LocationBadge";
 import type { PunchCell, PunchType } from "@/lib/timeclock";
 
 // CR es UTC-6 (sin horario de verano).
@@ -23,38 +24,6 @@ function crToIso(dayIso: string, hhmm: string): string {
   return new Date(utcWall + CR_OFFSET_MS).toISOString();
 }
 
-function Badge({ cell }: { cell: PunchCell }) {
-  const isRemote = cell.branchId === "remoto";
-  const shortName = (cell.branchName ?? "")
-    .replace(/^ICB Technologies Costa Rica /, "")
-    .replace(/^ICB /, "");
-  if (isRemote && cell.within) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
-        <Home className="size-2.5" /> Casa
-      </span>
-    );
-  }
-  if (cell.within === true) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
-        <MapPin className="size-2.5" /> {shortName || "En sede"}
-      </span>
-    );
-  }
-  if (cell.within === false && cell.distance !== null) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200">
-        <MapPin className="size-2.5" /> {cell.distance} m
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-1.5 py-0.5 text-[10px] font-semibold text-ink-500">
-      Sin ubic.
-    </span>
-  );
-}
 
 export function EditableCell({
   cell,
@@ -209,7 +178,7 @@ export function EditableCell({
           <Pencil className="size-3" />
         </button>
       </div>
-      <Badge cell={cell} />
+      <LocationBadge cell={cell} />
     </div>
   );
 }

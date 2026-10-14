@@ -80,6 +80,21 @@ export type DayRow = {
   cells: Record<PunchType, PunchCell | null>;
 };
 
+/** El GPS y la asignación de sede son datos distintos; no inventar validaciones. */
+export function punchLocationStatus(cell: PunchCell): {
+  label: string; kind: "remote" | "inside" | "outside" | "unassigned" | "unverified" | "missing";
+} {
+  if (typeof cell.lat !== "number" || typeof cell.lng !== "number" || !Number.isFinite(cell.lat) || !Number.isFinite(cell.lng)) {
+    return { label: "Sin GPS", kind: "missing" };
+  }
+  if (cell.branchId === "remoto" && cell.within === true) return { label: "Casa", kind: "remote" };
+  if (cell.within === true) return { label: (cell.branchName ?? "").replace(/^ICB Technologies Costa Rica /, "").replace(/^ICB /, "") || "En sede", kind: "inside" };
+  if (cell.within === false && cell.distance !== null) return { label: `A ${cell.distance} m`, kind: "outside" };
+  return cell.branchId
+    ? { label: "GPS registrado · Sin validar", kind: "unverified" }
+    : { label: "GPS registrado · Sin sede", kind: "unassigned" };
+}
+
 /** Hora HH:MM en zona de Costa Rica. */
 export function fmtTimeCR(iso: string): string {
   return new Date(iso).toLocaleTimeString("es-CR", {

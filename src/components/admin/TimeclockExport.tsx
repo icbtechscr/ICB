@@ -4,6 +4,7 @@ import {
   PUNCH_TYPES,
   PUNCH_COL,
   fmtDayLabel,
+  punchLocationStatus,
   type DayRow,
   type PunchCell,
 } from "@/lib/timeclock";
@@ -43,12 +44,7 @@ type TardyReport = {
 
 function cellText(cell: PunchCell | null): string {
   if (!cell) return "";
-  let loc = "";
-  if (cell.within === true) loc = " (en sede)";
-  else if (cell.within === false && cell.distance !== null)
-    loc = ` (a ${cell.distance} m)`;
-  else if (cell.distance === null) loc = " (sin ubicacion)";
-  return `${cell.time}${loc}`;
+  return `${cell.time} (${punchLocationStatus(cell).label})`;
 }
 
 function escapeHtml(value: string): string {
@@ -289,7 +285,7 @@ export function TimeclockExport({
       return [
         fmtDayLabel(r.dayIso),
         r.employeeName || "Sin nombre",
-        r.branchName ?? "--",
+        r.branchName ?? "Sin sede registrada",
         info.status,
         info.minutesLate === null ? "" : String(info.minutesLate),
         ...PUNCH_TYPES.map((t) => cellText(r.cells[t])),

@@ -46,6 +46,7 @@ export async function adminListEntries(opts: {
   to?: string;
   branchId?: string;
   userId?: string;
+  unassignedUserIds?: string[];
 }): Promise<TimeEntry[]> {
   const sb = createAdminClient();
   let query = sb
@@ -62,7 +63,14 @@ export async function adminListEntries(opts: {
     const { end } = crDayRangeUtcFromIso(opts.to);
     query = query.lt("punched_at", end);
   }
-  if (opts.branchId) query = query.eq("branch_id", opts.branchId);
+  if (opts.branchId) {
+    if (!/^[a-z0-9-]+$/.test(opts.branchId)) throw new Error("Sede inválida.");
+    const ids = [...new Set(opts.unassignedUserIds ?? [])];
+    if (ids.some(id => !/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id))) throw new Error("Colaborador inválido.");
+    query = ids.length
+      ? query.or(`branch_id.eq.${opts.branchId},and(branch_id.is.null,user_id.in.(${ids.join(",")}))`)
+      : query.eq("branch_id", opts.branchId);
+  }
   if (opts.userId) query = query.eq("user_id", opts.userId);
 
   const { data, error } = await query;

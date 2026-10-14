@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { LocationBadge } from "@/components/timeclock/LocationBadge";
 import { useRouter } from "next/navigation";
 import {
   LogOut,
@@ -14,7 +15,6 @@ import {
   Settings,
   X,
   KeyRound,
-  Home,
 } from "lucide-react";
 import { createSupabaseBrowser, signOutWithAudit } from "@/lib/supabase-browser";
 import {
@@ -591,46 +591,4 @@ function Cell({
     );
   }
   return <span className="text-ink-300">—</span>;
-}
-
-function shortBranch(name: string | null): string {
-  return (name ?? "").replace(/^ICB Technologies Costa Rica /, "").replace(/^ICB /, "");
-}
-
-function LocationBadge({ cell }: { cell: PunchCell }) {
-  const isRemote = cell.branchId === "remoto";
-
-  // Trabajo remoto: verde "Casa".
-  if (isRemote && cell.within) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
-        <Home className="size-3" />
-        Casa
-      </span>
-    );
-  }
-  // En una de sus sedes: verde con el nombre del lugar.
-  if (cell.within === true) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
-        <MapPin className="size-3" />
-        {shortBranch(cell.branchName) || "En sede"}
-      </span>
-    );
-  }
-  // Fuera de rango: ámbar con la distancia.
-  if (cell.within === false && cell.distance !== null) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200">
-        <MapPin className="size-3" />
-        A {cell.distance} m
-      </span>
-    );
-  }
-  // Sin ubicación.
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold text-ink-500">
-      Sin ubicación
-    </span>
-  );
 }

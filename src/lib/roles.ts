@@ -2,7 +2,7 @@ import { rewriteMediaUrl } from "./image-url";
 
 // Rol y sedes de cada usuario viven en auth.users.user_metadata.
 // Roles:
-//   - admin: acceso al panel, NO marca.
+//   - admin: acceso al panel; marca si clock_in_required=true en su perfil.
 //   - colaborador: solo marca hora.
 //   - dev: acceso a todo (como admin) Y marca hora.
 // Los usuarios sin `role` se tratan como 'admin' (compatibilidad).
@@ -28,9 +28,11 @@ export function isAdminLike(role: UserRole): boolean {
   return role === "admin" || role === "dev";
 }
 
-/** ¿Debe marcar hora? (colaborador o dev) */
-export function mustClockIn(role: UserRole): boolean {
-  return role === "colaborador" || role === "dev";
+/** Marcaje independiente de permisos: un admin puede marcar sin perder su rol. */
+export function mustClockIn(userOrRole: MetadataCarrier | UserRole | null | undefined): boolean {
+  const role = typeof userOrRole === "string" ? userOrRole : getUserRole(userOrRole);
+  return role === "colaborador" || role === "dev" ||
+    (typeof userOrRole === "object" && userOrRole?.user_metadata?.clock_in_required === true);
 }
 
 /** ¿Puede usar el panel de vendedor (publicar productos en Facebook)?

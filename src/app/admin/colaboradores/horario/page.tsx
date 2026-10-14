@@ -6,9 +6,9 @@ import {
   type DayRow,
 } from "@/lib/timeclock";
 import { adminListEntries } from "@/lib/timeclock-server";
-import { createAdminClient } from "@/lib/supabase";
+import { listTimeclockEmployees, unassignedUsersForBranch } from "@/lib/timeclock-roster";
 import { getCurrentUser } from "@/lib/supabase-server";
-import { getUserRole, mustClockIn, getUserBranchIds } from "@/lib/roles";
+import { getUserRole } from "@/lib/roles";
 import { BRANCHES } from "@/lib/branches";
 import { HorarioFilters } from "@/components/admin/HorarioFilters";
 import { HorarioTable } from "@/components/admin/HorarioTable";
@@ -26,44 +26,25 @@ export default async function ControlHorarioPage({
   const branchId = sp.branch || "";
   const userId = sp.user || "";
 
+  const roster = await listTimeclockEmployees();
   const entries = await adminListEntries({
     from: today,
     to: today,
     branchId: branchId || undefined,
     userId: userId || undefined,
+    unassignedUserIds: unassignedUsersForBranch(roster, branchId),
   });
   const markedRows = buildDayRows(entries);
 
   const currentUser = await getCurrentUser();
   const isDev = getUserRole(currentUser) === "dev";
 
-  // Lista completa de colaboradores que deben marcar (para el dropdown y la tabla).
-  let roster: { id: string; name: string; branchIds: string[] }[] = [];
-  try {
-    const sb = createAdminClient();
-    const { data } = await sb.auth.admin.listUsers({ page: 1, perPage: 500 });
-    roster = data.users
-      .filter((u) => mustClockIn(getUserRole(u)))
-      .map((u) => ({
-        id: u.id,
-        name:
-          (u.user_metadata?.full_name as string) ||
-          u.email?.split("@")[0] ||
-          "—",
-        branchIds: getUserBranchIds(u),
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  } catch {
-    roster = [];
-  }
-
   const employees = roster.map(({ id, name }) => ({ id, name }));
 
   // Colaboradores a mostrar en la tabla según los filtros activos.
   let visible = roster;
-  if (userId) visible = roster.filter((e) => e.id === userId);
-  else if (branchId)
-    visible = roster.filter((e) => e.branchIds.includes(branchId));
+  if (branchId) visible = visible.filter((e) => e.branchIds.includes(branchId));
+  if (userId) visible = visible.filter((e) => e.id === userId);
 
   // Fusiona: cada colaborador visible con su fila de marcas, o una fila vacía.
   const byUser = new Map(markedRows.map((r) => [r.userId, r]));
@@ -120,6 +101,7 @@ export default async function ControlHorarioPage({
         <TimeclockExport rows={rows} rangeLabel={rangeLabel} />
       </div>
 
+      {branchId && <p className="mt-3 text-xs text-ink-500">Se incluyen marcas sin sede registrada de usuarios actualmente asignados a esta sede. Su ubicación histórica no se modifica ni se considera validada.</p>}
       <div className="mt-5 overflow-hidden rounded-2xl border border-ink-200 bg-white">
         <div className="flex items-center gap-2 border-b border-ink-100 px-4 py-3">
           <CalendarDays className="size-4 text-brand-600" />
