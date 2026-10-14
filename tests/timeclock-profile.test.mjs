@@ -8,7 +8,7 @@ function load(relative, dependencies = {}) {
   const source = fs.readFileSync(new URL('../src/' + relative, import.meta.url), 'utf8');
   const exports = {};
   vm.runInNewContext(ts.transpileModule(source, {compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText,
-    {exports, Date, Number, Set, Map, Error, require(name) {
+    {exports, Date, Number, Set, Map, Error, Request, Response, require(name) {
       if (!(name in dependencies)) throw new Error('Unexpected dependency: ' + name);
       return dependencies[name];
     }});
@@ -123,4 +123,27 @@ test('las tres vistas y las exportaciones usan la misma distinción de GPS/sede'
   const exporter=fs.readFileSync(new URL('../src/components/admin/TimeclockExport.tsx',import.meta.url),'utf8');
   assert.match(exporter,/punchLocationStatus\(cell\).label/);
   assert.doesNotMatch(exporter,/sin ubicacion/);
+});
+
+test('una marca nueva usa Cartago asignado y GPS validado sin alterar rol ni otras marcas', async () => {
+  const branches=load('lib/branches.ts');
+  const cartago=branches.getLocation('cartago');
+  const writes=[];
+  const saved={insert:row=>{writes.push(row);return {select:()=>({single:async()=>({data:{id:'fake-entry',...row},error:null})})};}};
+  class NextResponse extends Response { static json(body) {return new Response(JSON.stringify(body),{headers:{'Content-Type':'application/json'}});} }
+  const route=load('app/api/timeclock/punch/route.ts',{
+    'next/server':{NextResponse},'@/lib/roles':roles,'@/lib/timeclock':clock,'@/lib/branches':branches,
+    '@/lib/supabase-server':{createSupabaseServer:async()=>({auth:{getUser:async()=>({data:{user:admin}})}})},
+    '@/lib/supabase':{createAdminClient:()=>({from:table=>{assert.equal(table,'time_entries');return saved;}})}});
+  const result=await route.POST(new Request('https://example.invalid/api/timeclock/punch',{method:'POST',body:JSON.stringify({punchType:'entrada',latitude:cartago.lat,longitude:cartago.lng,accuracy:10})}));
+  assert.equal(result.status,200);
+  assert.equal(writes.length,1);
+  assert.equal(writes[0].branch_id,'cartago');
+  assert.equal(writes[0].within_range,true);
+  assert.equal(writes[0].distance_m,0);
+  assert.equal(writes[0].latitude,cartago.lat);
+  assert.equal(admin.user_metadata.role,'admin');
+  const rejected=await route.POST(new Request('https://example.invalid/api/timeclock/punch',{method:'POST',body:JSON.stringify({punchType:'entrada'})}));
+  assert.equal(rejected.status,400);
+  assert.equal(writes.length,1);
 });
