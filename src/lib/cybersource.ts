@@ -300,8 +300,23 @@ export type TransactionLookup = {
   amount?: string;
   currency?: string;
   submittedAt?: string;
+  declineCategory?: "INVALID_AMOUNT";
   payload: Record<string, unknown> | null;
 };
+
+/** Texto fijo a partir de la consulta autenticada; nunca mostrar rMessage/JWT crudos. */
+export function paymentDeclineMessage(result: Pick<TransactionLookup, "reasonCode" | "declineCategory">): string {
+  if (result.declineCategory === "INVALID_AMOUNT") {
+    return "El procesador rechazó el importe del pago (código 233). Contactá a la tienda para revisar el monto antes de volver a intentarlo.";
+  }
+  if (result.reasonCode === "233") {
+    return "El procesador no aprobó este pago (código 233). Consultá a la tienda o a tu banco antes de volver a intentarlo.";
+  }
+  if (result.reasonCode === "476") {
+    return "No se completó la autenticación de la tarjeta (3-D Secure, código 476). Consultá a tu banco o a la tienda antes de volver a intentarlo.";
+  }
+  return "El pago no fue aprobado. Consultá a la tienda o a tu banco antes de volver a intentarlo.";
+}
 
 const PAID_STATUSES = [
   "AUTHORIZED",
@@ -429,6 +444,14 @@ export async function lookupTransactionByOrderNumber(
   const orderInfo = (t.orderInformation ?? {}) as Record<string, unknown>;
   const amountDetails = (orderInfo.amountDetails ?? {}) as Record<string, unknown>;
   const ok = requireCapture ? hasSuccessfulCapture(t) : isPaidSummary(t);
+  const apps = Array.isArray(app.applications) ? app.applications as Record<string, unknown>[] : [];
+  const auth = apps.find(a => String(a.name ?? "").toLowerCase() === "ics_auth" && String(a.reasonCode ?? "") === "233");
+  const processor = (t.processorInformation ?? {}) as Record<string, unknown>;
+  // El mismo 233 cubre varios rechazos: no atribuir todos a un monto mínimo.
+  const invalidAmount = !ok && String(app.reasonCode ?? "") === "233" && (
+    String(processor.responseCode ?? "") === "13" ||
+    (auth && /^Invalid (?:amt|amount) or Currency conversion field overflow$/i.test(String(auth.rMessage ?? "").trim()))
+  );
   const st =
     String(app.status ?? "").toUpperCase() ||
     (ok ? "APROBADA" : `RECHAZADA (reasonCode ${app.reasonCode ?? "?"})`);
@@ -442,6 +465,7 @@ export async function lookupTransactionByOrderNumber(
     amount: (amountDetails.totalAmount as string | undefined) ?? undefined,
     currency: (amountDetails.currency as string | undefined) ?? undefined,
     submittedAt: (t.submitTimeUtc as string | undefined) ?? undefined,
+    ...(invalidAmount ? { declineCategory: "INVALID_AMOUNT" as const } : {}),
     payload: t,
   };
 }

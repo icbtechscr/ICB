@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { lookupTransactionByOrderNumber, mountResultPaymentId, paymentErrorDetails } from "@/lib/cybersource";
+import { lookupTransactionByOrderNumber, mountResultPaymentId, paymentErrorDetails, paymentDeclineMessage } from "@/lib/cybersource";
 import { writeAuditEvent } from "@/lib/audit";
 import { notifyPaymentResult, sendCustomerReceipt } from "@/lib/email";
 
@@ -61,6 +61,7 @@ export async function POST(req: Request) {
     }
 
     const newPaymentStatus = result.ok ? "pagado" : "rechazado";
+    const declineMessage = result.ok ? undefined : paymentDeclineMessage(result);
     const newOrderStatus = !order.status || ["pendiente", "pagado"].includes(order.status)
       ? (result.ok ? "pagado" : "pendiente") : order.status;
 
@@ -71,7 +72,8 @@ export async function POST(req: Request) {
         status: newOrderStatus,
         payment_reference: result.id ?? null,
         payment_response: { verified_by: "cybersource_server_search", status: result.status, reasonCode: result.reasonCode,
-          amount: result.amount, currency: result.currency, submittedAt: result.submittedAt },
+          amount: result.amount, currency: result.currency, submittedAt: result.submittedAt,
+          ...(!result.ok ? { declineCategory: result.declineCategory, message: declineMessage } : {}) },
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId)
@@ -90,7 +92,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, message: "No pudimos guardar la confirmación. No vuelvas a pagar; contactá a la tienda." }, { status: 503 });
     }
     await writeAuditEvent({ action: result.ok ? "PAYMENT_CAPTURE_VERIFIED" : "PAYMENT_DECLINED_VERIFIED", table_name: "orders",
-      source: "/api/payments/confirm", details: { order_number: order.order_number, provider_status: result.status, reason_code: result.reasonCode } });
+      source: "/api/payments/confirm", details: { order_number: order.order_number, provider_status: result.status, reason_code: result.reasonCode,
+        ...(!result.ok ? { decline_category: result.declineCategory } : {}) } });
 
     // Comprobante al CLIENTE: solo si el pago fue aprobado (ya se rebajo).
     if (result.ok) {
@@ -150,7 +153,7 @@ export async function POST(req: Request) {
           shippingMethod: order.shipping_method ?? "",
         },
         result.ok,
-        result.ok ? undefined : "Pago no aprobado por Cybersource"
+        declineMessage
       );
     } catch {
       /* ignorar errores de correo */
@@ -162,7 +165,8 @@ export async function POST(req: Request) {
           ok: false,
           status: result.status,
           reasonCode: result.reasonCode,
-          message: "Pago no aprobado por Cybersource",
+          declineCategory: result.declineCategory,
+          message: declineMessage,
         },
         { status: 402 }
       );

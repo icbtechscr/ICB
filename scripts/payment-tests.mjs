@@ -47,7 +47,7 @@ async function confirm({ result = verified, row = order, saveError = null, saved
   const route = load("src/app/api/payments/confirm/route.ts", {
     "next/server": { NextResponse: class extends Response { static json(data, init) { return Response.json(data, init); } } },
     "@/lib/supabase": { createAdminClient: () => ({ from: () => builder }) },
-    "@/lib/cybersource": { mountResultPaymentId: () => "123", paymentErrorDetails: () => ({ error_type: "Error" }), lookupTransactionByOrderNumber: async (code, strict, id) => { assert.equal(code, "ICB-TEST"); assert.equal(strict, true); assert.equal(id, "123"); if (result instanceof Error) throw result; return result; } },
+    "@/lib/cybersource": { mountResultPaymentId: () => "123", paymentErrorDetails: () => ({ error_type: "Error" }), paymentDeclineMessage: cybs.paymentDeclineMessage, lookupTransactionByOrderNumber: async (code, strict, id) => { assert.equal(code, "ICB-TEST"); assert.equal(strict, true); assert.equal(id, "123"); if (result instanceof Error) throw result; return result; } },
     "@/lib/audit": { writeAuditEvent: async event => { events.push(event); } },
     "@/lib/email": { sendCustomerReceipt: async () => mails.push("receipt"), notifyPaymentResult: async () => mails.push("admin") }
   }, { console: { error: () => {} } });
@@ -98,4 +98,31 @@ test("confirmaciones concurrentes no duplican comprobantes", async () => {
 test("proveedor inaccesible no altera el pedido", async () => {
   const r = await confirm({ result: new Error("offline") });
   assert.equal(r.status, 503); assert.equal(r.mutations.length, 0);
+});
+
+test("importe inválido confirmado muestra causa segura sin inventar mínimo ni cambiar monto", async () => {
+  const r = await confirm({ result: { ...verified, ok: false, status: "DECLINED", reasonCode: "233", declineCategory: "INVALID_AMOUNT" } });
+  assert.equal(r.status, 402); assert.equal(r.data.ok, false);
+  assert.match(r.data.message, /rechazó el importe/); assert.match(r.data.message, /233/);
+  assert.doesNotMatch(r.data.message, /mínimo|₡100|₡500|cobro exitoso/);
+  assert.equal(r.mutations[0].payment_status, "rechazado");
+  assert.equal(r.mutations[0].payment_response.declineCategory, "INVALID_AMOUNT");
+  assert.equal(r.mutations[0].payment_response.message, r.data.message);
+  assert.equal(r.mutations[0].total_crc, undefined);
+  assert.ok(r.events.some(e => e.action === "PAYMENT_DECLINED_VERIFIED" && e.details.decline_category === "INVALID_AMOUNT"));
+});
+
+test("233 solo se clasifica como importe inválido con evidencia autenticada del procesador", async () => {
+  const env = { CYBS_RUN_ENV: "apitest", CYBS_KEY_ID: "test", CYBS_SECRET_KEY: Buffer.from("test").toString("base64"), CYBS_MERCHANT_ID: "test", ICB_PAYMENTS_ENABLED: "true" };
+  let message = "Invalid amt or Currency conversion field overflow";
+  const lib = load("src/lib/cybersource.ts", {}, { process: { env }, fetch: async () => new Response(JSON.stringify({ _embedded: { transactionSummaries: [{ id: "123", clientReferenceInformation: { code: "ICB-TEST" },
+    applicationInformation: { reasonCode: "233", applications: [{ name: "ics_auth", reasonCode: "233", rMessage: message }, { name: "ics_pa_enroll", reasonCode: "100" }, { name: "ics_bill" }] },
+    orderInformation: { amountDetails: { totalAmount: "1.00", currency: "CRC" } } }] } }), { headers: { "content-type": "application/json" } }) });
+  const result = await lib.lookupTransactionByOrderNumber("ICB-TEST", true, "123");
+  assert.equal(result.ok, false); assert.equal(result.declineCategory, "INVALID_AMOUNT");
+  message = "Private provider text 4111111111111111 customer@example.invalid";
+  const unknown = await lib.lookupTransactionByOrderNumber("ICB-TEST", true, "123");
+  assert.equal(unknown.declineCategory, undefined);
+  assert.doesNotMatch(lib.paymentDeclineMessage(unknown), /importe|411111|example.invalid|Private/);
+  assert.match(lib.paymentDeclineMessage({ reasonCode: "476" }), /autenticación/);
 });
