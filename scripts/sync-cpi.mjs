@@ -8,6 +8,8 @@
 //   node scripts/sync-cpi.mjs --dry-run -> consulta y parsea, sin escribir
 import { readFileSync, writeFileSync } from "node:fs";
 import https from "node:https";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 
 function loadEnv() {
@@ -72,7 +74,7 @@ function jarFrom(setCookie) {
 }
 const jarStr = (jar) => [...jar].map(([k, v]) => `${k}=${v}`).join("; ");
 
-async function login() {
+export async function login() {
   if (!USER || !PASS || !ID) throw new Error("Faltan CPI_USER/CPI_PASS/CPI_ID en .env.local");
   const jar = new Map();
 
@@ -142,7 +144,7 @@ function requestedRange() {
   return { from, to };
 }
 
-async function fetchReporte(cookie, range) {
+export async function fetchReporte(cookie, range) {
   const desde = `${range.from} 00:00:00`;
   const hasta = `${range.to} 23:59:59`;
 
@@ -189,7 +191,7 @@ const norm = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().rep
 
 // Parser del reporte "Facturacion FE". CPI cambia el orden de las columnas
 // cuando se agregan campos al reporte, por eso se resuelven por encabezado.
-function parse(html) {
+export function parse(html) {
   const out = [];
   const seen = new Set();
   const decodeEnt = (x) => (x || "")
@@ -383,4 +385,6 @@ async function main() {
   await saveRows(rows, range);
 }
 
-main().catch((e) => { console.error("ERROR:", e.message); process.exitCode = 1; });
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((e) => { console.error("ERROR:", e.message); process.exitCode = 1; });
+}
