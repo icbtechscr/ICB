@@ -5,6 +5,7 @@ import {
 import { getSalesAnalytics, periodRange, type Period } from "@/lib/cpi-analytics";
 import { getAllTimeProductRanking, getBranchProductRankings, type ProductRankRow } from "@/lib/cpi-products";
 import { PeriodNav } from "@/components/PeriodNav";
+import { CpiSalesStatusNotice } from "@/components/CpiSalesStatusNotice";
 import { formatCRCAmount, formatMoneyPair, formatUSD } from "@/lib/utils";
 import { StatCard, BarList, DayBars, SplitBar, type BarItem } from "@/components/admin/SalesCharts";
 import { ReportExportButtons } from "@/components/admin/ReportExportButtons";
@@ -230,10 +231,11 @@ export default async function VentasSucursalesPage({
         </div>
       </div>
 
+      <CpiSalesStatusNotice />
       {!a.hasData ? (
         <div className="rounded-2xl border border-ink-200 bg-white p-10 text-center shadow-soft">
           <span className="mx-auto inline-flex size-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600"><TrendingUp className="size-7" /></span>
-          <h2 className="mt-4 text-lg font-black text-ink-900">Sin ventas en este periodo</h2>
+          <h2 className="mt-4 text-lg font-black text-ink-900">Sin ventas sincronizadas en este periodo</h2>
           <p className="mx-auto mt-1.5 max-w-sm text-sm text-ink-600 first-letter:uppercase">No hay facturas sincronizadas para {range.label}.</p>
         </div>
       ) : (

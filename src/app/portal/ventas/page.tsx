@@ -8,6 +8,7 @@ import { formatCRCAmount, formatUSD, isUSDCurrency } from "@/lib/utils";
 import { MetricCard } from "@/components/portal/MetricCard";
 import { SyncSalesButton } from "@/components/portal/SyncSalesButton";
 import { PeriodNav } from "@/components/PeriodNav";
+import { CpiSalesStatusNotice } from "@/components/CpiSalesStatusNotice";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,7 @@ export default async function VentasPage({
 
   return (
     <div className="mx-auto max-w-3xl">
+      <CpiSalesStatusNotice />
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-ink-900">
@@ -93,7 +95,7 @@ export default async function VentasPage({
               <TrendingUp className="size-6" />
             </span>
             <p className="mx-auto mt-3 max-w-sm text-sm text-ink-600">
-              No hay facturas en este periodo. En cuanto se sincronice CPI
+              No hay facturas sincronizadas en este periodo. En cuanto se sincronice CPI
               aparecerán aquí.
             </p>
           </div>

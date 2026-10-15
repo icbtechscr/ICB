@@ -1,4 +1,5 @@
 import { ChartNoAxesCombined } from "lucide-react";
+import { CpiSalesStatusNotice } from "@/components/CpiSalesStatusNotice";
 import { InventoryAnalyticsDashboard } from "@/components/admin/InventoryAnalyticsDashboard";
 import {
   getInventoryRotationReport,
@@ -19,6 +20,7 @@ export default async function AnaliticaPage({
 
   return (
     <div>
+      <CpiSalesStatusNotice />
       <div className="mb-6">
         <h1 className="inline-flex items-center gap-2 text-2xl font-black tracking-tight text-ink-900">
           <ChartNoAxesCombined className="size-6 text-brand-600" /> Rotación de productos

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CpiSalesStatusNotice } from "@/components/CpiSalesStatusNotice";
 import { redirect } from "next/navigation";
 import {
   BadgeDollarSign,
@@ -733,6 +734,7 @@ export default async function RendimientoPage({
 
   return (
     <div className="mx-auto max-w-3xl min-w-0 overflow-x-hidden">
+      {activeView === "ventas" && <CpiSalesStatusNotice />}
       <PageHeader activeView={activeView} year={year} month1={month1} />
       <ViewTabs activeView={activeView} year={year} month1={month1} />
       {activeView === "cotizaciones" ? (

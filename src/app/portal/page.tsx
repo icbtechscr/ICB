@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CpiSalesStatusNotice } from "@/components/CpiSalesStatusNotice";
 import { redirect } from "next/navigation";
 import {
   ArrowRight,
@@ -78,6 +79,7 @@ export default async function PortalHomePage() {
 
   return (
     <div>
+      <CpiSalesStatusNotice />
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 via-brand-600 to-brand-800 px-6 py-7 text-white shadow-lift">
         <div className="pointer-events-none absolute inset-0 opacity-40 [background:radial-gradient(circle_at_85%_-10%,rgba(255,255,255,0.35),transparent_50%)]" />
         <div className="relative">
