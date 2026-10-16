@@ -9,11 +9,14 @@ export const supabase = createClient(url, anon, {
   auth: { persistSession: false },
 });
 
-export function createAdminClient() {
+export function createAdminClient(options?: { disableAuthRefresh?: boolean }) {
   const secret = process.env.SUPABASE_SECRET_KEY;
   if (!secret) throw new Error("SUPABASE_SECRET_KEY not set");
   return createClient(url, secret, {
-    auth: { persistSession: false },
+    auth: {
+      persistSession: false,
+      ...(options?.disableAuthRefresh ? { autoRefreshToken: false, detectSessionInUrl: false } : {}),
+    },
     global: {
       fetch: async (input, init) => {
         const target = input instanceof Request ? input.url : String(input);

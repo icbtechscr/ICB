@@ -38,6 +38,14 @@ type Group = {
 
 const GROUPS: Group[] = [
   {
+    id: "cronograma",
+    label: "Cronograma",
+    Icon: ClipboardList,
+    href: "/admin/cronograma",
+    prefixes: ["/admin/cronograma"],
+    sub: [],
+  },
+  {
     id: "auditoria",
     label: "Auditoría",
     Icon: ClipboardList,
