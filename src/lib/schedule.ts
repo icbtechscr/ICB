@@ -1,9 +1,9 @@
 export const SCHEDULE_COLUMNS = [
-  { id: "unassigned", label: "Sin asignar", hint: "Nuevas tareas por organizar", color: "border-ink-300" },
-  { id: "active", label: "Trabajando ahora", hint: "Hasta 3 tareas en vivo", color: "border-emerald-500" },
+  { id: "unassigned", label: "Tareas disponibles", hint: "Sin asignar · Arrastra para organizar", color: "border-ink-300" },
+  { id: "active", label: "Trabajando ahora mismo", hint: "Hasta 3 tareas en vivo", color: "border-brand-500" },
   { id: "urgent", label: "Urgente", hint: "Lo siguiente por resolver", color: "border-red-400" },
   { id: "important", label: "Importante", hint: "Trabajo prioritario", color: "border-amber-400" },
-  { id: "low", label: "No importante", hint: "Puede esperar", color: "border-sky-400" },
+  { id: "low", label: "Poco importante", hint: "Puede esperar", color: "border-lime-400" },
   { id: "done", label: "Terminadas", hint: "Historial de tareas completadas", color: "border-violet-400" },
 ] as const;
 export type ScheduleColumn = typeof SCHEDULE_COLUMNS[number]["id"];

@@ -7,11 +7,26 @@ import { isDifficulty, isScheduleColumn, validStart } from "./schedule";
 export class ScheduleError extends Error {
   constructor(message: string, public status = 400) { super(message); }
 }
+export function isScheduleOriginAllowed(request: Request): boolean {
+  // The public browser origin can differ from Host after Cloudflare/Traefik.
+  // Trust application configuration, never a forwarded host supplied by a caller.
+  const allowed = new Set(["https://icbtechscr.com", "https://www.icbtechscr.com"]);
+  for (const configured of [process.env.NEXT_PUBLIC_SITE_ORIGIN, process.env.NEXT_PUBLIC_SITE_URL]) {
+    if (!configured) continue;
+    try {
+      const url = new URL(configured);
+      if (["http:", "https:"].includes(url.protocol)) allowed.add(url.origin);
+    } catch { /* Ignore invalid configuration; do not weaken the origin check. */ }
+  }
+  if (process.env.NODE_ENV !== "production") {
+    const url = new URL(request.url);
+    if (["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) allowed.add(url.origin);
+  }
+  const origin = request.headers.get("origin");
+  return origin !== null && allowed.has(origin);
+}
 export async function scheduleActor(request: Request, devOnly = false) {
-  const url = new URL(request.url);
-  const host = request.headers.get("host") || url.host;
-  const expectedOrigin = /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host) ? `http://${host}` : `https://${host}`;
-  if (!["GET", "HEAD"].includes(request.method) && request.headers.get("origin") !== expectedOrigin) {
+  if (!["GET", "HEAD"].includes(request.method) && !isScheduleOriginAllowed(request)) {
     throw new ScheduleError("Origen de la solicitud no permitido.", 403);
   }
   const user = await getCurrentUser();

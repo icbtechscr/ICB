@@ -9,7 +9,7 @@ function load(path, dependencies = {}) {
   const source = fs.readFileSync(new URL('../src/' + path, import.meta.url), 'utf8');
   vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText,
     { exports, Date, Number, Set, Map, Error, Request, Response, File, FormData, URL, Uint8Array, crypto, console,
-      process: { env: { NEXT_PUBLIC_SUPABASE_URL: 'https://example.invalid', NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'public-test', SUPABASE_SECRET_KEY: 'secret-test' } },
+      process: { env: { NODE_ENV: 'production', NEXT_PUBLIC_SITE_ORIGIN: 'https://www.icbtechscr.com', NEXT_PUBLIC_SITE_URL: 'https://icbtechscr.com/', NEXT_PUBLIC_SUPABASE_URL: 'https://example.invalid', NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'public-test', SUPABASE_SECRET_KEY: 'secret-test' } },
       require(name) { if (!(name in dependencies)) throw new Error('Unexpected dependency: ' + name); return dependencies[name]; } });
   return exports;
 }
@@ -39,6 +39,27 @@ test('cronograma: sesión, rol y origen se comprueban en el handler antes de acc
   const actor = await server.scheduleActor(request('PATCH'), true);
   assert.equal(actor.dev, true);
   assert.equal(actor.id, id);
+});
+test('cronograma: crear detrás del proxy acepta el origen público aunque Host sea interno', async () => {
+  current = { id, user_metadata: { role: 'dev', full_name: 'Dev real' } };
+  const route = load('app/api/admin/schedule/route.ts', { 'next/server': { NextResponse: Response }, '@/lib/supabase': { createAdminClient: () => sb }, '@/lib/schedule-server': server });
+  for (const origin of ['https://www.icbtechscr.com', 'https://icbtechscr.com']) {
+    const before = rpcCalls.length;
+    const req = new Request('http://localhost:3000/api/admin/schedule', { method: 'POST', headers: {
+      host: 'localhost:3000', origin, 'content-type': 'application/json', 'x-forwarded-host': 'www.icbtechscr.com',
+    }, body: JSON.stringify({ name: 'Correos con dominio', description: 'Crear un buzón para diferentes correos', started_at: '2026-01-01T13:00:00Z', suggested_difficulty: 4 }) });
+    const response = await route.POST(req);
+    assert.equal(response.status, 201);
+    assert.equal(rpcCalls.length, before + 1);
+    assert.equal(rpcCalls.at(-1).data.p_input.name, 'Correos con dominio');
+    assert.equal(rpcCalls.at(-1).data.p_actor, id);
+  }
+  for (const origin of ['https://malicioso.example', 'http://localhost:3000', 'null', 'https://www.icbtechscr.com.malicioso.example', 'https://www.icbtechscr.com/']) {
+    const forged = new Request('http://localhost:3000/api/admin/schedule', { method: 'POST', headers: {
+      host: 'malicioso.example', origin, 'x-forwarded-host': 'www.icbtechscr.com',
+    } });
+    await assert.rejects(server.scheduleActor(forged), e => e.status === 403);
+  }
 });
 test('cronograma: altas ignoran identidad, columna y dificultad definitiva suministradas por el cliente', async () => {
   const input = server.validateCreate({ name: ' Tarea ', description: ' Trabajo ', started_at: '2026-01-01T10:00:00Z', suggested_difficulty: 3,

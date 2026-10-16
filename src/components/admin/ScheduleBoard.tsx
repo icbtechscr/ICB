@@ -108,7 +108,6 @@ export function ScheduleBoard({ canManage: initialCanManage }: { canManage: bool
   const tasks = board?.tasks ?? [];
   const ordered = (column: ScheduleColumn) => tasks.filter(t => t.column_id === column).sort((a, b) => a.position - b.position);
   const selected = tasks.find(t => t.id === selectedId);
-  const active = ordered("active");
   function drop(event: React.DragEvent, column: ScheduleColumn, beforeId?: string) {
     event.preventDefault(); event.stopPropagation(); setOver(null); setDragged(null);
     if (!canManage || busy || search.trim()) return;
@@ -149,12 +148,17 @@ export function ScheduleBoard({ canManage: initialCanManage }: { canManage: bool
     const definition = SCHEDULE_COLUMNS.find(c => c.id === columnId)!;
     const entries = ordered(columnId);
     const visible = entries.filter(t => `${t.name} ${t.description} ${t.created_by_name}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
+    const available = columnId === "unassigned";
+    const live = columnId === "active";
+    const headingColor = live ? "text-brand-600" : columnId === "urgent" ? "text-red-600" : columnId === "important" ? "text-amber-600" : columnId === "low" ? "text-lime-600" : "text-ink-900";
     return <section key={columnId} {...dragEvents(columnId)} aria-label={definition.label}
-      className={`min-w-0 rounded-2xl border border-t-4 ${definition.color} ${over === columnId ? "bg-brand-50 ring-2 ring-brand-400" : "bg-ink-50"} p-3`}>
-      <div className="mb-3 px-1"><div className="flex items-center justify-between"><h2 className="text-sm font-extrabold">{definition.label}</h2><span className="rounded-full bg-white px-2 py-0.5 text-xs text-ink-500">{entries.length}</span></div><p className="mt-1 text-xs text-ink-500">{definition.hint}</p></div>
-      <div className="space-y-3">{visible.map(card)}
-        {!visible.length && <p className="rounded-xl border border-dashed border-ink-200 px-3 py-8 text-center text-xs text-ink-500">{search ? "Sin coincidencias" : canManage ? "Arrastra una tarea aquí" : "Sin tareas"}</p>}
-        {!!visible.length && canManage && !search.trim() && <div {...dragEvents(columnId)} className="min-h-8 rounded-lg border border-dashed border-ink-200 p-2 text-center text-[10px] text-ink-400">Soltar al final</div>}
+      className={`flex min-w-0 flex-col ${available ? "rounded-2xl border border-ink-200 bg-white shadow-sm" : "border-l border-ink-200"} ${over === columnId ? "bg-brand-50 ring-2 ring-inset ring-brand-400" : ""} ${columnId === "done" ? "min-h-40" : "min-h-[32rem]"}`}>
+      <div className={`min-h-24 border-b px-3 py-4 ${available ? "border-ink-200" : `border-b-2 ${definition.color}`}`}><div className="flex items-start justify-between gap-2"><h2 className={`text-sm font-extrabold ${headingColor}`}>{definition.label}</h2><span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${live ? "bg-brand-50 text-brand-600" : "bg-ink-100 text-ink-500"}`}>{entries.length}{live ? "/3" : ""}</span></div><p className="mt-2 text-[11px] text-ink-500">{definition.hint}</p></div>
+      <div className="flex-1 space-y-3 p-3">{visible.map(card)}
+        {live ? Array.from({ length: Math.max(0, 3 - entries.length) }, (_, i) => <div key={`slot-${i}`} {...dragEvents("active")}
+          className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-brand-200 bg-brand-50/40 p-3 text-center text-brand-600"><Plus className="size-4 opacity-60" /><p className="text-[11px] font-semibold">Espacio {entries.length + i + 1} disponible</p><p className="text-[10px] text-ink-500">{canManage ? "Arrastra una tarea para empezar" : "Disponible para el desarrollador"}</p></div>)
+          : !visible.length && <p className="rounded-xl border border-dashed border-ink-200 px-3 py-8 text-center text-xs leading-5 text-ink-500">{search ? "Sin coincidencias" : available ? "Las tareas nuevas aparecerán aquí" : canManage ? "Arrastra una tarea aquí" : "Sin tareas"}</p>}
+        {!!visible.length && canManage && !search.trim() && <div {...dragEvents(columnId)} className="min-h-10 rounded-lg border border-dashed border-ink-200 p-2 text-center text-[10px] text-ink-400">Soltar al final</div>}
       </div>
     </section>;
   }
@@ -168,14 +172,14 @@ export function ScheduleBoard({ canManage: initialCanManage }: { canManage: bool
     </div>
     <ErrorNotice message={error} />
     {!board ? <div className="rounded-2xl border border-ink-200 bg-white p-10 text-center text-sm text-ink-500">{error ? "Cronograma no disponible. Puedes volver a intentar con Actualizar." : "Cargando cronograma…"}</div> : <>
-      <section {...dragEvents("active")} className={`rounded-2xl border p-5 ${over === "active" ? "border-emerald-400 bg-emerald-50 ring-2 ring-emerald-400" : "border-emerald-200 bg-emerald-50/40"}`} aria-label="Trabajando ahora">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2"><span className="relative flex size-2.5"><span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-50" /><span className="relative size-2.5 rounded-full bg-emerald-500" /></span><h2 className="font-black">Trabajando ahora</h2><span className="text-xs font-bold text-emerald-700">{active.length}/3</span></div><p className="text-xs text-ink-500">El tiempo en vivo se pausa al salir de aquí</p></div>
-        <div className="grid gap-3 md:grid-cols-3">{active.map(card)}{Array.from({ length: 3 - active.length }, (_, i) => <div key={`slot-${i}`} {...dragEvents("active")}
-          className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-300 p-4 text-center text-emerald-700"><Plus className="size-5 opacity-60" /><p className="text-xs font-semibold">Espacio {active.length + i + 1} disponible</p><p className="text-[11px] opacity-70">{canManage ? "Arrastra una tarea para empezar" : "El desarrollador puede ocupar este espacio"}</p></div>)}</div>
-      </section>
       <div className="flex flex-wrap items-center justify-between gap-3"><label className="w-full sm:max-w-xs"><span className="sr-only">Buscar tareas</span><input type="search" className={inputStyle} placeholder="Buscar tarea o administrador…" value={search} onChange={e => setSearch(e.target.value)} /></label>
         <p className="text-xs text-ink-500">{canManage ? search.trim() ? "Borra la búsqueda para arrastrar. También puedes mover desde el detalle." : "Arrastra para ordenar · Haz clic para ver detalles" : "Puedes crear tareas y sugerir dificultad. El desarrollador organiza el trabajo."}</p></div>
-      <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-4">{(["unassigned", "urgent", "important", "low"] as const).map(column)}</div>
+      <div className="grid items-start gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+        <aside aria-label="Lista de tareas disponibles">{column("unassigned")}</aside>
+        <div className="min-w-0 overflow-x-auto rounded-xl border border-ink-200 bg-white" tabIndex={0} aria-label="Prioridades del cronograma">
+          <div className="grid min-w-[720px] grid-cols-[1fr_1fr_1fr_1.15fr]">{(["low", "important", "urgent", "active"] as const).map(column)}</div>
+        </div>
+      </div>
       <section className="space-y-3"><button type="button" className={buttonStyle} aria-expanded={showDone} onClick={() => setShowDone(!showDone)}><Check className="size-4" />Terminadas ({ordered("done").length}) {showDone ? "−" : "+"}</button>
         {showDone ? column("done") : canManage && <div {...dragEvents("done")} className={`rounded-xl border border-dashed p-3 text-center text-xs text-ink-500 ${over === "done" ? "border-brand-500 bg-brand-50" : "border-ink-200"}`}>Suelta aquí una tarea para marcarla como terminada</div>}
       </section>
@@ -204,7 +208,7 @@ function CreateTask({ busy, error, onClose, onCreate }: { busy: boolean; error: 
     await onCreate({ name, description, started_at: timestamp.toISOString(), suggested_difficulty: difficulty });
   }
   return <Modal title="Nueva tarea" busy={busy} onClose={onClose}><ErrorNotice message={error} />
-    <p className="text-sm text-ink-500">La tarea aparecerá en Sin asignar con tu nombre como creador.</p>
+    <p className="text-sm text-ink-500">La tarea aparecerá en Tareas disponibles, sin asignar, con tu nombre como creador.</p>
     <form className="space-y-4" onSubmit={submit}>
       <label className="block space-y-1.5 text-sm font-semibold">Nombre<input autoFocus required maxLength={160} className={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="Ej. Integrar reportes de ventas" /></label>
       <label className="block space-y-1.5 text-sm font-semibold">¿Qué estoy haciendo?<textarea required maxLength={10000} rows={4} className={inputStyle} value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe el trabajo y el resultado esperado…" /></label>

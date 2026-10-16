@@ -2,6 +2,10 @@
 
 Ruta: `/admin/cronograma`, accesible desde el menú Admin. Reutiliza la sesión de ICB y sus roles existentes.
 
+La vista muestra Tareas disponibles (sin asignar) a la izquierda y un tablero a la derecha con Poco importante, Importante, Urgente y Trabajando ahora mismo, en ese orden. Los tres espacios en vivo se apilan dentro de la última columna. En pantallas pequeñas el tablero tiene desplazamiento horizontal propio.
+
+Las escrituras comprueban el Origin del navegador contra los dominios públicos de ICB y los orígenes configurados de la aplicación. No lo comparan con el Host interno del contenedor, que puede cambiar al atravesar Cloudflare/Traefik. Los encabezados de host reenviado no amplían la lista de orígenes permitidos.
+
 - Admin y dev: consultar tareas, avances e imágenes; crear tareas con nombre, descripción, inicio y dificultad sugerida. Todas nacen en Sin asignar. El servidor identifica al creador.
 - Dev: mover y ordenar tareas, cambiar descripción y dificultad definitiva, añadir avances e imágenes. Puede operar arrastrando o con el selector Mover a y los botones Subir/Bajar del detalle (también en móvil/teclado).
 - Colaborador y visitantes: sin acceso al módulo ni a sus APIs o imágenes.
