@@ -2,8 +2,12 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { getUserRole, canSell } from "@/lib/roles";
 import { writeAuditEvent } from "@/lib/audit";
+import { portalSgiDestination, retiredWorkerApi } from "@/lib/portal-sgi-redirect";
 
 export async function proxy(request: NextRequest) {
+  if (retiredWorkerApi(request.nextUrl.pathname)) return NextResponse.json({ error: "Usá esta función desde el SGI." }, { status: 410 });
+  const destination = portalSgiDestination(request.nextUrl.pathname, request.nextUrl.search);
+  if (destination) return ["GET", "HEAD"].includes(request.method) ? NextResponse.redirect(destination, 307) : NextResponse.json({ error: "Esta pantalla ahora está en SGI." }, { status: 410 });
   const path = request.nextUrl.pathname;
   const requestId = crypto.randomUUID();
   // Nunca confiar en identidad ni contexto enviados por el navegador.
