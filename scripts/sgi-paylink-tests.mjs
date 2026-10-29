@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';import ts from 'typescript';import crypto from 'node:crypto';
 function load(file,mocks={},extra={}){const exports={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText,{exports,require:n=>{if(Object.hasOwn(mocks,n))return mocks[n];throw Error(n);},Request,Response,URL,Buffer,Date,AbortSignal,Uint8Array,...extra});return exports;}
 const auth=load('src/lib/sgi-paylink-auth.ts',{'node:crypto':crypto}),secret=Buffer.alloc(32,9).toString('base64'),id='11111111-1111-4111-8111-111111111111',reference='SGIPL-'+'1'.repeat(32);
-function signed(body, timestamp=String(Date.now())){return{timestamp,signature:crypto.createHmac('sha256',Buffer.from(secret,'base64')).update(`sgi-paylinks-sandbox-v1\n${timestamp}\n${body}`).digest('hex')};}
+function signed(body, timestamp=String(Date.now()), mode='sandbox'){return{timestamp,signature:crypto.createHmac('sha256',Buffer.from(secret,'base64')).update(`sgi-paylinks-${mode}-v1\n${timestamp}\n${body}`).digest('hex')};}
 test('HMAC binds exact body, timestamp, sandbox purpose; stale/tampered/missing requests rejected',()=>{
  const body=JSON.stringify({action:'session',attemptId:id}),s=signed(body);assert.equal(auth.verifySgiPaylinkRequest(body,s.timestamp,s.signature,secret),true);
  for(const args of [[body+' ',s.timestamp,s.signature,secret],[body,String(Number(s.timestamp)-120000),s.signature,secret],[body,s.timestamp,s.signature,Buffer.alloc(32,8).toString('base64')],[body,s.timestamp,null,secret],[body,s.timestamp,s.signature,'invalid']])assert.equal(auth.verifySgiPaylinkRequest(...args),false);
@@ -12,10 +12,10 @@ test('sandbox service signature cannot be replayed as production, even with same
 });
 function harness(){
  const env={SGI_PAYLINK_BRIDGE_MODE:'sandbox',SGI_PAYLINK_BRIDGE_SECRET:secret,SGI_CYBS_SANDBOX_MERCHANT_ID:'synthetic-sandbox',SGI_CYBS_SANDBOX_KEY_ID:'synthetic-key',SGI_CYBS_SANDBOX_SECRET_KEY:Buffer.alloc(32,2).toString('base64')};
- const state={calls:[],providers:[],dispatched:false,dbError:false,badSdk:false,evidence:{found:true,ok:true,id:'12345',amount:'25.00',currency:'CRC',status:'COMPLETED',payload:{clientReferenceInformation:{code:reference},cardNumber:'NEVER_PROJECT'}}};
- const provider={createSession:async(input,sandbox)=>{state.providers.push({action:'session',input,sandbox});return'context';},getSdkAssets:()=>({clientLibrary:state.badSdk?'https://evil.test/sdk.js':'https://apitest.cybersource.com/sdk.js',clientLibraryIntegrity:'sha384-'+Buffer.alloc(48).toString('base64')}),lookupTransactionByOrderNumber:async(ref,strict,paymentId,sandbox)=>{state.providers.push({action:'confirm',ref,strict,paymentId,sandbox});return state.evidence;}};
- const route=load('src/app/api/internal/sgi-paylinks/route.ts',{'@/lib/sgi-paylink-auth':auth,'@/lib/cybersource':provider,'@/lib/supabase':{createAdminClient:()=>({rpc:(name,args)=>({abortSignal:async()=>{state.calls.push({name,args});if(state.dbError||(name==='sgi_paylink_dispatch'&&state.dispatched))return{error:{message:'PRIVATE_DB'}};if(name==='sgi_paylink_dispatch')state.dispatched=true;return{data:{id,mode:'sandbox',reference,amount:'25.00',customer:{name:'Cliente QA',email:'qa@example.test'}}};}})})}},{process:{env}});
- function request(input,authorized=true){const body=typeof input==='string'?input:JSON.stringify(input),s=signed(body);return new Request('https://www.icbtechscr.com/api/internal/sgi-paylinks',{method:'POST',headers:{'content-type':'application/json','x-sgi-time':s.timestamp,'x-sgi-signature':authorized?s.signature:'0'.repeat(64)},body});}
+ const state={calls:[],providers:[],dispatched:false,dbError:false,badSdk:false,sdkUrl:null,evidence:{found:true,ok:true,id:'12345',amount:'25.00',currency:'CRC',status:'COMPLETED',payload:{clientReferenceInformation:{code:reference},cardNumber:'NEVER_PROJECT'}}};
+ const provider={createSession:async(input,sandbox)=>{state.providers.push({action:'session',input,sandbox});return'context';},getSdkAssets:()=>({clientLibrary:state.sdkUrl||(state.badSdk?'https://evil.test/sdk.js':'https://apitest.cybersource.com/sdk.js'),clientLibraryIntegrity:'sha384-'+Buffer.alloc(48).toString('base64')}),lookupTransactionByOrderNumber:async(ref,strict,paymentId,sandbox)=>{state.providers.push({action:'confirm',ref,strict,paymentId,sandbox});return state.evidence;}};
+ const route=load('src/app/api/internal/sgi-paylinks/route.ts',{'@/lib/sgi-paylink-auth':auth,'@/lib/cybersource':provider,'@/lib/supabase':{createAdminClient:()=>({rpc:(name,args)=>({abortSignal:async()=>{state.calls.push({name,args});if(state.dbError||(name==='sgi_paylink_dispatch'&&state.dispatched))return{error:{message:'PRIVATE_DB'}};if(name==='sgi_paylink_dispatch')state.dispatched=true;return{data:{id,mode:env.SGI_PAYLINK_BRIDGE_MODE,reference,amount:'25.00',customer:{name:'Cliente QA',email:'qa@example.test'}}};}})})}},{process:{env}});
+ function request(input,authorized=true){const body=typeof input==='string'?input:JSON.stringify(input),s=signed(body,undefined,env.SGI_PAYLINK_BRIDGE_MODE);return new Request('https://www.icbtechscr.com/api/internal/sgi-paylinks',{method:'POST',headers:{'content-type':'application/json','x-sgi-time':s.timestamp,'x-sgi-signature':authorized?s.signature:'0'.repeat(64)},body});}
  return{route,state,env,request};
 }
 test('bridge disabled, unauthorized, missing separate sandbox keys: no DB/provider calls',async()=>{
@@ -41,4 +41,14 @@ test('sandbox context never uses live endpoint or live credentials, regular shop
  const calls=[],cybs=load('src/lib/cybersource.ts',{'node:crypto':crypto},{process:{env},fetch:async(url,opts)=>{calls.push({url,opts});return new Response('synthetic',{headers:{'content-type':'application/jwt'}});}});
  const input={amountCRC:25,orderNumber:reference,targetOrigin:'https://sgi.icbtechscr.com',customer:{name:'Cliente QA',email:'qa@example.test'}},sandbox={merchantId:'fake-sandbox',keyId:'fake-sandbox-key',secretKey:Buffer.alloc(32,5).toString('base64'),origin:'https://sgi.icbtechscr.com'};
  await cybs.createSession(input,sandbox);await cybs.createSession(input);assert.equal(new URL(calls[0].url).origin,'https://apitest.cybersource.com');assert.equal(calls[0].opts.headers['v-c-merchant-id'],'fake-sandbox');assert.equal(new URL(calls[1].url).origin,'https://api.cybersource.com');assert.equal(calls[1].opts.headers['v-c-merchant-id'],'fake-live');assert.equal(env.CYBS_RUN_ENV,'api');
+});
+
+test('real UC asset hosts returned by provider pass bridge without accepting another environment',async()=>{
+ for(const mode of ['sandbox','live_pilot'])for(const valid of [true,false]){
+  const h=harness();h.env.SGI_PAYLINK_BRIDGE_MODE=mode;
+  Object.assign(h.env,{SGI_PAYLINK_LIVE_BRIDGE_SECRET:secret,CYBS_RUN_ENV:'api',CYBS_MERCHANT_ID:'synthetic-live',CYBS_KEY_ID:'synthetic-key',CYBS_SECRET_KEY:secret});
+  h.state.sdkUrl=((mode==='live_pilot')===valid?'https://up.cybersource.com':'https://testup.cybersource.com')+'/uc/v1/assets/1.0/SecureAcceptance.js';
+  const response=await h.route.POST(h.request({action:'session',attemptId:id}));assert.equal(response.status,valid?200:503);
+  if(valid)assert.equal((await response.json()).sdkUrl,h.state.sdkUrl);
+ }
 });

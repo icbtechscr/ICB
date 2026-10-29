@@ -32,7 +32,9 @@ export async function POST(request: Request) {
     if (input.action === "session") {
       const sessionJwt = await createSession({ amountCRC: Number(attempt.amount), orderNumber: attempt.reference, targetOrigin: sandbox.origin, customer: { name: attempt.customer.name, email: attempt.customer.email } }, sandbox);
       const assets = getSdkAssets(sessionJwt);
-      if (!assets.clientLibrary || new URL(assets.clientLibrary).origin !== (live ? "https://api.cybersource.com" : "https://apitest.cybersource.com") || !assets.clientLibraryIntegrity || !/^sha(?:256|384|512)-[A-Za-z0-9+/]+=*$/.test(assets.clientLibraryIntegrity)) return json({ error: "Respuesta de checkout no válida. No repitas el intento." }, 503);
+      const sdk = assets.clientLibrary ? new URL(assets.clientLibrary) : null;
+      const sdkOrigins = live ? ["https://api.cybersource.com", "https://up.cybersource.com"] : ["https://apitest.cybersource.com", "https://testup.cybersource.com"];
+      if (!sdk || !sdkOrigins.includes(sdk.origin) || sdk.username || sdk.password || sdk.hash || !assets.clientLibraryIntegrity || !/^sha(?:256|384|512)-[A-Za-z0-9+/]+=*$/.test(assets.clientLibraryIntegrity)) return json({ error: "Respuesta de checkout no válida. No repitas el intento." }, 503);
       return json({ sessionJwt, sdkUrl: assets.clientLibrary, sdkIntegrity: assets.clientLibraryIntegrity, mode });
     }
     const evidence = await lookupTransactionByOrderNumber(attempt.reference, true, undefined, sandbox);
