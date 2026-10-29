@@ -7,6 +7,8 @@ import crypto from "node:crypto";
 // ---------------------------------------------------------------------------
 
 type Env = "apitest" | "api";
+/** Separate credentials for SGI sandbox; never falls back to the live merchant. */
+export type CybersourceSandbox = { merchantId: string; keyId: string; secretKey: string; origin: "https://sgi.icbtechscr.com"; mode?: "sandbox" | "live_pilot" };
 
 export class CybersourceRequestError extends Error {
   constructor(public httpStatus: number, public operation: string, data: unknown) {
@@ -55,13 +57,16 @@ function gmtDate() {
 async function signedRequest(
   method: "GET" | "POST",
   path: string,
-  body?: unknown
+  body?: unknown,
+  sandbox?: CybersourceSandbox
 ): Promise<{ status: number; data: unknown; raw: string }> {
   if (process.env.ICB_PAYMENTS_ENABLED === "false" ||
       (process.env.ICB_EXTERNAL_EFFECTS_ENABLED === "false" && process.env.ICB_PAYMENTS_ENABLED !== "true")) {
     throw new Error("Los pagos están desactivados en este entorno de pruebas");
   }
-  const { host, keyId, secretKey, merchantId } = cfg();
+  if (sandbox && (sandbox.origin !== "https://sgi.icbtechscr.com" || !sandbox.merchantId || !sandbox.keyId || !sandbox.secretKey)) throw new Error("Invalid sandbox configuration");
+  if (sandbox?.mode === "live_pilot" && process.env.CYBS_RUN_ENV !== "api") throw new Error("Production provider environment required");
+  const { host, keyId, secretKey, merchantId } = sandbox ? { ...sandbox, host: sandbox.mode === "live_pilot" ? "api.cybersource.com" : "apitest.cybersource.com" } : cfg();
   const date = gmtDate();
   const bodyStr = body ? JSON.stringify(body) : "";
 
@@ -140,8 +145,8 @@ export type CreateSessionInput = {
   };
 };
 
-export async function createSession(input: CreateSessionInput): Promise<string> {
-  const envOrigin = (process.env.NEXT_PUBLIC_SITE_ORIGIN ?? "").trim().replace(/\/$/, "");
+export async function createSession(input: CreateSessionInput, sandbox?: CybersourceSandbox): Promise<string> {
+  const envOrigin = (sandbox?.origin ?? process.env.NEXT_PUBLIC_SITE_ORIGIN ?? "").trim().replace(/\/$/, "");
   if (!envOrigin) {
     throw new Error("NEXT_PUBLIC_SITE_ORIGIN no está definido");
   }
@@ -217,7 +222,7 @@ export async function createSession(input: CreateSessionInput): Promise<string> 
     },
   };
 
-  const { status, data, raw } = await signedRequest("POST", "/uc/v1/sessions", body);
+  const { status, data, raw } = await signedRequest("POST", "/uc/v1/sessions", body, sandbox);
   if (status >= 200 && status < 300) {
     return typeof data === "string" ? data.trim() : raw.trim();
   }
@@ -301,6 +306,7 @@ export type TransactionLookup = {
   currency?: string;
   submittedAt?: string;
   declineCategory?: "INVALID_AMOUNT";
+  multipleCaptures?: boolean;
   payload: Record<string, unknown> | null;
 };
 
@@ -376,7 +382,8 @@ export function hasSuccessfulCapture(t: Record<string, unknown>): boolean {
 /** Ejecuta una busqueda cruda y devuelve la respuesta tal cual (para depurar). */
 export async function rawTransactionSearch(
   query: string,
-  limit = 20
+  limit = 20,
+  sandbox?: CybersourceSandbox
 ): Promise<{ httpStatus: number; data: unknown; raw: string }> {
   const body = {
     save: false,
@@ -387,7 +394,7 @@ export async function rawTransactionSearch(
     limit,
     sort: "submitTimeUtc:desc",
   };
-  const { status, data, raw } = await signedRequest("POST", "/tss/v2/searches", body);
+  const { status, data, raw } = await signedRequest("POST", "/tss/v2/searches", body, sandbox);
   return { httpStatus: status, data, raw };
 }
 
@@ -412,14 +419,15 @@ export function summariesOf(data: unknown): Record<string, unknown>[] {
 export async function lookupTransactionByOrderNumber(
   orderNumber: string,
   requireCapture = false,
-  paymentId?: string
+  paymentId?: string,
+  sandbox?: CybersourceSandbox
 ): Promise<TransactionLookup> {
   // La ventana de fechas NO es opcional: comprobado contra la cuenta real, la
   // misma busqueda por codigo devuelve 0 resultados sin `submitTimeUtc` y el
   // resultado correcto con ella.
   const query = `clientReferenceInformation.code:"${orderNumber}" AND submitTimeUtc:[NOW-90DAYS TO NOW]`;
 
-  const { httpStatus, data, raw } = await rawTransactionSearch(query);
+  const { httpStatus, data, raw } = await rawTransactionSearch(query, 20, sandbox);
   // 404 = "sin resultados" en este endpoint; no es un fallo real.
   if (httpStatus !== 404 && (httpStatus < 200 || httpStatus >= 300)) {
     throw new CybersourceRequestError(httpStatus, "transaction_search", data);
@@ -459,6 +467,7 @@ export async function lookupTransactionByOrderNumber(
   return {
     found: true,
     ok,
+    ...(sandbox && new Set(matching.filter(hasSuccessfulCapture).map(row => row.id)).size > 1 ? { multipleCaptures: true } : {}),
     status: st,
     id: (t.id as string | undefined) ?? undefined,
     reasonCode: (app.reasonCode as string | undefined) ?? undefined,
