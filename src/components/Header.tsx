@@ -14,6 +14,7 @@ import {
 } from "@/components/seasonal/PatrioticMonthDecor";
 import type { NavItem } from "@/lib/category-tree";
 import type { SiteSeason } from "@/lib/seasonal";
+import { ChristmasBar, ChristmasHeaderDecor } from "@/components/seasonal/ChristmasDecor";
 import { HalloweenBar, HalloweenHeaderDecor, HalloweenFlyingBats } from "@/components/seasonal/HalloweenDecor";
 
 export function Header({
@@ -35,11 +36,13 @@ export function Header({
 
   return (
     <header className="relative z-40 border-b border-ink-200 bg-white text-ink-900">
+      {seasonal === "christmas" && <ChristmasBar paused={seasonalPaused} onToggle={() => setSeasonalPaused(value => !value)} />}
       {seasonal === "patriotic-month" && <PatrioticMonthBar />}
       {seasonal === "halloween" && <HalloweenBar paused={seasonalPaused} onToggle={() => setSeasonalPaused(value => !value)} />}
       {seasonal === "halloween" && <HalloweenFlyingBats paused={seasonalPaused} />}
 
       <div className="relative">
+      {seasonal === "christmas" && <ChristmasHeaderDecor />}
       {seasonal === "patriotic-month" && <PatrioticMonthDecor />}
       {seasonal === "halloween" && <HalloweenHeaderDecor paused={seasonalPaused} />}
       <div className="relative mx-auto flex max-w-7xl items-center gap-2 px-3 py-3 sm:gap-4 sm:px-4 md:py-4">

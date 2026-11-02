@@ -24,7 +24,7 @@ export function isPatrioticMonthSeason(ref: Date = new Date()): boolean {
   const override = (process.env.SEASON_OVERRIDE || "").trim().toLowerCase();
   if (["patriotic-month", "patria", "mothers-day"].includes(override)) return true;
   if (override === "off") return false;
-  if (["halloween", "terror"].includes(override)) return false;
+  if (["halloween", "terror", "christmas", "navidad"].includes(override)) return false;
 
   const { m } = crParts(ref);
   return m === 9;
@@ -33,13 +33,21 @@ export function isPatrioticMonthSeason(ref: Date = new Date()): boolean {
 export function isHalloweenSeason(ref: Date = new Date()): boolean {
   const override = (process.env.SEASON_OVERRIDE || "").trim().toLowerCase();
   if (["halloween", "terror"].includes(override)) return true;
-  if (["off", "patriotic-month", "patria", "mothers-day"].includes(override)) return false;
+  if (["off", "patriotic-month", "patria", "mothers-day", "christmas", "navidad"].includes(override)) return false;
   return crParts(ref).m === 10;
 }
 
-export type SiteSeason = "patriotic-month" | "halloween" | null;
+export function isChristmasSeason(ref: Date = new Date()): boolean {
+  const override = (process.env.SEASON_OVERRIDE || "").trim().toLowerCase();
+  if (["christmas", "navidad"].includes(override)) return true;
+  if (["off", "halloween", "terror", "patriotic-month", "patria", "mothers-day"].includes(override)) return false;
+  const {m,d}=crParts(ref);
+  return m===11 || m===12 || (m===1 && d<=6);
+}
+export type SiteSeason = "patriotic-month" | "halloween" | "christmas" | null;
 
 export function getSiteSeason(ref: Date = new Date()): SiteSeason {
+  if (isChristmasSeason(ref)) return "christmas";
   if (isHalloweenSeason(ref)) return "halloween";
   return isPatrioticMonthSeason(ref) ? "patriotic-month" : null;
 }
