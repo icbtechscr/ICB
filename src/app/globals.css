@@ -210,8 +210,6 @@ body[data-site-season="halloween"] [data-catalog-section] {
 }
 
 /* Christmas frames are decorative only; preserve photo, price, focus and touch targets. */
-.christmas-card-frame{display:none}
-body[data-site-season="christmas"] .christmas-card-frame{display:block;position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:inherit;background:url('/seasonal/christmas-card-frame.svg') center / 100% 100% no-repeat}
 body[data-site-season="christmas"] [data-product-card]{border-color:#c6d8ca;box-shadow:0 2px 12px #174e3810}
 body[data-site-season="christmas"] [data-catalog-section]{background-image:radial-gradient(ellipse at top left,#e6c77913,transparent 50%),radial-gradient(ellipse at bottom right,#1a69440a,transparent 45%)}
 body[data-site-season="christmas"] [data-product-card]:focus-within{outline:2px solid #26794f;outline-offset:3px}

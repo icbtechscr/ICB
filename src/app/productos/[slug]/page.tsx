@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ChevronRight, Check, ShieldCheck, Truck, Headphones, Heart } from "lucide-react";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductGallery } from "@/components/ProductGallery";
+import { ChristmasFrame } from "@/components/seasonal/ChristmasFrame";
 import { getProductBySlug, getProductCategoryBreadcrumb } from "@/lib/products";
 import { formatCRC, decodeHtml, stripHtml } from "@/lib/utils";
 import { parseKitDescription } from "@/lib/parseKit";
@@ -194,7 +195,8 @@ export default async function ProductPage({
             salePriceCRC={product.salePriceCRC}
           />
 
-          <div className="rounded-3xl border border-ink-200 bg-white p-6 shadow-sm md:p-8">
+          <div data-detail-product-card="description" className="relative overflow-hidden rounded-3xl border border-ink-200 bg-white p-6 shadow-sm md:p-8">
+            <ChristmasFrame />
             {product.brand && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent-700">
                 {product.brand}

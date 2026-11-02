@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { ChristmasFrame } from "@/components/seasonal/ChristmasFrame";
 import { useState } from "react";
 import { Heart, ShoppingCart, Check } from "lucide-react";
 import { motion } from "framer-motion";
@@ -66,7 +67,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
       transition={{ duration: 0.4, delay: Math.min(index * 0.04, 0.4), ease: [0.22, 1, 0.36, 1] }}
       className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white card-lift hover:border-brand-300 hover:shadow-[var(--shadow-lift)]"
     >
-      <span className="christmas-card-frame" aria-hidden="true" />
+      <ChristmasFrame />
       <Link href={`/productos/${product.slug}`} className="flex h-full flex-col" prefetch={false}>
         <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-ink-50 to-[var(--surface)]">
           <ProductImage

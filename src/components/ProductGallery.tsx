@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { ChristmasFrame } from "@/components/seasonal/ChristmasFrame";
 import {
   ProductImage,
   normalizeProductImageSrc,
@@ -49,7 +50,8 @@ export function ProductGallery({
   }
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-ink-200 bg-white p-4 shadow-sm md:p-8">
+    <div data-detail-product-card="gallery" className="relative overflow-hidden rounded-3xl border border-ink-200 bg-white p-4 shadow-sm md:p-8">
+      <ChristmasFrame />
       <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-white">
         <ProductImage
           key={current?.src ?? "missing"}

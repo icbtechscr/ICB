@@ -1,0 +1,12 @@
+.frame{display:none}
+:global(body[data-site-season="christmas"]) .frame{display:block;position:absolute;inset:0;z-index:4;pointer-events:none;border-radius:inherit;overflow:hidden}
+.pine{position:absolute;inset:0;border:12px solid transparent;border-image:url('/seasonal/christmas-pine-frame.svg') 24 round;filter:drop-shadow(0 1px 1px #082a3a30)}
+.bulb{--lamp:#f8ca58;--halo:#f0bf5380;position:absolute;width:7px;height:10px;z-index:1;border-radius:35% 35% 50% 50%;background:radial-gradient(ellipse at 32% 28%,#fff9e5 5%,var(--lamp) 38%,var(--lamp) 65%,#795329 100%);box-shadow:0 0 4px 1px var(--halo),0 0 9px 3px var(--halo);animation:twinkle 5.6s ease-in-out infinite}
+.bulb::before{content:"";position:absolute;top:-3px;left:2px;width:3px;height:4px;border-radius:1px;background:#60775b}
+.bulb:nth-child(3n){--lamp:#ee696d;--halo:#ed626780;animation-delay:-1.4s}.bulb:nth-child(3n+1){--lamp:#8bcfe7;--halo:#88cde980;animation-delay:-2.8s}.bulb:nth-child(even){animation-delay:-4.2s}
+.topLeft{left:17%;top:5px;transform:rotate(13deg)}.topCenter{left:50%;top:5px;transform:rotate(-9deg)}.topRight{left:81%;top:5px;transform:rotate(11deg)}
+.right{right:5px;top:49%;transform:rotate(-78deg)}.bottomRight{left:81%;bottom:5px;transform:rotate(168deg)}.bottomCenter{left:50%;bottom:5px;transform:rotate(188deg)}.bottomLeft{left:17%;bottom:5px;transform:rotate(170deg)}.left{left:5px;top:49%;transform:rotate(78deg)}
+@keyframes twinkle{0%,14%,46%,100%{opacity:1}25%,34%{opacity:.12}}
+:global(body:has([data-christmas-paused="true"])) .bulb{animation-play-state:paused}
+@media(max-width:640px){.pine{border-width:10px}.topLeft,.topCenter,.topRight{top:4px}.bottomLeft,.bottomCenter,.bottomRight{bottom:4px}.left{left:4px}.right{right:4px}}
+@media(prefers-reduced-motion:reduce){.bulb{animation:none;opacity:1}}
