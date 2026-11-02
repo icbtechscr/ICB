@@ -215,3 +215,19 @@ body[data-site-season="christmas"] .christmas-card-frame{display:block;position:
 body[data-site-season="christmas"] [data-product-card]{border-color:#c6d8ca;box-shadow:0 2px 12px #174e3810}
 body[data-site-season="christmas"] [data-catalog-section]{background-image:radial-gradient(ellipse at top left,#e6c77913,transparent 50%),radial-gradient(ellipse at bottom right,#1a69440a,transparent 45%)}
 body[data-site-season="christmas"] [data-product-card]:focus-within{outline:2px solid #26794f;outline-offset:3px}
+
+/* Seasonal background is gated out of checkout/admin/portal by a DOM marker. */
+body[data-site-season="christmas"]:has([data-christmas-background]){background-color:#fffaf0;background-image:url('/seasonal/christmas-background.svg');background-size:640px 520px}
+body[data-site-season="christmas"]:has([data-christmas-background])>main{position:relative;z-index:1}
+body[data-site-season="christmas"]:has([data-christmas-background])>main,
+body[data-site-season="christmas"]:has([data-christmas-background])>main>.bg-white,
+body[data-site-season="christmas"]:has([data-christmas-background]) [data-catalog-section]{background-color:#fffcf4;background-image:url('/seasonal/christmas-background.svg');background-size:640px 520px}
+body[data-site-season="christmas"] [data-christmas-header]{background-color:#fff6e3}
+body[data-site-season="christmas"] [data-christmas-header-row]{padding-top:7px;padding-bottom:7px}
+body[data-site-season="christmas"] [data-christmas-header-row]>a img{height:40px}
+.dark body[data-site-season="christmas"]:has([data-christmas-background]),
+.dark body[data-site-season="christmas"]:has([data-christmas-background])>main,
+.dark body[data-site-season="christmas"]:has([data-christmas-background])>main>.bg-white,
+.dark body[data-site-season="christmas"]:has([data-christmas-background]) [data-catalog-section]{background-color:#171d1b;background-image:url('/seasonal/christmas-background.svg')}
+.dark body[data-site-season="christmas"] [data-christmas-header]{background-color:#202723}
+@media(max-width:640px){body[data-site-season="christmas"]:has([data-christmas-background])>main{background-size:400px 325px}}

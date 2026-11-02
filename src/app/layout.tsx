@@ -7,6 +7,7 @@ import { ChatWidget } from "@/components/ChatWidget";
 import { CartProvider } from "@/lib/cart";
 import { getNavMenu } from "@/lib/category-tree";
 import { getSiteSeason } from "@/lib/seasonal";
+import { ChristmasPageDecor } from "@/components/seasonal/ChristmasDecor";
 import { PatrioticMonthPageDecor } from "@/components/seasonal/PatrioticMonthDecor";
 import {
   SITE_URL,
@@ -114,6 +115,7 @@ export default async function RootLayout({
       </head>
       <body data-site-season={seasonal || undefined} className="relative min-h-full flex flex-col text-ink-900">
         <CartProvider>
+          {seasonal === "christmas" && <SiteChromeGate><ChristmasPageDecor /></SiteChromeGate>}
           {seasonal === "patriotic-month" && (
             <SiteChromeGate>
               <PatrioticMonthPageDecor />

@@ -30,15 +30,21 @@ export function ChristmasBar({paused,onToggle}:{paused:boolean;onToggle:()=>void
  return <div className={styles.bar} data-christmas-paused={paused}>
   <div className={styles.inner}><span className={styles.holly} aria-hidden="true">✦</span><div className={styles.greeting}><span>La magia de regalar</span><strong>Navidad en ICB</strong></div><span className={styles.star} aria-hidden="true">✦</span>
    <div className={styles.controls}>
-    {!quiet&&<button type="button" onClick={()=>void toggleMusic()} aria-pressed={playing} aria-label={playing?"Pausar música navideña":"Activar música navideña"} className={styles.music}>{playing?<VolumeX size={16}/>:<Music2 size={16}/>}<span>{playing?"Pausar música":"Música navideña"}</span></button>}
+    {!quiet&&<button type="button" onClick={()=>void toggleMusic()} aria-pressed={playing} aria-label={playing?"Pausar música navideña":"Activar música navideña"} className={styles.music}>{playing?<VolumeX size={16}/>:<Music2 size={16}/>}<span>{playing?"Pausar música":"Jingle Bells"}</span></button>}
     <button type="button" onClick={onToggle} aria-pressed={paused} aria-label={paused?"Activar luces navideñas":"Pausar luces navideñas"} className={styles.pause}>{paused?<Play size={14}/>:<Pause size={14}/>}</button>
    </div>
   </div>
-  <div className={styles.lights} aria-hidden="true">{Array.from({length:24},(_,i)=><i key={i} style={{animationDelay:`${i%5*-.7}s`}}/>)}</div>
-  <audio ref={audio} src="/audio/icb-christmas-bells.wav" loop preload="none" onError={()=>{setPlaying(false);setUnavailable(true);}}/>
+  <div className={styles.lights} data-christmas-lights aria-hidden="true">{Array.from({length:24},(_,i)=><i key={i} style={{animationDelay:`${i%5*-.7}s`}}/>)}</div>
+  <audio ref={audio} src="/audio/jingle-bells-icb.wav" title="Jingle Bells · instrumental navideño" loop preload="none" onError={()=>{setPlaying(false);setUnavailable(true);}}/>
   {unavailable&&<p className={styles.error} role="status">La música no está disponible en este navegador.</p>}
  </div>;
 }
 export function ChristmasHeaderDecor(){
- return <div className={styles.headerDecor} aria-hidden="true"><img src="/seasonal/christmas-garland.svg" alt="" className={styles.garland}/><span className={styles.ornament}/><span className={`${styles.ornament} ${styles.gold}`}/></div>;
+ return <div className={styles.headerDecor} aria-hidden="true" />;
+}
+
+export function ChristmasPageDecor(){
+ const pathname=usePathname()||"/";
+ if(/^\/(?:checkout|pago|pagar|carrito|admin|portal)(?:\/|$)/.test(pathname))return null;
+ return <div data-christmas-background aria-hidden="true" className={styles.pageDecor}><span className={styles.leftDecoration}/><span className={styles.rightDecoration}/></div>;
 }

@@ -35,7 +35,7 @@ export function Header({
   const pathname = usePathname() ?? "/";
 
   return (
-    <header className="relative z-40 border-b border-ink-200 bg-white text-ink-900">
+    <header data-christmas-header={seasonal === "christmas" || undefined} className="relative z-40 border-b border-ink-200 bg-white text-ink-900">
       {seasonal === "christmas" && <ChristmasBar paused={seasonalPaused} onToggle={() => setSeasonalPaused(value => !value)} />}
       {seasonal === "patriotic-month" && <PatrioticMonthBar />}
       {seasonal === "halloween" && <HalloweenBar paused={seasonalPaused} onToggle={() => setSeasonalPaused(value => !value)} />}
@@ -45,7 +45,7 @@ export function Header({
       {seasonal === "christmas" && <ChristmasHeaderDecor />}
       {seasonal === "patriotic-month" && <PatrioticMonthDecor />}
       {seasonal === "halloween" && <HalloweenHeaderDecor paused={seasonalPaused} />}
-      <div className="relative mx-auto flex max-w-7xl items-center gap-2 px-3 py-3 sm:gap-4 sm:px-4 md:py-4">
+      <div data-christmas-header-row={seasonal === "christmas" || undefined} className="relative mx-auto flex max-w-7xl items-center gap-2 px-3 py-3 sm:gap-4 sm:px-4 md:py-4">
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <Image
             src="/icb-logo.png"
