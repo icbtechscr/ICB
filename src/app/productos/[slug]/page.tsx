@@ -195,14 +195,14 @@ export default async function ProductPage({
             salePriceCRC={product.salePriceCRC}
           />
 
-          <div data-detail-product-card="description" className="relative overflow-hidden rounded-3xl border border-ink-200 bg-white p-6 shadow-sm md:p-8">
+          <div data-detail-product-card="description" className="relative min-w-0 rounded-3xl border border-ink-200 bg-white p-6 shadow-sm md:p-8">
             <ChristmasFrame />
             {product.brand && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent-700">
                 {product.brand}
               </span>
             )}
-            <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight text-ink-900 md:text-4xl">
+            <h1 className="mt-3 [overflow-wrap:anywhere] text-3xl font-black leading-tight tracking-tight text-ink-900 md:text-4xl">
               {product.name}
             </h1>
             {product.sku && (

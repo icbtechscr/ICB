@@ -12,6 +12,8 @@ export function connectChristmasAudio(media:HTMLAudioElement,quiet:boolean,onPla
  };
  const gesture=(event:Event)=>{
   if(!event.isTrusted||gestureTried||!wanted||quiet||document.hidden)return;
+  // Touch activation is granted on release/click, not at pointerdown.
+  if(event.type==='pointerdown'&&(event as PointerEvent).pointerType!=='mouse')return;
   if((event.target as Element|null)?.closest?.('[data-christmas-music-toggle]'))return;
   if(event instanceof KeyboardEvent&&(event.ctrlKey||event.altKey||event.metaKey||['Shift','Control','Alt','Meta'].includes(event.key)))return;
   gestureTried=true;void sync();
@@ -19,10 +21,11 @@ export function connectChristmasAudio(media:HTMLAudioElement,quiet:boolean,onPla
  const visible=()=>{void sync();};
  document.addEventListener('visibilitychange',visible);
  document.addEventListener('pointerdown',gesture,{passive:true});
+ document.addEventListener('click',gesture);
  document.addEventListener('keydown',gesture);
  void sync();
  return {
   async setEnabled(enabled:boolean){wanted=enabled;try{localStorage.setItem(preference,enabled?'on':'off');}catch{}await sync();},
-  dispose(){active=false;media.pause();document.removeEventListener('visibilitychange',visible);document.removeEventListener('pointerdown',gesture);document.removeEventListener('keydown',gesture);},
+  dispose(){active=false;media.pause();document.removeEventListener('visibilitychange',visible);document.removeEventListener('pointerdown',gesture);document.removeEventListener('click',gesture);document.removeEventListener('keydown',gesture);},
  };
 }

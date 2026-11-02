@@ -17,6 +17,9 @@ test('explicit pause persists across visits and gestures; quiet pages never star
  for(const options of [{preference:'off'},{quiet:true}]){const a=setup(options);await flush();a.fire('pointerdown');await flush();assert.equal(a.media.plays,0);assert.equal(a.media.paused,true);a.session.dispose();}
  const a=setup();await flush();await a.session.setEnabled(false);a.fire('pointerdown');await flush();assert.equal(a.media.plays,1);assert.equal(a.saved.get('icb-christmas-music-v2'),'off');assert.equal(a.media.paused,true);await a.session.setEnabled(true);assert.equal(a.media.paused,false);a.session.dispose();
 });
+test('touch waits for click activation and does not consume recovery on pointerdown',async()=>{
+ const a=setup({blocked:true});await flush();a.fire('pointerdown',{type:'pointerdown',pointerType:'touch',isTrusted:true,target:null});assert.equal(a.media.plays,1);a.fire('click',{type:'click',isTrusted:true,target:null});await flush();assert.equal(a.media.plays,2);assert.equal(a.media.paused,false);a.session.dispose();assert.equal(a.listeners.size,0);
+});
 test('visibility suspends sound and restores only when enabled; music controls do not consume the gesture fallback',async()=>{
  const a=setup({blocked:true});await flush();a.fire('pointerdown',{isTrusted:true,target:{closest:()=>({})}});assert.equal(a.media.plays,1);a.fire('pointerdown');await flush();assert.equal(a.media.paused,false);a.document.hidden=true;a.fire('visibilitychange');assert.equal(a.media.paused,true);a.document.hidden=false;a.fire('visibilitychange');await flush();assert.equal(a.media.paused,false);a.session.dispose();
 });

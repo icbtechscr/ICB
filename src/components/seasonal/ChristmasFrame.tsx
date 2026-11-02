@@ -3,7 +3,7 @@ import styles from './ChristmasFrame.module.css';
 /** One decorative frame for catalog, photo gallery and product information. */
 export function ChristmasFrame(){
  return <span data-christmas-frame aria-hidden="true" className={styles.frame}>
-  <span className={styles.pine}/>
+  <span className={styles.pine}>{['north','east','south','west'].map(edge=><span key={edge} className={`${styles.edge} ${styles[edge]}`}/>)}</span>
   {['topLeft','topCenter','topRight','right','bottomRight','bottomCenter','bottomLeft','left'].map(position=><span key={position} className={`${styles.bulb} ${styles[position]}`}/>)}
  </span>;
 }
