@@ -1,3 +1,4 @@
+import {StockDisplayBadge} from "@/components/StockDisplayBadge";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -229,6 +230,7 @@ export default async function ProductPage({
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
+              <StockDisplayBadge id={product.id}>
               {displayStockStatus === "in_stock" ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200">
                   <Check className="size-3.5" />
@@ -244,6 +246,7 @@ export default async function ProductPage({
                   {STOCK_LABELS[displayStockStatus]}
                 </span>
               )}
+              </StockDisplayBadge>
             </div>
 
             {product.shortDescription && (

@@ -1,0 +1,9 @@
+# Etiqueta visual de stock por producto
+
+Inventario → Ítems de venta → Tienda web → Etiqueta de stock. Solo administración puede consultar o modificar esta preferencia: Automático (predeterminado), Mostrar en stock o Mostrar agotado. Es exclusivamente la etiqueta pública. No altera cantidades, disponibilidad operativa, condición de compra, reservas, stock_status, stock_qty ni precios; tampoco publica fichas ocultas o inactivas. Los carritos y servidores conservan sus validaciones existentes.
+
+Preferencias y auditoría privadas separadas del catálogo, con ámbito de empresa, validación de rol en servidor y SQL, revisión optimista, solicitud idempotente y bloqueo transaccional. Retorno explícito a Automático. Una sincronización del producto no pisa la preferencia. No se cambia ninguna preferencia de productos reales como parte del despliegue.
+
+Las tarjetas de catálogo/búsqueda y el detalle usan el mismo envoltorio visual. Consulta pública acotada a 100 identificadores, solo modos de productos visibles y utilizables, sin datos de auditoría. Agrupa los productos visibles en una petición, actualiza cada 15 segundos y al volver a la página; ante fallo conserva la última etiqueta o su presentación automática. La carga inicial conserva la etiqueta habitual hasta resolver la preferencia. Los botones y reglas comerciales utilizan siempre los datos originales, nunca esta preferencia.
+
+Verificación: esquemas aislados de las dos empresas, sin datos de clientes ni operaciones financieras; acceso, ámbito, reintentos concurrentes, revisión obsoleta, cambio manual sin modificar productos, retorno automático y ocultos/inactivos. Rutas privadas/públicas y render del ProductCard real con cantidad cero + etiqueta En stock + botón deshabilitado. TypeScript y compilaciones, con revisión de artefactos desplegados. No se crean existencias ni se hacen pedidos de prueba en producción.

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import {StockDisplayBadge} from "./StockDisplayBadge";
 import { ChristmasFrame } from "@/components/seasonal/ChristmasFrame";
 import { useState } from "react";
 import { Heart, ShoppingCart, Check } from "lucide-react";
@@ -84,6 +85,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
                 -{discountPct}%
               </span>
             )}
+            <StockDisplayBadge id={product.id}>
             {displayStockStatus !== "in_stock" && (
               <span
                 className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white ${
@@ -93,6 +95,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
                 {STOCK_LABELS[displayStockStatus]}
               </span>
             )}
+            </StockDisplayBadge>
           </div>
 
           <button
