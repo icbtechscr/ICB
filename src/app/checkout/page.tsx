@@ -86,7 +86,7 @@ const DEFAULT_FORM: ShippingForm = {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, subtotal, count } = useCart();
+  const { items, subtotal, count, validate } = useCart();
   const [form, setForm] = useState<ShippingForm>(DEFAULT_FORM);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -147,8 +147,9 @@ export default function CheckoutPage() {
       ? distanceKm(ORIGIN.lat, ORIGIN.lng, form.lat, form.lng)
       : null;
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if(!(await validate())){setFormError("Cambió la disponibilidad. Volvé al carrito para revisar los productos.");return;}
     if (requiresShippingMinimum(form.method) && subtotal < MINIMUM_SUBTOTAL_FOR_SHIPPING) {
       setFormError("Para enviar tu compra, el subtotal mínimo es de ₡10.000. También podés elegir recoger en sucursal para comprar cualquier monto.");
       return;

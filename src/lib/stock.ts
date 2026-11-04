@@ -88,3 +88,7 @@ export function isMissingStockStatusError(error: unknown): boolean {
     .toLowerCase();
   return text.includes("stock_status") && text.includes("products");
 }
+
+export function isPurchasableProduct(status:StockStatus,stockQty:number|null|undefined,unitPrice:number):boolean{
+  return isPurchasableStock(status,stockQty)&&Number.isFinite(unitPrice)&&unitPrice>0;
+}

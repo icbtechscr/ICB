@@ -147,10 +147,13 @@ export default function PagoPage() {
     ) {
       noteParts.push(`Pago (${form.method}) a nombre de: ${form.payerName.trim()}`);
     }
+    const digest=JSON.stringify({items:items.map(i=>[i.id,i.qty]),shipping,payment:form.method,payer:form.payerName.trim()});
+    let requestId=crypto.randomUUID();try{const old=JSON.parse(localStorage.getItem('icb-order-request-v2')||'null');if(old?.hash===digest&&typeof old.requestId==='string')requestId=old.requestId;else localStorage.setItem('icb-order-request-v2',JSON.stringify({hash:digest,requestId}));}catch{}
     const res = await fetch("/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        requestId,
         items: items.map((it) => ({ id: it.id, qty: it.qty })),
         customer: {
           name: fullName,

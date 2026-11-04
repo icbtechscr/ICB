@@ -1,3 +1,5 @@
+import {stockSaleModes} from '@/lib/stock-sale-server';
+import {webPurchaseStock,MAX_WEB_ORDER_QUANTITY} from '@/lib/web-purchase-stock';
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { getProductsByIds } from "@/lib/products";
@@ -12,6 +14,7 @@ import { stockOrderLimit } from "@/lib/stock";
 import { notifyNewOrder } from "@/lib/email";
 
 type Body = {
+  requestId?: string;
   items?: { id: string; qty: number }[];
   customer?: {
     name?: string;
@@ -36,9 +39,11 @@ type Body = {
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as Body;
-    const items = (body.items ?? []).filter(
-      (i) => i.id && Number.isFinite(i.qty) && i.qty > 0
-    );
+    if(!Array.isArray(body.items)||body.items.length>100||body.items.some(i=>!i||typeof i.id!=='string'||!Number.isSafeInteger(i.qty)||i.qty<1||i.qty>MAX_WEB_ORDER_QUANTITY))return new NextResponse('Revisá los productos y cantidades.',{status:400});
+    const grouped=new Map<string,number>();for(const i of body.items)grouped.set(i.id,(grouped.get(i.id)||0)+i.qty);
+    const items=[...grouped].map(([id,qty])=>({id,qty}));if(items.some(i=>i.qty>MAX_WEB_ORDER_QUANTITY))return new NextResponse('La cantidad solicitada supera el máximo por pedido.',{status:400});
+    if(body.requestId!==undefined&&!/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(body.requestId))return new NextResponse('Revisá el número de operación.',{status:400});
+    const requestId=body.requestId||crypto.randomUUID();
     if (items.length === 0) {
       return new NextResponse("El carrito está vacío", { status: 400 });
     }
@@ -82,6 +87,7 @@ export async function POST(req: Request) {
     const products = await getProductsByIds(items.map((i) => i.id));
     const priceMap = new Map(products.map((p) => [p.id, p]));
 
+    const modes=await stockSaleModes(products.map(p=>p.id));
     for (const item of items) {
       const p = priceMap.get(item.id);
       if (!p) {
@@ -89,8 +95,9 @@ export async function POST(req: Request) {
           status: 409,
         });
       }
-      const qty = Math.min(99, Math.max(1, Math.floor(item.qty)));
-      const stockLimit = stockOrderLimit(p.stockStatus, p.stockQty);
+      const qty = item.qty;
+      const sale=webPurchaseStock(p.stockStatus,p.stockQty,modes[p.id]);
+      const stockLimit = stockOrderLimit(sale.stockStatus,sale.stockQty);
       if (stockLimit === 0) {
         return new NextResponse(
           `No hay unidades disponibles de ${p.name}.`,
@@ -110,7 +117,7 @@ export async function POST(req: Request) {
         const p = priceMap.get(i.id);
         if (!p) return null;
         const unit = p.salePriceCRC ?? p.priceCRC;
-        const qty = Math.min(99, Math.max(1, Math.floor(i.qty)));
+        const qty = i.qty;
         return {
           product_id: p.id,
           product_name: p.name,
@@ -142,51 +149,19 @@ export async function POST(req: Request) {
       size: shipping.size,
     });
     const total = subtotal + shippingCost;
-    const orderNumber = generateOrderNumber();
 
-    const sb = createAdminClient();
-    const { data: order, error: orderErr } = await sb
-      .from("orders")
-      .insert({
-        order_number: orderNumber,
-        status: "pendiente",
-        customer_name: customer.name,
-        customer_email: customer.email,
-        customer_phone: customer.phone,
-        customer_id_number: customer.idNumber ?? null,
-        shipping_province: shipping.province ?? null,
-        shipping_canton: shipping.canton ?? null,
-        shipping_address: shipping.address ?? null,
-        shipping_method: shippingMethod,
-        shipping_notes: shippingNotes,
-        payment_method: paymentMethod,
-        payment_status: paymentMethod === "tarjeta" ? "rechazado" : "pendiente",
-        subtotal_crc: subtotal,
-        shipping_crc: shippingCost,
-        total_crc: total,
-      })
-      .select("id, order_number")
-      .single();
-
-    if (orderErr || !order) {
-      return new NextResponse(orderErr?.message ?? "Error al crear pedido", {
-        status: 500,
-      });
-    }
-
-    const { error: itemsErr } = await sb
-      .from("order_items")
-      .insert(lineItems.map((li) => ({ ...li, order_id: order.id })));
-
-    if (itemsErr) {
-      // limpiar la orden huérfana
-      await sb.from("orders").delete().eq("id", order.id);
-      return new NextResponse(itemsErr.message, { status: 500 });
-    }
+    const sb=createAdminClient(),proposedNumber=generateOrderNumber();
+    const {data:created,error:createError}=await sb.rpc('sgi_web_order_create',{p_request:requestId,p_input:{
+      order_number:proposedNumber,customer_name:customer.name,customer_email:customer.email,customer_phone:customer.phone,customer_id_number:customer.idNumber??null,
+      shipping_province:shipping.province??null,shipping_canton:shipping.canton??null,shipping_address:shipping.address??null,shipping_method:shippingMethod,shipping_notes:shippingNotes,payment_method:paymentMethod,
+      subtotal_crc:subtotal,shipping_crc:shippingCost,total_crc:total,lines:lineItems
+    }}).abortSignal(AbortSignal.timeout(20000));
+    if(createError||!created?.orderId){const message=createError?.message==='stock_insufficient'?'Cambió la disponibilidad de un producto. Revisá el carrito.':createError?.message==='stock_request_conflict'?'Este intento corresponde a otros datos. Revisá el pedido antes de repetir.':'No se pudo confirmar el pedido. Conservá los datos e intentá nuevamente.';return new NextResponse(message,{status:createError?.message?.startsWith('stock_')?409:503});}
+    const order={id:created.orderId},orderNumber=created.orderNumber;
 
     // Avisar al registrarse cualquier pedido, incluida tarjeta: todavía SIN pago.
     // La confirmación del proveedor enviará otro aviso solo con el resultado real.
-    {
+    if(!created.repeated){
       try {
         await notifyNewOrder({
           orderNumber,

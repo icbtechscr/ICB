@@ -6,13 +6,14 @@ import { ProductImage } from "@/components/ProductImage";
 import { useCart } from "@/lib/cart";
 import { STOCK_LABELS, stockOrderLimit } from "@/lib/stock";
 import { formatCRC } from "@/lib/utils";
+import {MAX_WEB_ORDER_QUANTITY} from '@/lib/web-purchase-stock';
 
 export default function CartPage() {
-  const { items, subtotal, count, setQty, remove } = useCart();
+  const { items, subtotal, count, setQty, remove,stockIssues,inventoryError,checkingStock } = useCart();
   const total = subtotal;
   const MIN_ORDER = 10000;
   const missing = Math.max(0, MIN_ORDER - subtotal);
-  const canCheckout = true;
+  const canCheckout = !checkingStock&&!inventoryError&&Object.keys(stockIssues).length===0;
 
   return (
     <div className="bg-white">
@@ -38,6 +39,7 @@ export default function CartPage() {
           </div>
         </div>
 
+        {inventoryError&&<p role="alert" className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{inventoryError}</p>}
         {items.length === 0 ? (
           <EmptyCart />
         ) : (
@@ -45,7 +47,7 @@ export default function CartPage() {
             <div className="space-y-3">
               {items.map((it, i) => {
                 const limit = stockOrderLimit(it.stockStatus, it.stockQty);
-                const reachedLimit = limit !== null && it.qty >= limit;
+                const reachedLimit = it.qty>=MAX_WEB_ORDER_QUANTITY || limit !== null && it.qty >= limit;
 
                 return (
                   <motion.article
@@ -90,6 +92,7 @@ export default function CartPage() {
                           ? `Maximo disponible: ${limit}`
                           : STOCK_LABELS[it.stockStatus]}
                       </div>
+                      {stockIssues[it.id]&&<p role="alert" className="mt-2 text-xs text-red-700">{stockIssues[it.id]}</p>}
                     </div>
 
                     <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
@@ -168,12 +171,7 @@ export default function CartPage() {
                     disabled
                     className="mt-6 inline-flex w-full cursor-not-allowed flex-col items-center justify-center rounded-full bg-ink-200 px-6 py-3 text-ink-600"
                   >
-                    <span className="text-sm font-bold">
-                      Te faltan {formatCRC(missing)}
-                    </span>
-                    <span className="text-[11px] font-medium">
-                      Mínimo de compra {formatCRC(MIN_ORDER)}
-                    </span>
+                    <span className="text-sm font-bold">{checkingStock?'Verificando disponibilidad…':'Revisá los productos para continuar'}</span>
                   </button>
                 )}
                 <Link

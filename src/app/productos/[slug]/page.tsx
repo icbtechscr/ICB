@@ -267,7 +267,7 @@ export default async function ProductPage({
                   stockStatus: product.stockStatus,
                   stockQty: product.stockQty,
                 }}
-                disabled={!canAddToCart}
+                disabled={price<=0}
                 className="flex-1"
               />
               <button

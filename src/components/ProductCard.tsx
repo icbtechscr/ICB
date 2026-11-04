@@ -1,4 +1,6 @@
 "use client";
+import {useStockDisplay} from '@/lib/use-stock-display';
+import {webPurchaseStock} from '@/lib/web-purchase-stock';
 import Link from "next/link";
 import {StockDisplayBadge} from "./StockDisplayBadge";
 import { ChristmasFrame } from "@/components/seasonal/ChristmasFrame";
@@ -15,7 +17,7 @@ import { STOCK_LABELS, effectiveStockStatus } from "@/lib/stock";
 import { formatCRC } from "@/lib/utils";
 
 export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
-  const { add } = useCart();
+  const { add,actionNotice,inventoryError } = useCart();
   const [added, setAdded] = useState(false);
   const [failedImages, setFailedImages] = useState<Set<string>>(() => new Set());
   const img = product.images.find((image) => {
@@ -26,8 +28,9 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
     product.salePriceCRC && product.priceCRC
       ? Math.round((1 - product.salePriceCRC / product.priceCRC) * 100)
       : null;
-  const displayStockStatus = effectiveStockStatus(product.stockStatus, product.stockQty);
-  const canAddToCart = displayStockStatus !== "out_of_stock";
+  const sale=webPurchaseStock(product.stockStatus,product.stockQty,useStockDisplay(product.id));
+  const displayStockStatus = effectiveStockStatus(sale.stockStatus,sale.stockQty);
+  const canAddToCart = displayStockStatus !== "out_of_stock" && (product.salePriceCRC??product.priceCRC)>0;
 
   function markUnavailable(src: string) {
     setFailedImages((currentFailed) => {
@@ -38,11 +41,11 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
     });
   }
 
-  function addToCart(e: React.MouseEvent) {
+  async function addToCart(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
     if (!canAddToCart) return;
-    add(
+    const ok=await add(
       {
         id: product.id,
         slug: product.slug,
@@ -55,6 +58,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
       },
       1
     );
+    if(!ok)return;
     setAdded(true);
     setTimeout(() => setAdded(false), 1400);
   }
@@ -160,6 +164,8 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           </div>
         </div>
       </Link>
+      {actionNotice?.id===product.id&&<p role="alert" className="px-3 pb-3 text-xs text-red-700">{actionNotice.message}</p>}
+      {inventoryError&&<p role="alert" className="px-3 pb-3 text-xs text-red-700">{inventoryError}</p>}
     </motion.article>
   );
 }

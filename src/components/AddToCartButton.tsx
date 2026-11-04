@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import {useStockDisplay} from "@/lib/use-stock-display";
+import {webPurchaseStock} from "@/lib/web-purchase-stock";
 import { useRouter } from "next/navigation";
 import { ShoppingCart, Check } from "lucide-react";
 import { useCart, type CartItem } from "@/lib/cart";
@@ -12,21 +14,22 @@ type Props = {
 };
 
 export function AddToCartButton({ product, disabled, className = "" }: Props) {
-  const { add } = useCart();
+  const { add, actionNotice, inventoryError } = useCart();
   const router = useRouter();
   const [added, setAdded] = useState(false);
-  const unavailable = stockOrderLimit(product.stockStatus, product.stockQty) === 0;
+  const sale=webPurchaseStock(product.stockStatus,product.stockQty,useStockDisplay(product.id));
+  const unavailable = stockOrderLimit(sale.stockStatus,sale.stockQty)===0 || product.unitPrice<=0;
   const isDisabled = disabled || unavailable;
 
-  function onClick() {
+  async function onClick() {
     if (isDisabled) return;
-    add(product, 1);
+    if(!(await add(product, 1)))return;
     setAdded(true);
     setTimeout(() => setAdded(false), 1400);
   }
 
   return (
-    <div className={`flex flex-col gap-2 sm:flex-row ${className}`}>
+    <div className={className}><div className="flex flex-col gap-2 sm:flex-row">
       <button
         type="button"
         onClick={onClick}
@@ -47,9 +50,9 @@ export function AddToCartButton({ product, disabled, className = "" }: Props) {
       </button>
       <button
         type="button"
-        onClick={() => {
+        onClick={async () => {
           if (isDisabled) return;
-          add(product, 1);
+          if(!(await add(product, 1)))return;
           router.push("/carrito");
         }}
         disabled={isDisabled}
@@ -57,6 +60,6 @@ export function AddToCartButton({ product, disabled, className = "" }: Props) {
       >
         Comprar ahora
       </button>
-    </div>
+    </div>{actionNotice?.id===product.id&&<p role="alert" className="mt-2 text-sm text-red-700">{actionNotice.message}</p>}{inventoryError&&<p role="alert" className="mt-2 text-sm text-red-700">{inventoryError}</p>}</div>
   );
 }
