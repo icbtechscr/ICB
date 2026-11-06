@@ -36,7 +36,7 @@ export function adminSgiDestination(pathname: string, query = "") {
   // Solo filtros de consulta conocidos. Nunca trasladar acciones, tokens o destinos.
   if (ROUTES[path] && !["/admin", "/admin/login", "/admin/productos/nuevo"].includes(path)) {
     const params = new URLSearchParams(query);
-    for (const key of ["q", "query", "search", "page", "p", "tab", "status", "from", "to", "desde", "hasta", "mes", "year", "month", "branch", "vendor", "category", "brand", "sort", "order", "limit", "origin", "state", "on_sale", "stock", "out", "visibility", "user", "user_id", "vendor_id", "branch_id"]) {
+    for (const key of ["q", "query", "search", "page", "p", "tab", "status", "from", "to", "desde", "hasta", "mes", "year", "month", "branch", "vendor", "category", "brand", "sort", "order", "limit", "origin", "state", "on_sale", "stock", "out", "visibility", "user", "user_id", "vendor_id", "branch_id", "sucursal", "days", "period", "ref"]) {
       const value = params.get(key);
       if (value && value.length <= 200) destination.searchParams.set(key, value);
     }

@@ -23,6 +23,8 @@ test("filters survive but actions, redirect targets and credentials never transf
  const url=new URL(destination("/admin/productos","q=monitor&page=3&status=hidden&next=https://evil.test&token=secret&delete=1"));
  assert.equal(url.origin,origin);assert.equal(url.search,"?q=monitor&page=3&status=hidden");
  assert.equal(new URL(destination("/admin/login","next=https://evil.test")).search,"");
+ assert.equal(new URL(destination("/admin/inventario-cpi","sucursal=BARREAL")).search,"?sucursal=BARREAL");
+ assert.equal(new URL(destination("/admin/analitica","days=30&period=month&ref=2026-10")).search,"?days=30&period=month&ref=2026-10");
  for(const path of ["/","/checkout","/api/admin/orders","/api/portal/sgi","/admin-other","/productos/x"])assert.equal(destination(path),null);
  assert.equal(destination("/admin/../../checkout"),origin+"/gestion");
 });
