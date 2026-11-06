@@ -4,6 +4,7 @@ import { getUserRole, canSell } from "@/lib/roles";
 import { writeAuditEvent } from "@/lib/audit";
 import { portalSgiDestination, retiredWorkerApi } from "@/lib/portal-sgi-redirect";
 import { adminSgiDestination } from "@/lib/admin-sgi-redirect";
+import { createAdminClient } from "@/lib/supabase";
 
 export async function proxy(request: NextRequest) {
   const adminDestination = adminSgiDestination(request.nextUrl.pathname, request.nextUrl.search);
@@ -93,6 +94,15 @@ export async function proxy(request: NextRequest) {
 
   const isLogin = path === "/admin/login";
   const isApi = path.startsWith("/api/admin");
+  // SGI conserva estos servicios privados; su autorización también se exige
+  // aquí para que el panel retirado no deje un acceso por metadata editable.
+  if (user && isApi) {
+    const { data: grant, error } = await createAdminClient().from("sgi_user_access")
+      .select("role, enabled").eq("user_id", user.id).maybeSingle();
+    if (error) return NextResponse.json({ error: "No se pudieron verificar los permisos." }, { status: 503 });
+    if (grant?.enabled !== true || grant.role !== "admin")
+      return NextResponse.json({ error: "Solo administradores." }, { status: 403 });
+  }
   // Portal del colaborador (incluye rutas legadas /marcar y /vendedor,
   // que redirigen dentro del portal).
   const isPortal =
@@ -136,7 +146,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Colaborador autenticado intentando entrar al panel → a su portal.
-  if (user && role === "colaborador" && !isLogin) {
+  if (user && role === "colaborador" && !isLogin && !isApi) {
     if (isApi) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
