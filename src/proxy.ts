@@ -3,8 +3,13 @@ import { createServerClient } from "@supabase/ssr";
 import { getUserRole, canSell } from "@/lib/roles";
 import { writeAuditEvent } from "@/lib/audit";
 import { portalSgiDestination, retiredWorkerApi } from "@/lib/portal-sgi-redirect";
+import { adminSgiDestination } from "@/lib/admin-sgi-redirect";
 
 export async function proxy(request: NextRequest) {
+  const adminDestination = adminSgiDestination(request.nextUrl.pathname, request.nextUrl.search);
+  if (adminDestination) return ["GET", "HEAD"].includes(request.method)
+    ? NextResponse.redirect(adminDestination, 307)
+    : NextResponse.json({ error: "El panel de administración se trasladó al SGI. Abrí el documento allí antes de guardar.", destination: adminDestination }, { status: 410 });
   if (retiredWorkerApi(request.nextUrl.pathname)) return NextResponse.json({ error: "Usá esta función desde el SGI." }, { status: 410 });
   const destination = portalSgiDestination(request.nextUrl.pathname, request.nextUrl.search);
   if (destination) return ["GET", "HEAD"].includes(request.method) ? NextResponse.redirect(destination, 307) : NextResponse.json({ error: "Esta pantalla ahora está en SGI." }, { status: 410 });
