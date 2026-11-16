@@ -1,47 +1,60 @@
-# ICB: dirección separada para WordPress antiguo
+# ICB: restauración del dominio principal
 
-Aplicado en producción el 16 de noviembre de 2026, con una corrección posterior del recorrido por la IP antigua. No requiere reconstruir ni desplegar la aplicación Next/SGI.
+Estado vigente aplicado el 16 de noviembre de 2026: la tienda se abre en **https://icbtechscr.com/**, también desde www. No se requiere usar un subdominio alternativo. La página separada de WordPress y su aviso fueron retirados por instrucción del usuario.
 
-## Resultado
+## Configuración vigente
 
-- Tienda actual: https://icbtechscr.com/ y https://www.icbtechscr.com/.
-- Entrada de contingencia a la misma tienda actual: https://tienda.icbtechscr.com/.
-- WordPress antiguo: https://anterior.icbtechscr.com/.
-- SGI: https://sgi.icbtechscr.com/ (acceso autenticado existente).
+### DNS
 
-## Configuración aplicada
+Cloudflare continúa siendo la autoridad del dominio. Sus rutas originales del dominio raíz, www y SGI no se cambiaron.
 
-1. DirectAdmin, dominio icbtechscr.com: subdominio `anterior`, DocumentRoot `/domains/icbtechscr.com/public_html`, reutilizando los archivos y la base de datos existentes. No se clonó el sitio; el alojamiento está por encima de su cuota.
-2. Cloudflare: un registro A `anterior` → `51.222.105.179`, DNS only, TTL Auto. Se verificó HTTPS con certificado válido para ese nombre; el certificado comodín existente se aplicó al nuevo vhost tras el procesamiento de DirectAdmin. No se desactivó ninguna validación TLS.
-3. `wp-config.php`: las dos constantes del archivo `wp-config-url.inc.php`, antes de cargar WordPress. El archivo con credenciales no se incluye en Git.
-4. `wp-content/mu-plugins/icb-legacy-url.php`: aviso visible de sitio anterior con botón a la tienda actual, y traducción de enlaces y recursos absolutos del dominio anterior al subdominio. Cambia la salida HTML, las URL de adjuntos y las redirecciones de WordPress; no modifica datos comerciales ni hace reemplazos en la base de datos. No se modifican respuestas binarias/no HTML.
-5. Al principio de `.htaccess`: bloque de `legacy-root-redirect.conf`. Las visitas tanto al dominio raíz como a www que aún alcanzan el servidor viejo se envían por HTTP 302 a `tienda.icbtechscr.com`, preservando ruta y consulta, con Cache-Control no-store; se excluye ACME. El subdominio `anterior` no coincide con esa regla. La primera versión sólo cubría el dominio raíz y dejaba que www recibiera un 301 de WordPress hacia anterior; se reprodujo y corrigió ese recorrido.
-6. Zona DNS antigua de Neothek: se sustituyó únicamente `www CNAME icbtechscr.com.` por `www A 104.21.49.91` y `www A 172.67.189.113`, ambos TTL 300. Es una mitigación temporal para resolutores que conservan la delegación antigua; Cloudflare sigue siendo la autoridad vigente. Las IP se verificaron con Host/SNI de `www` y TLS estricto antes de aplicarlas.
-7. Cloudflare Tunnel: ruta publicada `tienda.icbtechscr.com` → `http://127.0.0.1:80`, sin reemplazar las cinco rutas existentes y con CNAME proxied creado automáticamente. En Traefik se instaló `/data/coolify/proxy/dynamic/icb-store-transition.yaml`, que asocia ese Host al servicio Docker existente de la tienda, preservando el Host. No se usa proxy por PHP ni se transfieren credenciales a WordPress. Se agregaron también dos A tienda con las mismas IP de Cloudflare y TTL 300 en la zona antigua, sin duplicar a otros dominios.
-8. Se conservó el A raíz antiguo (`51.222.105.179`), porque el MX antiguo apunta al mismo nombre. No se alteraron MX, SPF, mail, buzones, delegación vigente ni test.
+Los dos servidores DNS antiguos de Neothek también entregan ahora para `icbtechscr.com` las IP verificadas de Cloudflare `104.21.49.91` y `172.67.189.113`, con TTL 300; www ya usa esas mismas IP. Antes, sólo www se había corregido y el A raíz aún conducía a WordPress.
 
-DirectAdmin agregó también los registros correspondientes al nuevo subdominio en su zona antigua. Se desmarcó Duplicate to pointers al modificar `www`.
+Para cambiar el A raíz sin conservar la dependencia del correo respecto de la IP web:
+
+- En la zona antigua, el MX `0 icbtechscr.com.` se reemplazó por los tres MX que ya usa el dominio en Cloudflare: 10 `route2.mx.cloudflare.net.`, 39 `route1.mx.cloudflare.net.` y 84 `route3.mx.cloudflare.net.`, TTL 300.
+- El CNAME antiguo `mail` se fijó a `bison.smart-hosts.com.` (mismo alojamiento antiguo) para que ese acceso no siga el A raíz hacia un servidor web de Cloudflare.
+- El SPF antiguo conserva sus IP explícitas y agrega el include de correo vigente: `v=spf1 ip4:51.222.105.179 ip6:2607:5300:203:86b3:0:0:0:0 include:_spf.mx.cloudflare.net ~all`. Se quitaron a/mx como autorizaciones implícitas porque esos nombres ya apuntan a servicios diferentes.
+
+No se borraron buzones, mensajes, archivos, bases de datos ni registros comerciales. No se enviaron correos de prueba en esta restauración. Los emisores que tengan un MX/A anterior en caché pueden reintentar durante la transición; no se puede afirmar la entrega de un mensaje concreto sólo con estas pruebas DNS.
+
+### Clientes que aún llegan a la IP antigua
+
+En el alojamiento de Neothek, `/domains/icbtechscr.com/public_html/.htaccess` conserva su contenido original, precedido únicamente por `legacy-root-redirect.conf`.
+
+Los accesos HTTPS con Host `icbtechscr.com` o `www.icbtechscr.com` usan `_icb_current_site_bridge.php`, cuyo código versionado es `current-site-bridge.php`. El puente consulta el sitio actual por HTTPS con Host/SNI original y las IP públicas verificadas de Cloudflare; el navegador conserva su dominio. La verificación del certificado y del nombre sigue habilitada. No se usa un proxy HTTP sin cifrar y no se sigue ninguna redirección del servidor internamente.
+
+El destino está limitado a los dos nombres públicos originales. No admite un destino enviado por el cliente, bloquea recursión y no ejecuta comandos ni escribe datos comerciales. Preserva el método, cuerpo JSON, formularios, archivos multipart, estado, cookies separadas y encabezados de seguridad del sitio actual; omite encabezados propios del transporte. Los cuerpos binarios se transmiten sin transformación. No reintenta operaciones de escritura automáticamente. Los límites de carga del hosting antiguo siguen aplicando; rechaza con 413 un multipart que PHP haya descartado por tamaño.
+
+El HTTP antiguo se conduce al HTTPS del dominio principal. Los clientes cuyo DNS ya está actualizado llegan directamente al túnel y a la aplicación, sin pasar por el puente. El puente se puede retirar cuando los registros de acceso confirmen que dejaron de llegar clientes al alojamiento antiguo. No necesita reconstruir la aplicación Next ni cambiar SGI.
+
+### Retiro del sitio alternativo
+
+`anterior` ya no presenta WordPress: responde sólo con una redirección al dominio principal. `tienda` también devuelve al principal; el router de compatibilidad en `/data/coolify/proxy/dynamic/icb-store-transition.yaml` usa ahora un middleware de redirección, no una tienda independiente.
+
+Estos nombres conservan únicamente la respuesta de compatibilidad necesaria para recuperar navegadores que ya habían guardado un 301 del dominio principal hacia anterior. Borrarlos inmediatamente haría fallar esos navegadores antes de que pudieran regresar. La redirección usa el parámetro `icb_actual=20261116` para evitar reutilizar la URL exacta del antiguo 301; termina en el dominio original incluso forzando también su IP antigua. No se les pide a los usuarios visitar esos subdominios.
+
+Se restauró el `wp-config.php` original desde el respaldo privado, retirando WP_HOME/WP_SITEURL de anterior. `icb-legacy-url.php` quedó desactivado: no reescribe URL ni agrega un aviso. WordPress conserva sus archivos y base de datos; no se publica como web separada.
 
 ## Verificación
 
-`verification-summary.json` contiene las comprobaciones finales con fecha UTC y validación TLS normal: HTTP 200 para la tienda raíz, www, WordPress, Nosotros, un producto y el inicio de sesión SGI. Las tres páginas de WordPress permanecieron en `anterior` sin enlaces href/src absolutos dirigidos al dominio principal. Se revisó visualmente el sitio con sus imágenes, estilos y navegación.
+`verification-canonical-restore.json` registra fecha UTC y validación TLS normal:
 
-Ambos servidores antiguos (`51.222.105.179` y `51.161.108.91`) ya devuelven las dos IP de Cloudflare para www; su MX y A raíz siguen intactos. Los clientes con respuestas DNS anteriores todavía pueden necesitar agotar su caché. No se garantiza el plazo de cada proveedor.
+- HTTP/HTTPS y raíz/www forzados a la IP antigua: la aplicación actual responde 200 y conserva el dominio original; HTTPS raíz no redirige.
+- Los enlaces de los nombres retirados finalizan en icbtechscr.com, también simulando un A raíz antiguo.
+- Catálogo y carrito responden igual por el acceso directo y por el puente.
+- Una solicitud JSON vacía al inicio de sesión conserva el 400 y su mensaje de validación; no se intenta autenticar a una persona.
+- Consulta administrativa y multipart sin sesión conservan el 401; no se cargó un archivo en los datos de la aplicación.
+- El favicon descargado por ambos caminos tiene el mismo SHA-256.
+- Los tres servidores consultados (Cloudflare público y ambos antiguos) muestran las IP correctas del dominio; los MX antiguos coinciden con los vigentes.
+- El navegador abrió https://icbtechscr.com/ y comprobó que el enlace de anterior regresa a ese dominio. Captura local en `evidence/icb-canonical-restore-20261116/icbtechscr-com.jpg`.
 
-No se probaron compras ni pagos en WordPress; no se realizaron pedidos de prueba. Esta publicación conserva el acceso a la web anterior.
+Una prueba negativa que forzó tienda a la IP Neothek falló correctamente por certificado: ese nombre nunca apuntó allí ni tiene vhost allí. No es una ruta usada por visitantes. La ruta real de tienda por Cloudflare sí termina en el principal. No se deshabilitó TLS para esa prueba.
 
-## Corrección del recorrido que seguía fallando
+No se crearon pedidos, cobros, facturas ni movimientos de inventario. No se efectuó una compra real ni se probó la firma o emisión fiscal. El puente se validó con navegación, binarios, validación JSON y rechazo de acceso no autorizado.
 
-La verificación inicial confirmó DNS y servicios pero no cubrió el acceso directo a www en la IP antigua. Allí WordPress enviaba un 301 a anterior. No era suficiente afirmar que bastaba esperar DNS. La regla actual detiene ese recorrido antes de WordPress para ambos nombres y usa un hostname nuevo que resuelve en las zonas actual y antigua.
+## Evidencia y reversión
 
-`verification-redirect-fix.json` contiene 12 rutas finales: cuatro combinaciones HTTP/HTTPS y raíz/www forzadas a la IP antigua, una ruta con consulta y un enlace de entrada con consulta; todas terminan en la tienda actual con 200, sin bucles y sin pasar por anterior. Además se probaron las rutas públicas principales, archivo, carrito y SGI. Ambos DNS antiguos confirman los A tienda y conservan MX/A raíz. En navegador se agregó un producto al carrito, se comprobó su presencia y se vació la prueba; no se creó pedido ni se efectuó pago. El botón del aviso en WordPress abre la tienda nueva.
+Las exportaciones DNS previas y las pruebas por etapa permanecen en el workspace operativo, bajo `evidence/icb-legacy-link-20261116`, `evidence/icb-legacy-redirect-fix-20261116` y `evidence/icb-canonical-restore-20261116`. Las pruebas anteriores describen estados anteriores y quedan sustituidas por este informe.
 
-Un navegador que ya haya cacheado el antiguo 301 puede seguir saltando localmente a anterior sin contactar al servidor. No se puede borrar esa caché remota desde Cloudflare. La entrada https://tienda.icbtechscr.com/ permite acceso inmediato; https://icbtechscr.com/?actual=20261116 es otra entrada que evita reutilizar la URL raíz exacta cacheada. La reparación del servidor está verificada; queda la comprobación final desde el dispositivo afectado.
-
-La regla temporal del proxy referencia un servicio Docker de la aplicación de ICB. Si cambia el identificador de esa aplicación en Coolify, debe actualizarse este alias. No rotar tokens ni reemplazar la configuración completa del túnel para retirarlo: eliminar únicamente su ruta y su DNS cuando ya no se requiera.
-
-## Respaldo y reversión
-
-Antes de tocar DNS se guardaron exportaciones de Cloudflare y la tabla DNS antigua. Los originales completos de wp-config.php y .htaccess se descargaron a un respaldo privado local fuera del repositorio. Las evidencias locales están en `evidence/icb-legacy-link-20261116` del workspace operativo; no contienen contraseñas en el informe.
-
-Para revertir la adaptación de WordPress: restaurar los dos archivos originales desde ese respaldo privado y desactivar el archivo MU específico; no sobrescribir otros plugins ni la base de datos. Reponer el DNS www anterior únicamente si deliberadamente se desea volver a servir la web vieja a los resolutores antiguos. No cambiar el MX ni el A raíz como parte de esa reversión.
+Los originales completos de wp-config.php y .htaccess están en un respaldo privado local fuera de Git. No se incluyen credenciales en este repositorio. Para retirar sólo el puente, esperar a que se agote el tráfico antiguo y quitar su regla de reescritura y su archivo, conservando las redirecciones de compatibilidad. No devolver el A raíz a WordPress como parte de esa limpieza. Si se revierte el DNS, hay que revisar conjuntamente A, MX, mail y SPF; no reponer un MX que vuelva a depender de la IP web.

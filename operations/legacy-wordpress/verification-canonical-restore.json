@@ -1,0 +1,395 @@
+{
+  "checked_at": "2026-11-16T22:25:13.805949+00:00",
+  "tls_validation": true,
+  "http": [
+    {
+      "label": "icbtechscr.com https",
+      "url": "https://icbtechscr.com/",
+      "forced_old_ip": true,
+      "method": "GET",
+      "result": "200 https://icbtechscr.com/",
+      "exit": 0,
+      "bytes": 340297,
+      "sha256": "cab176d3c47f8ce56dd57a1e4d75c970f816d56ebc5c7f40ee2248e742d8fa79",
+      "bridge": true,
+      "locations": [],
+      "title": [
+        "ICB Technologies Costa Rica — Tecnología y seguridad"
+      ],
+      "error": ""
+    },
+    {
+      "label": "icbtechscr.com http",
+      "url": "http://icbtechscr.com/",
+      "forced_old_ip": true,
+      "method": "GET",
+      "result": "200 https://icbtechscr.com/?icb_actual=20261116",
+      "exit": 0,
+      "bytes": 340297,
+      "sha256": "fad57ec60387bda3e775da7303c8916d4e45f4b06320c568de5920bd1aa4f6f9",
+      "bridge": true,
+      "locations": [
+        "https://icbtechscr.com/?icb_actual=20261116"
+      ],
+      "title": [
+        "ICB Technologies Costa Rica — Tecnología y seguridad"
+      ],
+      "error": ""
+    },
+    {
+      "label": "www.icbtechscr.com https",
+      "url": "https://www.icbtechscr.com/",
+      "forced_old_ip": true,
+      "method": "GET",
+      "result": "200 https://www.icbtechscr.com/",
+      "exit": 0,
+      "bytes": 340297,
+      "sha256": "f0e0fc950b130dc7d0b9ec4c6d8b23a675efacc8844969ad3230697a4aca37e8",
+      "bridge": true,
+      "locations": [],
+      "title": [
+        "ICB Technologies Costa Rica — Tecnología y seguridad"
+      ],
+      "error": ""
+    },
+    {
+      "label": "www.icbtechscr.com http",
+      "url": "http://www.icbtechscr.com/",
+      "forced_old_ip": true,
+      "method": "GET",
+      "result": "200 https://icbtechscr.com/?icb_actual=20261116",
+      "exit": 0,
+      "bytes": 340297,
+      "sha256": "48bb9c92cdfa10dc21be5b509612d24a2ece11f8ce564fd30ec8eba2ea135c0b",
+      "bridge": true,
+      "locations": [
+        "https://icbtechscr.com/?icb_actual=20261116"
+      ],
+      "title": [
+        "ICB Technologies Costa Rica — Tecnología y seguridad"
+      ],
+      "error": ""
+    },
+    {
+      "label": "retired anterior.icbtechscr.com",
+      "url": "https://anterior.icbtechscr.com/",
+      "forced_old_ip": true,
+      "method": "GET",
+      "result": "200 https://icbtechscr.com/?icb_actual=20261116",
+      "exit": 0,
+      "bytes": 340297,
+      "sha256": "681cff85cf64f9cc9831dc764e79818c26696d61a128ce55e616633c3ca8a7e1",
+      "bridge": true,
+      "locations": [
+        "https://icbtechscr.com/?icb_actual=20261116"
+      ],
+      "title": [
+        "ICB Technologies Costa Rica — Tecnología y seguridad"
+      ],
+      "error": ""
+    },
+    {
+      "label": "retired tienda.icbtechscr.com",
+      "url": "https://tienda.icbtechscr.com/",
+      "forced_old_ip": true,
+      "method": "GET",
+      "result": "000 https://tienda.icbtechscr.com/",
+      "exit": 60,
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bridge": false,
+      "locations": [],
+      "title": [],
+      "error": "curl: (60) schannel: SNI or certificate check failed: SEC_E_WRONG_PRINCIPAL (0x80090322) - El nombre de entidad de seguridad de destino es incorrecto.\nMore details here: https://curl.se/docs/sslcerts.html\n\ncurl failed to verify the legitimacy of the server and therefore could not\nestablish a secure connection to it. To learn more about this situation and\nhow to fix it, please visit the webpage mentioned above.\n",
+      "classification": "negative TLS test: this hostname never pointed to the Neothek IP and has no vhost there",
+      "expected_failure": true
+    },
+    {
+      "label": "retired tienda public",
+      "url": "https://tienda.icbtechscr.com/",
+      "forced_old_ip": false,
+      "method": "GET",
+      "result": "200 https://icbtechscr.com/?icb_actual=20261116",
+      "exit": 0,
+      "bytes": 340297,
+      "sha256": "b3b97bce7d8ed62608114f4749aa73b0eaba54e42d716b1846f7d20e7107bfe3",
+      "bridge": false,
+      "locations": [
+        "https://icbtechscr.com/?icb_actual=20261116"
+      ],
+      "title": [
+        "ICB Technologies Costa Rica — Tecnología y seguridad"
+      ],
+      "error": ""
+    },
+    {
+      "label": "direct /",
+      "url": "https://icbtechscr.com/",
+      "forced_old_ip": false,
+      "method": "GET",
+      "result": "200 https://icbtechscr.com/",
+      "exit": 0,
+      "bytes": 340297,
+      "sha256": "876c38f12ed601d17b3b0ae71f702abe071597fedcd8567f5551b08d56e34a76",
+      "bridge": false,
+      "locations": [],
+      "title": [
+        "ICB Technologies Costa Rica — Tecnología y seguridad"
+      ],
+      "error": ""
+    },
+    {
+      "label": "old /",
+      "url": "https://icbtechscr.com/",
+      "forced_old_ip": true,
+      "method": "GET",
+      "result": "200 https://icbtechscr.com/",
+      "exit": 0,
+      "bytes": 340297,
+      "sha256": "690249a9b10a3f6ddb0d5df8ff0711ac3a2f5413c3d5068fbfeae1ba2e4a4717",
+      "bridge": true,
+      "locations": [],
+      "title": [
+        "ICB Technologies Costa Rica — Tecnología y seguridad"
+      ],
+      "error": ""
+    },
+    {
+      "label": "direct /productos?buscar=camara",
+      "url": "https://icbtechscr.com/productos?buscar=camara",
+      "forced_old_ip": false,
+      "method": "GET",
+      "result": "200 https://icbtechscr.com/productos?buscar=camara",
+      "exit": 0,
+      "bytes": 373736,
+      "sha256": "ff1d6779220b61639b350b0e38f7d0bad216a30f4bdf8731b3b8952504e36e7a",
+      "bridge": false,
+      "locations": [],
+      "title": [
+        "Catálogo de tecnología — ICB Technologies Costa Rica"
+      ],
+      "error": ""
+    },
+    {
+      "label": "old /productos?buscar=camara",
+      "url": "https://icbtechscr.com/productos?buscar=camara",
+      "forced_old_ip": true,
+      "method": "GET",
+      "result": "200 https://icbtechscr.com/productos?buscar=camara",
+      "exit": 0,
+      "bytes": 373736,
+      "sha256": "84ca4737aa7b91d3e88c3050e218dda0350aaff56c714f0446bfedda4f7e449f",
+      "bridge": true,
+      "locations": [],
+      "title": [
+        "Catálogo de tecnología — ICB Technologies Costa Rica"
+      ],
+      "error": ""
+    },
+    {
+      "label": "direct /carrito",
+      "url": "https://icbtechscr.com/carrito",
+      "forced_old_ip": false,
+      "method": "GET",
+      "result": "200 https://icbtechscr.com/carrito",
+      "exit": 0,
+      "bytes": 76684,
+      "sha256": "a14a469c2ca36ff98d4aa31882407c7fb63f0d053157026d19cb83a6b65583dd",
+      "bridge": false,
+      "locations": [],
+      "title": [
+        "ICB Technologies Costa Rica — Tecnología y seguridad"
+      ],
+      "error": ""
+    },
+    {
+      "label": "old /carrito",
+      "url": "https://icbtechscr.com/carrito",
+      "forced_old_ip": true,
+      "method": "GET",
+      "result": "200 https://icbtechscr.com/carrito",
+      "exit": 0,
+      "bytes": 76684,
+      "sha256": "e91a0279a37d593d692e3f5a15b51bf8b5e2f51e61ee8ccccaafd34f0aa1dc57",
+      "bridge": true,
+      "locations": [],
+      "title": [
+        "ICB Technologies Costa Rica — Tecnología y seguridad"
+      ],
+      "error": ""
+    },
+    {
+      "label": "direct /api/admin/products",
+      "url": "https://icbtechscr.com/api/admin/products",
+      "forced_old_ip": false,
+      "method": "GET",
+      "result": "401 https://icbtechscr.com/api/admin/products",
+      "exit": 0,
+      "bytes": 25,
+      "sha256": "b19407833ab490af8732f88b8e022a8658f42bdd20d46a69b1d6f2e967393965",
+      "bridge": false,
+      "locations": [],
+      "title": [],
+      "error": "",
+      "response_body": "{\"error\":\"No autorizado\"}"
+    },
+    {
+      "label": "old /api/admin/products",
+      "url": "https://icbtechscr.com/api/admin/products",
+      "forced_old_ip": true,
+      "method": "GET",
+      "result": "401 https://icbtechscr.com/api/admin/products",
+      "exit": 0,
+      "bytes": 25,
+      "sha256": "b19407833ab490af8732f88b8e022a8658f42bdd20d46a69b1d6f2e967393965",
+      "bridge": true,
+      "locations": [],
+      "title": [],
+      "error": "",
+      "response_body": "{\"error\":\"No autorizado\"}"
+    },
+    {
+      "label": "direct /favicon.ico",
+      "url": "https://icbtechscr.com/favicon.ico",
+      "forced_old_ip": false,
+      "method": "GET",
+      "result": "200 https://icbtechscr.com/favicon.ico",
+      "exit": 0,
+      "bytes": 34985,
+      "sha256": "5f71d1964442a1b7f836af39da0b6eee1ad8085243d77943abd296a70afd58a8",
+      "bridge": false,
+      "locations": [],
+      "title": [],
+      "error": ""
+    },
+    {
+      "label": "old /favicon.ico",
+      "url": "https://icbtechscr.com/favicon.ico",
+      "forced_old_ip": true,
+      "method": "GET",
+      "result": "200 https://icbtechscr.com/favicon.ico",
+      "exit": 0,
+      "bytes": 34985,
+      "sha256": "5f71d1964442a1b7f836af39da0b6eee1ad8085243d77943abd296a70afd58a8",
+      "bridge": true,
+      "locations": [],
+      "title": [],
+      "error": ""
+    },
+    {
+      "label": "JSON validation",
+      "url": "https://icbtechscr.com/api/auth/login",
+      "forced_old_ip": false,
+      "method": "POST",
+      "result": "400 https://icbtechscr.com/api/auth/login",
+      "exit": 0,
+      "bytes": 48,
+      "sha256": "a4ee5b4d99a0ad2436ae6fd467f537459e5b63cc657b42dcb03c721b67fde992",
+      "bridge": false,
+      "locations": [],
+      "title": [],
+      "error": "",
+      "response_body": "{\"error\":\"Ingresá el correo y la contraseña.\"}"
+    },
+    {
+      "label": "multipart unauthorized",
+      "url": "https://icbtechscr.com/api/admin/upload",
+      "forced_old_ip": false,
+      "method": "POST",
+      "result": "401 https://icbtechscr.com/api/admin/upload",
+      "exit": 0,
+      "bytes": 25,
+      "sha256": "b19407833ab490af8732f88b8e022a8658f42bdd20d46a69b1d6f2e967393965",
+      "bridge": false,
+      "locations": [],
+      "title": [],
+      "error": "",
+      "response_body": "{\"error\":\"No autorizado\"}"
+    },
+    {
+      "label": "JSON validation",
+      "url": "https://icbtechscr.com/api/auth/login",
+      "forced_old_ip": true,
+      "method": "POST",
+      "result": "400 https://icbtechscr.com/api/auth/login",
+      "exit": 0,
+      "bytes": 48,
+      "sha256": "a4ee5b4d99a0ad2436ae6fd467f537459e5b63cc657b42dcb03c721b67fde992",
+      "bridge": true,
+      "locations": [],
+      "title": [],
+      "error": "",
+      "response_body": "{\"error\":\"Ingresá el correo y la contraseña.\"}"
+    },
+    {
+      "label": "multipart unauthorized",
+      "url": "https://icbtechscr.com/api/admin/upload",
+      "forced_old_ip": true,
+      "method": "POST",
+      "result": "401 https://icbtechscr.com/api/admin/upload",
+      "exit": 0,
+      "bytes": 25,
+      "sha256": "b19407833ab490af8732f88b8e022a8658f42bdd20d46a69b1d6f2e967393965",
+      "bridge": true,
+      "locations": [],
+      "title": [],
+      "error": "",
+      "response_body": "{\"error\":\"No autorizado\"}"
+    }
+  ],
+  "dns": [
+    {
+      "server": "1.1.1.1",
+      "type": "A",
+      "output": "Servidor:  one.one.one.one\nAddress:  1.1.1.1\n\nNombre:  icbtechscr.com\nAddresses:  104.21.49.91\n\t  172.67.189.113\n\nRespuesta no autoritativa:\n\n"
+    },
+    {
+      "server": "1.1.1.1",
+      "type": "MX",
+      "output": "Servidor:  one.one.one.one\nAddress:  1.1.1.1\n\nicbtechscr.com\tMX preference = 10, mail exchanger = route2.mx.cloudflare.net\nicbtechscr.com\tMX preference = 39, mail exchanger = route1.mx.cloudflare.net\nicbtechscr.com\tMX preference = 84, mail exchanger = route3.mx.cloudflare.net\nRespuesta no autoritativa:\n\n"
+    },
+    {
+      "server": "1.1.1.1",
+      "type": "TXT",
+      "output": "Servidor:  one.one.one.one\nAddress:  1.1.1.1\n\nicbtechscr.com\ttext =\n\n\t\"google-site-verification=SsMnROcsSAAfrpz5K7G1Jw4aiAl-yN5SeV29A0chQfE\"\nicbtechscr.com\ttext =\n\n\t\"v=spf1 include:_spf.mx.cloudflare.net ~all\"\nRespuesta no autoritativa:\n\n"
+    },
+    {
+      "server": "51.222.105.179",
+      "type": "A",
+      "output": "Servidor:  UnKnown\nAddress:  51.222.105.179\n\nNombre:  icbtechscr.com\nAddresses:  104.21.49.91\n\t  172.67.189.113\n\n"
+    },
+    {
+      "server": "51.222.105.179",
+      "type": "MX",
+      "output": "Servidor:  UnKnown\nAddress:  51.222.105.179\n\nicbtechscr.com\tMX preference = 84, mail exchanger = route3.mx.cloudflare.net\nicbtechscr.com\tMX preference = 10, mail exchanger = route2.mx.cloudflare.net\nicbtechscr.com\tMX preference = 39, mail exchanger = route1.mx.cloudflare.net\n"
+    },
+    {
+      "server": "51.222.105.179",
+      "type": "TXT",
+      "output": "Servidor:  UnKnown\nAddress:  51.222.105.179\n\nicbtechscr.com\ttext =\n\n\t\"v=spf1 ip4:51.222.105.179 ip6:2607:5300:203:86b3:0:0:0:0 include:_spf.mx.cloudflare.net ~all\"\nicbtechscr.com\ttext =\n\n\t\"google-site-verification=SsMnROcsSAAfrpz5K7G1Jw4aiAl-yN5SeV29A0chQfE\"\n"
+    },
+    {
+      "server": "51.161.108.91",
+      "type": "A",
+      "output": "Servidor:  UnKnown\nAddress:  51.161.108.91\n\nNombre:  icbtechscr.com\nAddresses:  172.67.189.113\n\t  104.21.49.91\n\n"
+    },
+    {
+      "server": "51.161.108.91",
+      "type": "MX",
+      "output": "Servidor:  UnKnown\nAddress:  51.161.108.91\n\nicbtechscr.com\tMX preference = 84, mail exchanger = route3.mx.cloudflare.net\nicbtechscr.com\tMX preference = 10, mail exchanger = route2.mx.cloudflare.net\nicbtechscr.com\tMX preference = 39, mail exchanger = route1.mx.cloudflare.net\n"
+    },
+    {
+      "server": "51.161.108.91",
+      "type": "TXT",
+      "output": "Servidor:  UnKnown\nAddress:  51.161.108.91\n\nicbtechscr.com\ttext =\n\n\t\"v=spf1 ip4:51.222.105.179 ip6:2607:5300:203:86b3:0:0:0:0 include:_spf.mx.cloudflare.net ~all\"\nicbtechscr.com\ttext =\n\n\t\"google-site-verification=SsMnROcsSAAfrpz5K7G1Jw4aiAl-yN5SeV29A0chQfE\"\n"
+    }
+  ],
+  "no_orders_or_payments_created": true,
+  "final_deployed_script_recheck": {
+    "result": "200 https://icbtechscr.com/",
+    "tls_validation": true,
+    "nextjs": true,
+    "isolated_probe_removed": true
+  },
+  "status": "passed"
+}

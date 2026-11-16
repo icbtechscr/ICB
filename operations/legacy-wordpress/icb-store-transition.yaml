@@ -6,7 +6,19 @@
         "entryPoints": [
           "http"
         ],
-        "service": "http-0-e3qib0s0vmfx7ex10uzea2dh@docker"
+        "service": "http-0-e3qib0s0vmfx7ex10uzea2dh@docker",
+        "middlewares": [
+          "icb-canonical-restore"
+        ]
+      }
+    },
+    "middlewares": {
+      "icb-canonical-restore": {
+        "redirectRegex": {
+          "regex": "^https?://tienda\\.icbtechscr\\.com(?:/.*)?$",
+          "replacement": "https://icbtechscr.com/?icb_actual=20261116",
+          "permanent": false
+        }
       }
     }
   }
