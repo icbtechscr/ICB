@@ -32,3 +32,12 @@ add_action( 'template_redirect', function () {
         return $html ? icb_legacy_rewrite_urls( $body ) : $body;
     } );
 }, -100 );
+
+// Browsers may still hold a former permanent redirect to this archive hostname.
+// Keep this site available, with an explicit route back to the current store.
+add_action( 'wp_head', function () {
+    echo '<style>body{padding-bottom:76px!important}.icb-legacy-notice{position:fixed;bottom:0;left:0;right:0;z-index:2147483000;background:#122849;color:#fff;padding:12px 18px;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;font:15px/1.4 Arial,sans-serif;box-shadow:0 -2px 8px #0003}.icb-legacy-notice a{background:#fff;color:#122849!important;padding:7px 14px;border-radius:5px;font-weight:bold;text-decoration:none}</style>';
+} );
+add_action( 'wp_footer', function () {
+    echo '<aside class="icb-legacy-notice" role="note" aria-label="Sitio anterior de ICB"><span>Estás en el sitio anterior de ICB.</span><a href="https://tienda.icbtechscr.com/">Abrir tienda actual</a></aside>';
+} );

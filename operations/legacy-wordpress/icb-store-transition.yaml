@@ -1,0 +1,13 @@
+{
+  "http": {
+    "routers": {
+      "icb-store-transition": {
+        "rule": "Host(`tienda.icbtechscr.com`)",
+        "entryPoints": [
+          "http"
+        ],
+        "service": "http-0-e3qib0s0vmfx7ex10uzea2dh@docker"
+      }
+    }
+  }
+}

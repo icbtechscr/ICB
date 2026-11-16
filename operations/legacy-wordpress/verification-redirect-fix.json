@@ -1,0 +1,197 @@
+{
+  "checked_at": "2026-11-16T22:03:42.877036+00:00",
+  "tls_validation": true,
+  "http": [
+    {
+      "url": "http://icbtechscr.com/",
+      "forced_resolution": "icbtechscr.com:80:51.222.105.179",
+      "rc": 0,
+      "result": "200 https://tienda.icbtechscr.com/",
+      "title": "ICB Technologies Costa Rica — Tecnología y seguridad",
+      "redirects": [
+        "https://tienda.icbtechscr.com/"
+      ],
+      "no_store": true,
+      "nextjs": true,
+      "archive_notice": false,
+      "error": ""
+    },
+    {
+      "url": "https://icbtechscr.com/",
+      "forced_resolution": "icbtechscr.com:443:51.222.105.179",
+      "rc": 0,
+      "result": "200 https://tienda.icbtechscr.com/",
+      "title": "ICB Technologies Costa Rica — Tecnología y seguridad",
+      "redirects": [
+        "https://tienda.icbtechscr.com/"
+      ],
+      "no_store": true,
+      "nextjs": true,
+      "archive_notice": false,
+      "error": ""
+    },
+    {
+      "url": "http://www.icbtechscr.com/",
+      "forced_resolution": "www.icbtechscr.com:80:51.222.105.179",
+      "rc": 0,
+      "result": "200 https://tienda.icbtechscr.com/",
+      "title": "ICB Technologies Costa Rica — Tecnología y seguridad",
+      "redirects": [
+        "https://tienda.icbtechscr.com/"
+      ],
+      "no_store": true,
+      "nextjs": true,
+      "archive_notice": false,
+      "error": ""
+    },
+    {
+      "url": "https://www.icbtechscr.com/",
+      "forced_resolution": "www.icbtechscr.com:443:51.222.105.179",
+      "rc": 0,
+      "result": "200 https://tienda.icbtechscr.com/",
+      "title": "ICB Technologies Costa Rica — Tecnología y seguridad",
+      "redirects": [
+        "https://tienda.icbtechscr.com/"
+      ],
+      "no_store": true,
+      "nextjs": true,
+      "archive_notice": false,
+      "error": ""
+    },
+    {
+      "url": "https://www.icbtechscr.com/productos?buscar=camara",
+      "forced_resolution": "www.icbtechscr.com:443:51.222.105.179",
+      "rc": 0,
+      "result": "200 https://tienda.icbtechscr.com/productos?buscar=camara",
+      "title": "Catálogo de tecnología — ICB Technologies Costa Rica",
+      "redirects": [
+        "https://tienda.icbtechscr.com/productos?buscar=camara"
+      ],
+      "no_store": true,
+      "nextjs": true,
+      "archive_notice": false,
+      "error": ""
+    },
+    {
+      "url": "https://icbtechscr.com/?actual=20261116",
+      "forced_resolution": "icbtechscr.com:443:51.222.105.179",
+      "rc": 0,
+      "result": "200 https://tienda.icbtechscr.com/?actual=20261116",
+      "title": "ICB Technologies Costa Rica — Tecnología y seguridad",
+      "redirects": [
+        "https://tienda.icbtechscr.com/?actual=20261116"
+      ],
+      "no_store": true,
+      "nextjs": true,
+      "archive_notice": false,
+      "error": ""
+    },
+    {
+      "url": "https://icbtechscr.com/",
+      "forced_resolution": null,
+      "rc": 0,
+      "result": "200 https://icbtechscr.com/",
+      "title": "ICB Technologies Costa Rica — Tecnología y seguridad",
+      "redirects": [],
+      "no_store": false,
+      "nextjs": true,
+      "archive_notice": false,
+      "error": ""
+    },
+    {
+      "url": "https://www.icbtechscr.com/",
+      "forced_resolution": null,
+      "rc": 0,
+      "result": "200 https://www.icbtechscr.com/",
+      "title": "ICB Technologies Costa Rica — Tecnología y seguridad",
+      "redirects": [],
+      "no_store": false,
+      "nextjs": true,
+      "archive_notice": false,
+      "error": ""
+    },
+    {
+      "url": "https://tienda.icbtechscr.com/",
+      "forced_resolution": null,
+      "rc": 0,
+      "result": "200 https://tienda.icbtechscr.com/",
+      "title": "ICB Technologies Costa Rica — Tecnología y seguridad",
+      "redirects": [],
+      "no_store": false,
+      "nextjs": true,
+      "archive_notice": false,
+      "error": ""
+    },
+    {
+      "url": "https://tienda.icbtechscr.com/carrito",
+      "forced_resolution": null,
+      "rc": 0,
+      "result": "200 https://tienda.icbtechscr.com/carrito",
+      "title": "ICB Technologies Costa Rica — Tecnología y seguridad",
+      "redirects": [],
+      "no_store": false,
+      "nextjs": true,
+      "archive_notice": false,
+      "error": ""
+    },
+    {
+      "url": "https://anterior.icbtechscr.com/",
+      "forced_resolution": null,
+      "rc": 0,
+      "result": "200 https://anterior.icbtechscr.com/",
+      "title": "ICB Technologies Costa Rica | El Mundo de la Tecnología",
+      "redirects": [],
+      "no_store": false,
+      "nextjs": false,
+      "archive_notice": true,
+      "error": ""
+    },
+    {
+      "url": "https://sgi.icbtechscr.com/",
+      "forced_resolution": null,
+      "rc": 0,
+      "result": "200 https://sgi.icbtechscr.com/ingresar?next=%2F",
+      "title": "SGI 2027 · Gestión integral",
+      "redirects": [
+        "https://sgi.icbtechscr.com/ingresar?next=%2F"
+      ],
+      "no_store": false,
+      "nextjs": true,
+      "archive_notice": false,
+      "error": ""
+    }
+  ],
+  "dns": [
+    {
+      "server": "51.222.105.179",
+      "name": "tienda.icbtechscr.com",
+      "type": "A",
+      "output": "Servidor:  UnKnown\nAddress:  51.222.105.179\n\nNombre:  tienda.icbtechscr.com\nAddresses:  104.21.49.91\n\t  172.67.189.113\n\n"
+    },
+    {
+      "server": "51.222.105.179",
+      "name": "icbtechscr.com",
+      "type": "MX",
+      "output": "Servidor:  UnKnown\nAddress:  51.222.105.179\n\nicbtechscr.com\tMX preference = 0, mail exchanger = icbtechscr.com\nicbtechscr.com\tinternet address = 51.222.105.179\n"
+    },
+    {
+      "server": "51.161.108.91",
+      "name": "tienda.icbtechscr.com",
+      "type": "A",
+      "output": "Servidor:  UnKnown\nAddress:  51.161.108.91\n\nNombre:  tienda.icbtechscr.com\nAddresses:  104.21.49.91\n\t  172.67.189.113\n\n"
+    },
+    {
+      "server": "51.161.108.91",
+      "name": "icbtechscr.com",
+      "type": "MX",
+      "output": "Servidor:  UnKnown\nAddress:  51.161.108.91\n\nicbtechscr.com\tMX preference = 0, mail exchanger = icbtechscr.com\nicbtechscr.com\tinternet address = 51.222.105.179\n"
+    }
+  ],
+  "browser_test": {
+    "product_added_and_cart_displayed": true,
+    "test_cart_emptied": true,
+    "order_created": false,
+    "payment_executed": false,
+    "archive_banner_link_opens_current_store": true
+  }
+}
