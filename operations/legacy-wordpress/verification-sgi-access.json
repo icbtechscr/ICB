@@ -1,0 +1,201 @@
+{
+  "checked_at": "2026-11-16T22:46:47.932251+00:00",
+  "tls_validation": true,
+  "dns": [
+    {
+      "host": "sgi.icbtechscr.com",
+      "server": "1.1.1.1",
+      "type": "A",
+      "output": "Servidor:  one.one.one.one\nAddress:  1.1.1.1\n\nNombre:  sgi.icbtechscr.com\nAddresses:  172.67.189.113\n\t  104.21.49.91\n\nRespuesta no autoritativa:\n\n"
+    },
+    {
+      "host": "sgi.icbtechscr.com",
+      "server": "1.1.1.1",
+      "type": "AAAA",
+      "output": "Servidor:  one.one.one.one\nAddress:  1.1.1.1\n\nNombre:  sgi.icbtechscr.com\nAddresses:  2606:4700:3032::ac43:bd71\n\t  2606:4700:3030::6815:315b\n\nRespuesta no autoritativa:\n\n"
+    },
+    {
+      "host": "sgi.icbtechscr.com",
+      "server": "8.8.8.8",
+      "type": "A",
+      "output": "Servidor:  dns.google\nAddress:  8.8.8.8\n\nNombre:  sgi.icbtechscr.com\nAddresses:  104.21.49.91\n\t  172.67.189.113\n\nRespuesta no autoritativa:\n\n"
+    },
+    {
+      "host": "sgi.icbtechscr.com",
+      "server": "8.8.8.8",
+      "type": "AAAA",
+      "output": "Servidor:  dns.google\nAddress:  8.8.8.8\n\nNombre:  sgi.icbtechscr.com\nAddresses:  2606:4700:3030::6815:315b\n\t  2606:4700:3032::ac43:bd71\n\nRespuesta no autoritativa:\n\n"
+    },
+    {
+      "host": "sgi.icbtechscr.com",
+      "server": "51.222.105.179",
+      "type": "A",
+      "output": "Servidor:  UnKnown\nAddress:  51.222.105.179\n\nNombre:  sgi.icbtechscr.com\nAddresses:  172.67.189.113\n\t  104.21.49.91\n\n"
+    },
+    {
+      "host": "sgi.icbtechscr.com",
+      "server": "51.222.105.179",
+      "type": "AAAA",
+      "output": "Servidor:  UnKnown\nAddress:  51.222.105.179\n\nNombre:  sgi.icbtechscr.com\nAddresses:  2606:4700:3032::ac43:bd71\n\t  2606:4700:3030::6815:315b\n\n"
+    },
+    {
+      "host": "sgi.icbtechscr.com",
+      "server": "51.161.108.91",
+      "type": "A",
+      "output": "Servidor:  UnKnown\nAddress:  51.161.108.91\n\nNombre:  sgi.icbtechscr.com\nAddresses:  104.21.49.91\n\t  172.67.189.113\n\n"
+    },
+    {
+      "host": "sgi.icbtechscr.com",
+      "server": "51.161.108.91",
+      "type": "AAAA",
+      "output": "Servidor:  UnKnown\nAddress:  51.161.108.91\n\nNombre:  sgi.icbtechscr.com\nAddresses:  2606:4700:3032::ac43:bd71\n\t  2606:4700:3030::6815:315b\n\n"
+    },
+    {
+      "host": "api.icbtechscr.com",
+      "server": "1.1.1.1",
+      "type": "A",
+      "output": "Servidor:  one.one.one.one\nAddress:  1.1.1.1\n\nNombre:  api.icbtechscr.com\nAddresses:  104.21.49.91\n\t  172.67.189.113\n\nRespuesta no autoritativa:\n\n"
+    },
+    {
+      "host": "api.icbtechscr.com",
+      "server": "1.1.1.1",
+      "type": "AAAA",
+      "output": "Servidor:  one.one.one.one\nAddress:  1.1.1.1\n\nNombre:  api.icbtechscr.com\nAddresses:  2606:4700:3030::6815:315b\n\t  2606:4700:3032::ac43:bd71\n\nRespuesta no autoritativa:\n\n"
+    },
+    {
+      "host": "api.icbtechscr.com",
+      "server": "8.8.8.8",
+      "type": "A",
+      "output": "Servidor:  dns.google\nAddress:  8.8.8.8\n\nNombre:  api.icbtechscr.com\nAddresses:  172.67.189.113\n\t  104.21.49.91\n\nRespuesta no autoritativa:\n\n"
+    },
+    {
+      "host": "api.icbtechscr.com",
+      "server": "8.8.8.8",
+      "type": "AAAA",
+      "output": "Servidor:  dns.google\nAddress:  8.8.8.8\n\nNombre:  api.icbtechscr.com\nAddresses:  2606:4700:3030::6815:315b\n\t  2606:4700:3032::ac43:bd71\n\nRespuesta no autoritativa:\n\n"
+    },
+    {
+      "host": "api.icbtechscr.com",
+      "server": "51.222.105.179",
+      "type": "A",
+      "output": "Servidor:  UnKnown\nAddress:  51.222.105.179\n\nNombre:  api.icbtechscr.com\nAddresses:  104.21.49.91\n\t  172.67.189.113\n\n"
+    },
+    {
+      "host": "api.icbtechscr.com",
+      "server": "51.222.105.179",
+      "type": "AAAA",
+      "output": "Servidor:  UnKnown\nAddress:  51.222.105.179\n\nNombre:  api.icbtechscr.com\nAddresses:  2606:4700:3030::6815:315b\n\t  2606:4700:3032::ac43:bd71\n\n"
+    },
+    {
+      "host": "api.icbtechscr.com",
+      "server": "51.161.108.91",
+      "type": "A",
+      "output": "Servidor:  UnKnown\nAddress:  51.161.108.91\n\nNombre:  api.icbtechscr.com\nAddresses:  104.21.49.91\n\t  172.67.189.113\n\n"
+    },
+    {
+      "host": "api.icbtechscr.com",
+      "server": "51.161.108.91",
+      "type": "AAAA",
+      "output": "Servidor:  UnKnown\nAddress:  51.161.108.91\n\nNombre:  api.icbtechscr.com\nAddresses:  2606:4700:3032::ac43:bd71\n\t  2606:4700:3030::6815:315b\n\n"
+    }
+  ],
+  "http": [
+    {
+      "path": "/ingresar",
+      "ip": null,
+      "method": "GET",
+      "status": "200",
+      "exit": 0,
+      "expected": 200,
+      "error": "",
+      "has_login_fields": true
+    },
+    {
+      "path": "/api/sesion/verificar",
+      "ip": null,
+      "method": "GET",
+      "status": "401",
+      "exit": 0,
+      "expected": 401,
+      "error": "",
+      "response": "{\"error\":\"No se pudo confirmar la sesión.\"}"
+    },
+    {
+      "path": "/api/sesion/iniciar",
+      "ip": null,
+      "method": "POST",
+      "status": "400",
+      "exit": 0,
+      "expected": 400,
+      "error": "",
+      "response": "{\"error\":\"Ingresá tu correo y contraseña.\"}"
+    },
+    {
+      "path": "/ingresar",
+      "ip": "104.21.49.91",
+      "method": "GET",
+      "status": "200",
+      "exit": 0,
+      "expected": 200,
+      "error": "",
+      "has_login_fields": true
+    },
+    {
+      "path": "/api/sesion/verificar",
+      "ip": "104.21.49.91",
+      "method": "GET",
+      "status": "401",
+      "exit": 0,
+      "expected": 401,
+      "error": "",
+      "response": "{\"error\":\"No se pudo confirmar la sesión.\"}"
+    },
+    {
+      "path": "/api/sesion/iniciar",
+      "ip": "104.21.49.91",
+      "method": "POST",
+      "status": "400",
+      "exit": 0,
+      "expected": 400,
+      "error": "",
+      "response": "{\"error\":\"Ingresá tu correo y contraseña.\"}"
+    },
+    {
+      "path": "/ingresar",
+      "ip": "172.67.189.113",
+      "method": "GET",
+      "status": "200",
+      "exit": 0,
+      "expected": 200,
+      "error": "",
+      "has_login_fields": true
+    },
+    {
+      "path": "/api/sesion/verificar",
+      "ip": "172.67.189.113",
+      "method": "GET",
+      "status": "401",
+      "exit": 0,
+      "expected": 401,
+      "error": "",
+      "response": "{\"error\":\"No se pudo confirmar la sesión.\"}"
+    },
+    {
+      "path": "/api/sesion/iniciar",
+      "ip": "172.67.189.113",
+      "method": "POST",
+      "status": "400",
+      "exit": 0,
+      "expected": 400,
+      "error": "",
+      "response": "{\"error\":\"Ingresá tu correo y contraseña.\"}"
+    }
+  ],
+  "no_user_passwords_changed": true,
+  "no_real_credentials_submitted": true,
+  "negative_cache_ttl_seconds": 1800,
+  "server_auth_backend_health": {
+    "status": 200,
+    "healthy": true
+  }
+}

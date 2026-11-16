@@ -58,3 +58,8 @@ No se crearon pedidos, cobros, facturas ni movimientos de inventario. No se efec
 Las exportaciones DNS previas y las pruebas por etapa permanecen en el workspace operativo, bajo `evidence/icb-legacy-link-20261116`, `evidence/icb-legacy-redirect-fix-20261116` y `evidence/icb-canonical-restore-20261116`. Las pruebas anteriores describen estados anteriores y quedan sustituidas por este informe.
 
 Los originales completos de wp-config.php y .htaccess están en un respaldo privado local fuera de Git. No se incluyen credenciales en este repositorio. Para retirar sólo el puente, esperar a que se agote el tráfico antiguo y quitar su regla de reescritura y su archivo, conservando las redirecciones de compatibilidad. No devolver el A raíz a WordPress como parte de esa limpieza. Si se revierte el DNS, hay que revisar conjuntamente A, MX, mail y SPF; no reponer un MX que vuelva a depender de la IP web.
+
+
+## Acceso SGI en redes afectadas
+
+Se completaron también las rutas SGI/API que faltaban en la zona antigua. Ver [SGI-ACCESS.md](SGI-ACCESS.md), los ocho registros en `sgi-access-dns.json` y la comprobación en `verification-sgi-access.json`.

@@ -1,0 +1,53 @@
+{
+  "scope": "Neothek legacy zone for icbtechscr.com only",
+  "records": [
+    {
+      "name": "sgi",
+      "type": "A",
+      "value": "104.21.49.91",
+      "ttl": 300
+    },
+    {
+      "name": "sgi",
+      "type": "A",
+      "value": "172.67.189.113",
+      "ttl": 300
+    },
+    {
+      "name": "sgi",
+      "type": "AAAA",
+      "value": "2606:4700:3030::6815:315b",
+      "ttl": 300
+    },
+    {
+      "name": "sgi",
+      "type": "AAAA",
+      "value": "2606:4700:3032::ac43:bd71",
+      "ttl": 300
+    },
+    {
+      "name": "api",
+      "type": "A",
+      "value": "104.21.49.91",
+      "ttl": 300
+    },
+    {
+      "name": "api",
+      "type": "A",
+      "value": "172.67.189.113",
+      "ttl": 300
+    },
+    {
+      "name": "api",
+      "type": "AAAA",
+      "value": "2606:4700:3030::6815:315b",
+      "ttl": 300
+    },
+    {
+      "name": "api",
+      "type": "AAAA",
+      "value": "2606:4700:3032::ac43:bd71",
+      "ttl": 300
+    }
+  ]
+}
