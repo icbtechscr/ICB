@@ -1,0 +1,66 @@
+{
+  "checked_at": "2026-11-16T21:35:52.547942+00:00",
+  "tls_validation": "enabled; default trusted certificate validation",
+  "checks": [
+    {
+      "name": "principal",
+      "requested": "https://icbtechscr.com/",
+      "final": "https://icbtechscr.com/",
+      "status": 200,
+      "title": "ICB Technologies Costa Rica — Tecnología y seguridad",
+      "nextjs": true,
+      "wordpress": true,
+      "untranslated_legacy_link": null
+    },
+    {
+      "name": "www",
+      "requested": "https://www.icbtechscr.com/",
+      "final": "https://www.icbtechscr.com/",
+      "status": 200,
+      "title": "ICB Technologies Costa Rica — Tecnología y seguridad",
+      "nextjs": true,
+      "wordpress": true,
+      "untranslated_legacy_link": null
+    },
+    {
+      "name": "wordpress",
+      "requested": "https://anterior.icbtechscr.com/",
+      "final": "https://anterior.icbtechscr.com/",
+      "status": 200,
+      "title": "ICB Technologies Costa Rica | El Mundo de la Tecnología",
+      "nextjs": false,
+      "wordpress": true,
+      "untranslated_legacy_link": false
+    },
+    {
+      "name": "nosotros",
+      "requested": "https://anterior.icbtechscr.com/nosotros/",
+      "final": "https://anterior.icbtechscr.com/nosotros/",
+      "status": 200,
+      "title": "Nosotros - ICB TECHNOLOGIES SRL",
+      "nextjs": false,
+      "wordpress": true,
+      "untranslated_legacy_link": false
+    },
+    {
+      "name": "producto",
+      "requested": "https://anterior.icbtechscr.com/producto/case-x-micro-m03-slim-c-fuente-de-poder-650w-negro/",
+      "final": "https://anterior.icbtechscr.com/producto/case-x-micro-m03-slim-c-fuente-de-poder-650w-negro/",
+      "status": 200,
+      "title": "CASE X-MICRO M03 **SLIM** C/FUENTE DE PODER 650W NEGRO",
+      "nextjs": false,
+      "wordpress": true,
+      "untranslated_legacy_link": false
+    },
+    {
+      "name": "sgi",
+      "requested": "https://sgi.icbtechscr.com/",
+      "final": "https://sgi.icbtechscr.com/ingresar?next=%2F",
+      "status": 200,
+      "title": "SGI 2027 · Gestión integral",
+      "nextjs": true,
+      "wordpress": false,
+      "untranslated_legacy_link": null
+    }
+  ]
+}
